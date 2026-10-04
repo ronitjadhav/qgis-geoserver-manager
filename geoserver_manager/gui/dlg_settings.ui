@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>wdg_geoserver_manager_settings</class>
+    <widget class="QWidget" name="wdg_geoserver_manager_settings">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>538</width>
+                <height>273</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>GeoServer Manager - Settings</string>
+        </property>
+        <property name="locale">
+            <locale language="English" country="UnitedStates"/>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+                <widget class="QLabel" name="lbl_title">
+                    <property name="minimumSize">
+                        <size>
+                            <width>0</width>
+                            <height>25</height>
+                        </size>
+                    </property>
+                    <property name="maximumSize">
+                        <size>
+                            <width>16777215</width>
+                            <height>30</height>
+                        </size>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <weight>75</weight>
+                            <bold>true</bold>
+                        </font>
+                    </property>
+                    <property name="locale">
+                        <locale language="English" country="UnitedStates"/>
+                    </property>
+                    <property name="text">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;PluginTitle - Version X.X.X&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
+                    <property name="scaledContents">
+                        <bool>true</bool>
+                    </property>
+                    <property name="alignment">
+                        <set>Qt::AlignCenter</set>
+                    </property>
+                    <property name="wordWrap">
+                        <bool>true</bool>
+                    </property>
+                    <property name="openExternalLinks">
+                        <bool>false</bool>
+                    </property>
+                    <property name="textInteractionFlags">
+                        <set>Qt::TextSelectableByMouse</set>
+                    </property>
+                </widget>
+            </item>
+            <item>
+                <widget class="QGroupBox" name="grp_credentials">
+                    <property name="title">
+                        <string>GeoServer Connection</string>
+                    </property>
+                    <layout class="QFormLayout" name="formLayout">
+                        <item row="0" column="0">
+                            <widget class="QLabel" name="lbl_gs_url">
+                                <property name="text">
+                                    <string>Base URL</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="0" column="1">
+                            <widget class="QLineEdit" name="txt_gs_url">
+                                <property name="placeholderText">
+                                    <string>http://localhost:8080/geoserver</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="1" column="0">
+                            <widget class="QLabel" name="lbl_gs_username">
+                                <property name="text">
+                                    <string>Username</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="1" column="1">
+                            <widget class="QLineEdit" name="txt_gs_username"/>
+                        </item>
+                        <item row="2" column="0">
+                            <widget class="QLabel" name="lbl_gs_password">
+                                <property name="text">
+                                    <string>Password</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="2" column="1">
+                            <widget class="QgsPasswordLineEdit" name="txt_gs_password"/>
+                        </item>
+                        <item row="3" column="1">
+                            <widget class="QCheckBox" name="opt_verify_tls">
+                                <property name="text">
+                                    <string>Verify the server's TLS certificate</string>
+                                </property>
+                                <property name="toolTip">
+                                    <string>Leaving it on is the safe default. For a private CA, set REQUESTS_CA_BUNDLE instead (see the documentation's network settings). Untick it only as a last resort.</string>
+                                </property>
+                                <property name="checked">
+                                    <bool>true</bool>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="4" column="1">
+                            <layout class="QHBoxLayout" name="lyt_test_connection">
+                                <item>
+                                    <widget class="QPushButton" name="btn_test_connection">
+                                        <property name="text">
+                                            <string>Test connection</string>
+                                        </property>
+                                        <property name="toolTip">
+                                            <string>Try the URL and credentials as typed, without saving them.</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                                <item>
+                                    <widget class="QLabel" name="lbl_test_result">
+                                        <property name="wordWrap">
+                                            <bool>true</bool>
+                                        </property>
+                                    </widget>
+                                </item>
+                            </layout>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+            <item>
+                <widget class="QGroupBox" name="grp_misc">
+                    <property name="locale">
+                        <locale language="English" country="UnitedStates"/>
+                    </property>
+                    <property name="title">
+                        <string>Miscellaneous</string>
+                    </property>
+                    <property name="flat">
+                        <bool>false</bool>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout">
+                        <item row="0" column="1">
+                            <widget class="QPushButton" name="btn_report">
+                                <property name="minimumSize">
+                                    <size>
+                                        <width>200</width>
+                                        <height>25</height>
+                                    </size>
+                                </property>
+                                <property name="maximumSize">
+                                    <size>
+                                        <width>500</width>
+                                        <height>30</height>
+                                    </size>
+                                </property>
+                                <property name="locale">
+                                    <locale language="English" country="UnitedStates"/>
+                                </property>
+                                <property name="text">
+                                    <string>Report an issue</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="0" column="0">
+                            <widget class="QPushButton" name="btn_help">
+                                <property name="minimumSize">
+                                    <size>
+                                        <width>200</width>
+                                        <height>25</height>
+                                    </size>
+                                </property>
+                                <property name="maximumSize">
+                                    <size>
+                                        <width>500</width>
+                                        <height>30</height>
+                                    </size>
+                                </property>
+                                <property name="locale">
+                                    <locale language="English" country="UnitedStates"/>
+                                </property>
+                                <property name="text">
+                                    <string>Help</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="3" column="0" colspan="2">
+                            <widget class="QPushButton" name="btn_reset">
+                                <property name="minimumSize">
+                                    <size>
+                                        <width>200</width>
+                                        <height>25</height>
+                                    </size>
+                                </property>
+                                <property name="maximumSize">
+                                    <size>
+                                        <width>16777215</width>
+                                        <height>30</height>
+                                    </size>
+                                </property>
+                                <property name="autoFillBackground">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="text">
+                                    <string>Reset settings to factory defaults</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="1" column="0" colspan="2">
+                            <widget class="QCheckBox" name="opt_debug">
+                                <property name="minimumSize">
+                                    <size>
+                                        <width>0</width>
+                                        <height>25</height>
+                                    </size>
+                                </property>
+                                <property name="maximumSize">
+                                    <size>
+                                        <width>16777215</width>
+                                        <height>30</height>
+                                    </size>
+                                </property>
+                                <property name="toolTip">
+                                    <string>Enable debug mode.</string>
+                                </property>
+                                <property name="autoFillBackground">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="locale">
+                                    <locale language="English" country="UnitedStates"/>
+                                </property>
+                                <property name="text">
+                                    <string>Verbose logging (Info messages in the QGIS log panel)</string>
+                                </property>
+                                <property name="tristate">
+                                    <bool>false</bool>
+                                </property>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+            <item>
+                <spacer name="verticalSpacer">
+                    <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                        <size>
+                            <width>20</width>
+                            <height>56</height>
+                        </size>
+                    </property>
+                </spacer>
+            </item>
+        </layout>
+    </widget>
+    <customwidgets>
+        <customwidget>
+            <class>QgsPasswordLineEdit</class>
+            <extends>QLineEdit</extends>
+            <header>qgspasswordlineedit.h</header>
+        </customwidget>
+    </customwidgets>
+    <resources/>
+    <connections/>
+</ui>

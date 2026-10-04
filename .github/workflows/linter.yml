@@ -1,0 +1,83 @@
+name: "✅ Linter"
+
+on:
+  # development.txt is what this job installs, and the workflow file pins the
+  # actions it runs with: a bump to either has to be linted by this job, or it
+  # reaches main with nothing having checked it.
+  push:
+    branches:
+      - main
+    paths:
+      - '**.py'
+      - .github/workflows/linter.yml
+      - requirements/development.txt
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.py'
+      - .github/workflows/linter.yml
+      - requirements/development.txt
+
+env:
+  PROJECT_FOLDER: "geoserver_manager"
+  PYTHON_VERSION: "3.12"
+
+
+jobs:
+  lint-py:
+    name: Python 🐍
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          cache: "pip"
+          cache-dependency-path: "requirements/development.txt"
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install project requirements
+        run: |
+          python -m pip install -U pip setuptools wheel
+          python -m pip install -U -r requirements/development.txt
+
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 ${{ env.PROJECT_FOLDER }} --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings.
+          flake8 ${{ env.PROJECT_FOLDER }} --count --exit-zero --statistics
+
+  qt6-check:
+    name: PyQt6 6️⃣
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/oslandia/qgis/pyqgis-4-checker/pyqgis-qt-checker:latest
+      volumes:
+        - /tmp/.X11-unix:/tmp/.X11-unix
+        - ${{ github.workspace }}:/home/pyqgisdev/
+      options: --user root
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v7
+
+      - name: Check PyQt5 to PyQt6 compatibility.
+        run: |
+          pyqt5_to_pyqt6.py --dry_run ${{ env.PROJECT_FOLDER }}/
+          pyqt5_to_pyqt6.py --logfile pyqt6_checker.log ${{ env.PROJECT_FOLDER }}/
+
+      - name: Upload script report if script fails
+        uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: pyqt6-checker-error-report
+          path: pyqt6_checker.log
+          retention-days: 7

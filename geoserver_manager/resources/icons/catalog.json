@@ -1,0 +1,261 @@
+{
+  "version": 1,
+  "design": {
+    "canvas": 24,
+    "stroke_width": 1.2,
+    "display_size": 20
+  },
+  "accents": {
+    "light": {
+      "blue": "#007d9e",
+      "green": "#477d28"
+    },
+    "dark": {
+      "blue": "#69cce5",
+      "green": "#9acf7f"
+    }
+  },
+  "icons": {
+    "plugin": {
+      "label": "GeoServer Manager",
+      "category": "Brand",
+      "purpose": "Open or identify GeoServer Manager. The existing Ribbon G is the brand mark.",
+      "status": "custom",
+      "asset": "images/geoserver_manager.svg",
+      "exports": [
+        "images/default_icon.png"
+      ]
+    },
+    "workspaces": {
+      "label": "Workspaces",
+      "category": "Navigation",
+      "purpose": "A folder for the namespaces that group stores, layers and styles.",
+      "status": "custom",
+      "asset": "icons/workspaces.svg"
+    },
+    "datastores": {
+      "label": "Datastores",
+      "category": "Navigation",
+      "purpose": "A database cylinder for vector data sources.",
+      "status": "custom",
+      "asset": "icons/datastores.svg"
+    },
+    "coverage-stores": {
+      "label": "Coverage stores",
+      "category": "Navigation",
+      "purpose": "An image frame for raster data sources.",
+      "status": "custom",
+      "asset": "icons/coverage-stores.svg"
+    },
+    "cascaded-stores": {
+      "label": "Cascaded stores",
+      "category": "Navigation",
+      "purpose": "A chain link for connections to remote WMS or WMTS services.",
+      "status": "custom",
+      "asset": "icons/cascaded-stores.svg"
+    },
+    "layers": {
+      "label": "Layers",
+      "category": "Navigation",
+      "purpose": "A neutral stack for all published layer types, including raster and vector.",
+      "status": "custom",
+      "asset": "icons/layers.svg"
+    },
+    "layer-groups": {
+      "label": "Layer groups",
+      "category": "Navigation",
+      "purpose": "Brackets contain several layers served together.",
+      "status": "custom",
+      "asset": "icons/layer-groups.svg"
+    },
+    "styles": {
+      "label": "Styles / set style",
+      "category": "Navigation",
+      "purpose": "A brush for symbology and choosing a server style.",
+      "status": "custom",
+      "asset": "icons/styles.svg"
+    },
+    "tile-cache": {
+      "label": "Tile cache",
+      "category": "Navigation",
+      "purpose": "Four map tiles for GeoWebCache.",
+      "status": "custom",
+      "asset": "icons/tile-cache.svg"
+    },
+    "add-to-qgis": {
+      "label": "Add to QGIS",
+      "category": "Layers and stores",
+      "purpose": "A layer stack with a plus adds an existing server layer to the project.",
+      "status": "custom",
+      "asset": "icons/add-to-qgis.svg"
+    },
+    "preview-map": {
+      "label": "Preview in QGIS",
+      "category": "Layers and stores",
+      "purpose": "An eye opens a temporary map without adding a layer to the project.",
+      "status": "custom",
+      "asset": "icons/preview-map.svg"
+    },
+    "preview-browser": {
+      "label": "Preview in browser",
+      "category": "Layers and stores",
+      "purpose": "A browser window with an outward arrow opens the external preview.",
+      "status": "custom",
+      "asset": "icons/preview-browser.svg"
+    },
+    "browse-resources": {
+      "label": "Browse store contents",
+      "category": "Layers and stores",
+      "purpose": "A list shows the coverages or cascaded layers held by a store.",
+      "status": "custom",
+      "asset": "icons/browse-resources.svg"
+    },
+    "publish-layer": {
+      "label": "Publish a layer",
+      "category": "Layers and stores",
+      "purpose": "A layer stack with an upward arrow publishes a store resource on GeoServer.",
+      "status": "custom",
+      "asset": "icons/publish-layer.svg"
+    },
+    "push-style": {
+      "label": "Push style to GeoServer",
+      "category": "Styles",
+      "purpose": "A brush with a separate upward arrow sends project symbology to the server.",
+      "status": "custom",
+      "asset": "icons/push-style.svg"
+    },
+    "update-from-source": {
+      "label": "Update from the data",
+      "category": "Layer actions",
+      "purpose": "A clockwise arrow around a small database: GeoServer re-reads the data behind a layer and recomputes its bounds.",
+      "status": "custom",
+      "asset": "icons/update-from-source.svg"
+    },
+    "apply-style": {
+      "label": "Apply style to QGIS",
+      "category": "Styles",
+      "purpose": "A brush with a separate downward arrow brings server symbology into the project.",
+      "status": "custom",
+      "asset": "icons/apply-style.svg"
+    },
+    "save-style": {
+      "label": "Save style to disk",
+      "category": "Styles",
+      "purpose": "A document with a downward arrow writes a style definition to a local file.",
+      "status": "custom",
+      "asset": "icons/save-style.svg"
+    },
+    "clear-cache": {
+      "label": "Truncate cached tiles",
+      "category": "Cache and removal",
+      "purpose": "An eraser with a flat contact edge clears tile content but keeps the cache configuration.",
+      "status": "custom",
+      "asset": "icons/clear-cache.svg"
+    },
+    "remove-cache": {
+      "label": "Stop caching",
+      "category": "Cache and removal",
+      "purpose": "A minus removes the cache configuration; the published layer remains.",
+      "status": "custom",
+      "asset": "icons/remove-cache.svg"
+    },
+    "delete": {
+      "label": "Delete resource",
+      "category": "Cache and removal",
+      "purpose": "A familiar bin removes a server resource after confirmation.",
+      "status": "custom",
+      "asset": "icons/delete.svg"
+    },
+    "settings": {
+      "label": "Settings",
+      "category": "Utilities",
+      "purpose": "A six-tooth cog opens the plugin settings.",
+      "status": "custom",
+      "asset": "icons/settings.svg"
+    },
+    "help": {
+      "label": "Help",
+      "category": "Utilities",
+      "purpose": "A question mark opens the documentation.",
+      "status": "custom",
+      "asset": "icons/help.svg"
+    },
+    "report-issue": {
+      "label": "Report an issue",
+      "category": "Utilities",
+      "purpose": "A bug opens the issue reporter.",
+      "status": "custom",
+      "asset": "icons/report-issue.svg"
+    },
+    "reset-settings": {
+      "label": "Reset settings",
+      "category": "Utilities",
+      "purpose": "A counterclockwise arrow restores the default settings.",
+      "status": "custom",
+      "asset": "icons/reset-settings.svg"
+    },
+    "copy-style": {
+      "label": "Copy a style",
+      "category": "Style actions",
+      "purpose": "A sheet in front of another, the front one with two accent lines: the style copied under a new name or into another workspace.",
+      "status": "custom",
+      "asset": "icons/copy-style.svg"
+    },
+    "seed-cache": {
+      "label": "Seed or truncate",
+      "category": "Tile cache actions",
+      "purpose": "A grid of tiles with one slot being added: render (or drop) a layer's tiles for a gridset, format and zoom range.",
+      "status": "custom",
+      "asset": "icons/seed-cache.svg"
+    },
+    "seed-tasks": {
+      "label": "Seeding tasks",
+      "category": "Tile cache actions",
+      "purpose": "Two progress bars: the seed and truncate tasks GeoWebCache is running for a layer.",
+      "status": "custom",
+      "asset": "icons/seed-tasks.svg"
+    },
+    "server": {
+      "label": "Server",
+      "category": "Navigation",
+      "purpose": "Two stacked server units with a status light: the settings of the whole GeoServer.",
+      "status": "custom",
+      "asset": "icons/server.svg"
+    },
+    "list-add": {
+      "label": "Add to a list",
+      "category": "Forms",
+      "purpose": "A plus: add the picked or typed name as a new row.",
+      "status": "custom",
+      "asset": "icons/list-add.svg"
+    },
+    "list-remove": {
+      "label": "Remove from a list",
+      "category": "Forms",
+      "purpose": "A minus: remove the selected row.",
+      "status": "custom",
+      "asset": "icons/list-remove.svg"
+    },
+    "move-up": {
+      "label": "Move up",
+      "category": "Forms",
+      "purpose": "An arrow up: move the selected row one place earlier.",
+      "status": "custom",
+      "asset": "icons/move-up.svg"
+    },
+    "move-down": {
+      "label": "Move down",
+      "category": "Forms",
+      "purpose": "An arrow down: move the selected row one place later.",
+      "status": "custom",
+      "asset": "icons/move-down.svg"
+    },
+    "pick-crs": {
+      "label": "Pick a CRS",
+      "category": "Forms",
+      "purpose": "A globe: open QGIS's CRS picker to fill an SRS code.",
+      "status": "custom",
+      "asset": "icons/pick-crs.svg"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+/* Screenshots are light-themed. A border and a soft shadow set them off the
+   page, which matters most on the dark theme. */
+figure img {
+  border: 1px solid var(--color-background-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 12%);
+}
+figure figcaption {
+  color: var(--color-foreground-secondary);
+  font-size: var(--font-size--small);
+}

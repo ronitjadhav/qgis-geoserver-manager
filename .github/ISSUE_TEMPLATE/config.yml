@@ -1,0 +1,6 @@
+blank_issues_enabled: true
+
+contact_links:
+  - name: Documentation
+    url: https://ronitjadhav.github.io/qgis-geoserver-manager/
+    about: Check the user guide and troubleshooting steps before submitting an issue.

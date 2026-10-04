@@ -1,0 +1,28 @@
+[general]
+name=GeoServer Manager
+about=Browse, create, edit and delete workspaces, datastores, coverage stores, cascaded WMS/WMTS stores, layers, layer groups and styles on a GeoServer, configure and seed its tile cache, and edit the server-wide settings; publish a table, or a vector or raster layer of the open project; bring layers and styles back into QGIS as WMS, WFS or WMTS. Lists load in the background and are searchable, sortable and paginated. Credentials are kept in the QGIS authentication database. Built on python-geoservercloud.
+category=Web
+hasProcessingProvider=False
+description=Manage a GeoServer from QGIS: workspaces, stores, layers, layer groups and styles. Browse, create, edit, delete and publish
+icon=resources/images/default_icon.png
+tags=geoserver,rest,wms,wfs,wmts,workspace,datastore,coverage,layer,layer group,style,sld,publish
+
+# credits and contact
+author=Ronit Jadhav
+email=ronit.jadhav@camptocamp.com
+homepage=https://ronitjadhav.github.io/qgis-geoserver-manager/
+repository=https://github.com/ronitjadhav/qgis-geoserver-manager
+tracker=https://github.com/ronitjadhav/qgis-geoserver-manager/issues/
+
+# QGIS context
+deprecated=False
+experimental=True
+plugin_dependencies=
+qgisMinimumVersion=3.40
+qgisMaximumVersion=4.99
+# QGIS 4 ignores this flag and reads only the range; Qt6 builds of 3.40 to 3.44 need it
+supportsQt6=True
+
+# versioning
+version=0.1.0
+changelog=
