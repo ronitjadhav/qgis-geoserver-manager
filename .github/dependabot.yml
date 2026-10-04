@@ -1,0 +1,42 @@
+version: 2
+
+# Every requirements file is installed by the workflow that would notice it
+# breaking, and each of those workflows triggers on the file it installs:
+#
+#   requirements/development.txt   -> Linter
+#   requirements/testing.txt       -> Tester
+#   requirements/documentation.txt -> Documentation
+#   requirements/packaging.txt     -> Package & Release
+#
+# So a bump arrives with its own check already run. Keep that mapping intact
+# when a requirements file or a workflow path filter changes; a bump nobody
+# builds broke the packaging job once.
+#
+# The bundled geoservercloud wheel is deliberately not here. It lives in
+# geoserver_manager/extras/, is stripped by hand on every version bump, and is
+# pinned in toolbelt/dependencies.py, so it must never be updated unattended.
+updates:
+  - package-ecosystem: pip
+    directory: "/requirements"
+    schedule:
+      interval: monthly
+      time: "04:00"
+    # Minor and patch bumps travel together, one pull request a month instead
+    # of five. A major version stays on its own, so when it breaks the build
+    # it is obvious which one did it.
+    groups:
+      python-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

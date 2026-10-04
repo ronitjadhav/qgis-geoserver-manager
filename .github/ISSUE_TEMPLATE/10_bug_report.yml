@@ -1,0 +1,70 @@
+name: Bug or crash report
+description: Report a bug or a crash.
+labels:
+  - "Bug"
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. The details below help us reproduce the problem.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What is the bug or the crash?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce the problem
+      description: |
+        The steps, a sample dataset and a QGIS project file that reproduce the problem.
+        Screenshots or screencasts help: drag them into the text box.
+
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: about-info
+    attributes:
+      label: Versions
+      description: |
+        In QGIS, open Help, then About. Click in the table, press Ctrl+A, then Ctrl+C.
+        Paste the result here, not a screenshot.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: qgis-version
+    attributes:
+      label: Supported QGIS version
+      description: |
+        QGIS releases a new version each month. Run a supported QGIS version.
+        The release schedule is at https://www.qgis.org/en/site/getinvolved/development/roadmap.html#release-schedule
+      options:
+        - label: I run a supported QGIS version.
+
+  - type: checkboxes
+    id: new-profile
+    attributes:
+      label: New profile
+      description: |
+        Try with a new QGIS profile: another plugin or a setting can cause the problem.
+        How to create one:
+        https://docs.qgis.org/3.40/en/docs/user_manual/introduction/qgis_configuration.html#working-with-user-profiles
+      options:
+        - label: I tried with a new QGIS profile
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: |
+        Anything else about the problem.

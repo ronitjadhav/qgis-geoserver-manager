@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest a feature.
+labels:
+  - 'Feature Request'
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the request.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: Feature description
+      description: What you want to do, and what the plugin does today instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: Additional
+    attributes:
+      label: Additional context
+      description: |
+        Anything else, screenshots included.

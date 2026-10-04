@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+<title id="title">GeoServer Manager</title>
+<path d="M45 17L39 11Q32 4 25 11L11 25Q4 32 11 39L25 53Q32 60 39 53L53 39Q56.5 35.5 56.5 32H33" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="butt" stroke-linejoin="round"/>
+<path d="M44 48L53 39Q56.5 35.5 56.5 32H33" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="butt" stroke-linejoin="round"/>
+</svg>

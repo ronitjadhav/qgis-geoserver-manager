@@ -1,0 +1,3 @@
+# Kept out of the plugin zip: QGIS reads only the compiled .qm files, which
+# the packaging job builds from these (360 KB of the 1.1 MB installed).
+geoserver_manager/resources/i18n/*.ts export-ignore
