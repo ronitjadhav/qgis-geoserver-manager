@@ -1131,8 +1131,8 @@ class LayerGroupTabMixin:
             ),
             cascade=translate(
                 "LayerGroupTabMixin",
-                "Only the group goes away; the layers it published stay. GeoServer "
-                "refuses if another layer group contains this one.",
+                "Only the group goes away; the layers it published stay. A group "
+                "that another layer group contains stays too.",
             ),
         )
 
@@ -1142,6 +1142,14 @@ class LayerGroupTabMixin:
         TODO(#1): see _global_group_names; delete_layer_group() requires a
         workspace_name, so a global group needs the raw path.
         """
+        parents = self._parent_groups(name, workspace_name)
+        if parents:
+            raise RuntimeError(
+                translate(
+                    "LayerGroupTabMixin",
+                    "Layer group {} contains it. Remove it from there first.",
+                ).format(", ".join(f"'{parent}'" for parent in parents))
+            )
         try:
             if workspace_name:
                 # The library interpolates the names into the path as they
@@ -1156,3 +1164,29 @@ class LayerGroupTabMixin:
         except Exception:
             self._refuse_gone_group(name, workspace_name)
             raise
+
+    def _parent_groups(self, name, workspace_name):
+        """The groups that contain this one, as publishables name them.
+
+        GeoServer refuses to delete a nested group, until its layer list was
+        edited: then the DELETE answered 200 and the parent kept a group that
+        is gone (2.28.5 and 3.0.1). A listing that fails leaves the check to
+        GeoServer, as before.
+        """
+        reference = f"{workspace_name}:{name}" if workspace_name else name
+        try:
+            groups = self._all_group_names()
+        except Exception:
+            return []
+        # ponytail: one GET per group on each delete; a batch-wide read if that is slow.
+        details = self._fan_out(
+            lambda qualified: self._group_detail(
+                qualified.rpartition(":")[2], qualified.rpartition(":")[0] or None
+            ),
+            groups,
+        )
+        return [
+            group
+            for group, (detail, _error) in zip(groups, details)
+            if (reference, "layerGroup") in self._group_layers(detail or {})
+        ]

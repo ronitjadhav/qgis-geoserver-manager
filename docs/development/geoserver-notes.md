@@ -536,7 +536,11 @@ carries a `TODO(#1)` comment at the call site.
 - **Editing a layer group** (row 57, measured on 2.28.5): a partial `PUT` merges. On
   a group deleted meanwhile it is a 500 NullPointerException, and a `DELETE` a 500
   with no body, where a GET says 404. So a failed save or delete reads the group
-  again before it reports. A new `publishables` list needs a `styles` list of the
+  again before it reports. A nested group's `DELETE` is a 500 "Unable to delete layer
+  group referenced by layer group" until its `publishables` are edited. After that
+  it answers 200, and the parent keeps naming a group that is gone (2.28.5 and
+  3.0.1). So the delete reads every group first and refuses while one holds it.
+  A new `publishables` list needs a `styles` list of the
   same length (`""` for a layer's default), or it is refused. A group that holds a
   nested group needs `styles` even on a create (HTTP 500 without). GeoServer **never
   recomputes the bounds on a PUT**: a new layer list keeps the old box, and

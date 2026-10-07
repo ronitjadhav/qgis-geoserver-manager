@@ -321,6 +321,9 @@ bounds of the group, because GeoServer does not do that on an edit.
 GeoServer does not allow two things: renaming a group, and taking an Earth
 Observation group out of that mode.
 
+A delete removes the group only; its layers stay. A group that is inside
+another group is not deleted. Remove it from that group first.
+
 ```{figure} ../static/screenshots/layer-group-edit.png
 :alt: Editing the tasmania layer group, its Layers tab listing the layers in drawing order with their styles
 :width: 420px
