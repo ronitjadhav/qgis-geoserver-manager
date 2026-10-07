@@ -50,6 +50,15 @@ class TestPluginMetadata(unittest.TestCase):
         self.assertEqual(general.get("supportsqt6"), "True")
         self.assertGreaterEqual(parse(general.get("qgismaximumversion")), parse("4.0"))
 
+    def test_no_nameless_plugin_dependency(self):
+        """QGIS splits plugin_dependencies on commas and keeps blanks.
+
+        An empty value was a dependency named "": installing the zip opened
+        the Plugin Dependencies Manager with an empty row to "Fix manually".
+        """
+        deps = __about__.__plugin_md__.get("general").get("plugin_dependencies")
+        self.assertTrue(deps is None or all(dep.strip() for dep in deps.split(",")))
+
 
 # ############################################################################
 # ####### Stand-alone run ########

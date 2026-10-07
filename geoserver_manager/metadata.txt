@@ -17,7 +17,6 @@ tracker=https://github.com/ronitjadhav/qgis-geoserver-manager/issues/
 # QGIS context
 deprecated=False
 experimental=True
-plugin_dependencies=
 qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
 # QGIS 4 ignores this flag and reads only the range; Qt6 builds of 3.40 to 3.44 need it
