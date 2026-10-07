@@ -22,7 +22,7 @@ version.
 CI rejects a plugin archive of 1 MB or more, on a tag too, before anything is
 published. If the archive grows unexpectedly, check whether the bundled wheel
 was replaced with the upstream one. The shipped copy has the 15 MB of
-acceptance-test fixtures stripped out, which takes it from 16 MB to 49 KB.
+acceptance-test fixtures stripped out, which takes it from 16 MB to 58 KB.
 Strip a new wheel the same way on every version bump, and keep
 `GSC_REQUIRED` in `toolbelt/dependencies.py` equal to what is shipped. A test
 asserts that those two agree.

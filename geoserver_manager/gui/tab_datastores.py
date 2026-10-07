@@ -1342,7 +1342,7 @@ class DatastoreTabMixin:
 
     def _do_delete_datastore(self, workspace_name, datastore_name):
         """Execute the REST DELETE for a datastore (recurse=true removes feature types too)."""
-        # TODO(#1): upstream as delete_datastore(ws, ds, recurse=True); the library
-        # has none. Workaround: DELETE /workspaces/{ws}/datastores/{ds}.json?recurse=true
+        # TODO(#1): 0.8.14 has delete_datastore(ws, ds), recursive too: switch to it.
+        # Workaround: DELETE /workspaces/{ws}/datastores/{ds}.json?recurse=true
         path = self._datastore_path(workspace_name, datastore_name)
         self._raw_rest("delete", path, params={"recurse": "true"})

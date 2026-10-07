@@ -33,12 +33,12 @@ from geoserver_manager.toolbelt.log_handler import PlgLogger
 EXTRAS_DIR = DIR_PLUGIN_ROOT / "extras"
 BUNDLED_WHLS = [
     EXTRAS_DIR / "xmltodict-1.0.4-py3-none-any.whl",
-    EXTRAS_DIR / "geoservercloud-0.8.5-py3-none-any.whl",
+    EXTRAS_DIR / "geoservercloud-0.8.14-py3-none-any.whl",
 ]
 # The version the plugin is written against. Its raw-REST workarounds ride on
 # library internals, so a different version in the QGIS profile is worth a
 # loud warning even when the import works.
-GSC_REQUIRED = "0.8.5"
+GSC_REQUIRED = "0.8.14"
 
 
 def _report_resolved_version(logger) -> None:

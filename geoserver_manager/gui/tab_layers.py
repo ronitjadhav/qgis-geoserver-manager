@@ -564,7 +564,8 @@ class LayerTabMixin:
         """One feature type, as GeoServer stores it.
 
         TODO(#1): upstream: get_feature_type() exists, but FeatureType drops
-        cqlFilter, and title when an internationalTitle is set (row 63). The
+        title when an internationalTitle is set, and dropped cqlFilter before
+        0.8.14 (row 63). The
         edit form then showed an existing filter as empty, and emptying the
         field changed nothing. Workaround: GET the feature type path.
         """

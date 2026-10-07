@@ -248,7 +248,7 @@ class CascadedStoreTabMixin:
     def _create_cascaded_layer(self, workspace_name, store_name, kind, native, name):
         """Publish one remote layer under `name`. Raises when the name is taken."""
         self._require_safe_name(name)
-        # create_wms_layer deletes and recreates an existing name, so refuse it first
+        # create_wms_layer overwrites an existing name, so refuse it first
         if self._cascaded_layer_exists(workspace_name, store_name, kind, name):
             raise ValueError(
                 translate(
@@ -262,7 +262,7 @@ class CascadedStoreTabMixin:
             return
         # TODO(#1): create_wmts_layer() fetches the remote capabilities from
         # *this* machine (the remote may be reachable from GeoServer only),
-        # forces the SRS to EPSG:4326 and deletes an existing layer first.
+        # forces the SRS to EPSG:4326 and overwrites an existing layer.
         # GeoServer needs only the two names and reads title, abstract, SRS
         # and bounds from the capabilities itself. Workaround: POST them.
         self._raw_rest(
@@ -632,8 +632,8 @@ class CascadedStoreTabMixin:
             self._check(self.gs.create_wms_store(ws, name, url))
         else:
             self._check(self.gs.create_wmts_store(ws, name, url))
-        # TODO(#1): the library's create_wms_store/create_wmts_store take no
-        # credentials, timeouts or pool size (row 55). A merging PUT adds what
+        # TODO(#1): create_wms_store takes no credentials, timeouts or pool size,
+        # create_wmts_store no credentials (row 55). A merging PUT adds what
         # the form set; an authenticated remote needs it before any layer.
         defaults = dict(
             _CONNECTION_DEFAULTS, capabilities_url=values["capabilities_url"]
