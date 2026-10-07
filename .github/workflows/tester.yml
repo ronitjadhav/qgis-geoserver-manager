@@ -59,8 +59,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # the oldest QGIS supported, on Qt5, and the first QGIS 4, on Qt6
-        image: ["qgis/qgis:3.40", "qgis/qgis:4.0"]
+        # the oldest QGIS supported, on Qt5, the first QGIS 4 and the latest
+        # release, both on Qt6
+        image: ["qgis/qgis:3.40", "qgis/qgis:4.0", "qgis/qgis:stable"]
 
     container:
       image: ${{ matrix.image }}

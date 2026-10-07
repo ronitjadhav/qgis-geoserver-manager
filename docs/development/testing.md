@@ -20,8 +20,10 @@ QT_QPA_PLATFORM=offscreen python -m pytest tests/qgis
 ```
 
 `QT_QPA_PLATFORM=offscreen` lets the widget tests run without a display. CI
-sets the same variable. CI runs the suite twice: in the `qgis/qgis:3.40`
-container (Qt5, the oldest QGIS supported) and in `qgis/qgis:4.0` (Qt6). QGIS
+sets the same variable. CI runs the suite three times: in the `qgis/qgis:3.40`
+container (Qt5, the oldest QGIS supported), in `qgis/qgis:4.0` (Qt6) and in
+`qgis/qgis:stable`, the latest release. A test that depends on the QGIS version
+says so in its skip reason. QGIS
 4 ignores `supportsQt6`, so there `test_qgis_compat` checks that the version
 range of `metadata.txt` lets it load the plugin. No `qgis/qgis` image has a
 Qt6 build of QGIS 3.40 to 3.44, so no job covers those. Without pytest,
