@@ -352,7 +352,10 @@ carries a `TODO(#1)` comment at the call site.
   wiped the contact and the charset. One of `contactPerson` alone cleared the city.
   One of `level` alone turned standard-output logging off. So `tab_server.py` reads
   them again, merges the form, and sends them whole. A `null` `proxyBaseUrl` unsets
-  it (`""` stores an empty one). The log is `GET /rest/resource/{location}`: served
+  it (`""` stores an empty one). GeoServer 3.0.1 has no `location` in its
+  logging settings. A `PUT` of one answers 200 and drops it, so the logging form
+  offers the log file only when the GET has it. The file is still
+  `logs/geoserver.log` there. The log is `GET /rest/resource/{location}`: served
   whole, gzip, no length, no Range, so it is streamed and only its end kept. A file
   that is not there is a 404 "Undefined resource path." (2.27 and 2.28.5). GeoServer
   Cloud writes no log file: each service logs to its standard output. There the log

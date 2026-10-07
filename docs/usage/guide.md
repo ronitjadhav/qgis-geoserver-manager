@@ -459,7 +459,8 @@ it.
   keywords and contact lines, and for WFS the maximum features per request.
   The form also gives the capabilities URL, the address to connect QGIS to.
 - **Logging:** the logging profile and the log file. **Show the log** opens
-  the last 500 lines.
+  the last 500 lines. GeoServer 3 has no log file setting, so the form shows
+  none there.
 - **Catalog:** **Reload** reads the whole configuration from the data
   directory again, after it changed outside GeoServer. **Reset** drops the
   caches of stores, feature types and styles.
