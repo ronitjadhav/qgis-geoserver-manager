@@ -1559,6 +1559,7 @@ class TestWhatTheServerRuns(unittest.TestCase):
         for gs in (
             fake_server(version="2.28.5"),
             fake_server(version="2.28-SNAPSHOT"),
+            fake_server(version="3.0.1"),
             fake_server(
                 version="2.28.5-SNAPSHOT",
                 manifest="gs-cloud-base-spring-boot-2.28.5.1",

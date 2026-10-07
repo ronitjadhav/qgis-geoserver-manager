@@ -4,7 +4,8 @@ Everything here was measured, not assumed: against GeoServer **2.28.5** in the
 [docker sandbox](environment.md), and against the
 [python-geoservercloud](https://github.com/camptocamp/python-geoservercloud)
 version bundled in `geoserver_manager/extras/`. Use these notes when you change
-server calls.
+server calls. The plugin was also driven end to end against **3.0.1** (October
+2026). Where 3.0.1 answers differently, the bullet says so.
 
 Two rules frame all of it. Every GeoServer call goes through the library. Each
 gap in the library is recorded as a row in
@@ -17,7 +18,9 @@ carries a `TODO(#1)` comment at the call site.
 - Every REST verb calls `raise_for_status()` **except** GET/DELETE on 404 and POST on
   409. Those three come back as `(content, status)`, which is exactly why `_check`
   exists. `requests` exceptions all subclass `OSError`, so catch `HTTPError` *before*
-  `OSError` (see `toolbelt/probe.py`).
+  `OSError` (see `toolbelt/probe.py`). GeoServer's own error bodies are the same
+  on 3.0.1. A path with no endpoint at all is new there: a 404
+  `application/problem+json` such as `{"detail": "No endpoint GET …"}`.
 - `create_workspace` and `create_datastore` **upsert**. There is no `update_*`, no
   `delete_datastore`, no workspace rename, no "set default workspace" call (the
   `set_default_workspace=True` kwarg only sets a client-side attribute). Those are
@@ -45,8 +48,8 @@ carries a `TODO(#1)` comment at the call site.
   then feature types, as the Layers tab did, misses the others.
   `GET /rest/layers/{ws}:{name}.json` gives `type` (VECTOR / RASTER / WMS / WMTS) and
   `defaultStyle` (`{"name": ""}` for a cascaded WMS layer). It also gives `resource`
-  with `@class` (featureType / coverage / wmsLayer / wmtsLayer) and an `href`, except
-  a **wmtsLayer, which has no href** on 2.28.5. Such a store is found by asking the
+  with `@class` (featureType / coverage / wmsLayer / wmtsLayer) and an `href`. A
+  **wmtsLayer has no href** (2.28.5 and 3.0.1). Such a store is found by asking the
   workspace's WMTS stores for their layers. The href carries GeoServer's own idea of
   its base URL (behind a proxy, an inside name). So the tab parses the store segment
   out of it and never follows it. `rest_service.get_layer()` exists, but its `Layer`

@@ -86,7 +86,7 @@ _ELIDED_AFTER = 24
 _WAIT_BEFORE_BOX = 0.3
 
 # The GeoServer series the plugin is tested with; another one gets a warning.
-_TESTED_SERIES = (2, 28)
+_TESTED_SERIES = ((2, 28), (3, 0))
 # The jar every GeoServer Cloud service is built on, then Cloud's own version.
 _CLOUD_JAR = "gs-cloud-base-spring-boot-"
 
@@ -709,7 +709,7 @@ class GeoServerMainDialog(
         differ from 2.28's. `version` is the status line's label.
         """
         found = re.search(r"(\d+)\.(\d+)", version)
-        if not found or tuple(map(int, found.groups())) == _TESTED_SERIES:
+        if not found or tuple(map(int, found.groups())) in _TESTED_SERIES:
             return
         if (url, version) in self._untested_warned:
             return  # a Refresh reconnects: once is enough
@@ -719,7 +719,10 @@ class GeoServerMainDialog(
                 "GeoServer Manager is tested with GeoServer {tested}; this server "
                 "runs {version}. Some features can work differently: see 'Supported "
                 "GeoServer versions' in the user guide."
-            ).format(tested="{}.{}".format(*_TESTED_SERIES), version=version)
+            ).format(
+                tested=", ".join("{}.{}".format(*series) for series in _TESTED_SERIES),
+                version=version,
+            )
         )
 
     # -- Public entry point ------------------------------------------------
