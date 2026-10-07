@@ -483,6 +483,15 @@ carries a `TODO(#1)` comment at the call site.
   takes its layers along. Cascaded layers also appear in the Layers tab (it reads
   `/rest/layers`), which reaches this tab's detail and delete helpers for them. The
   tab's own *Cascaded layers* dialog is a viewer; deleting is the Layers tab's action.
+  **A WMS store that cascades the same GeoServer's global service locks it up**
+  (measured on 2.28.5). Creating it and publishing its layers worked. A later edit of
+  the store made GeoServer read the remote capabilities again, and those were its own:
+  they list the store's layers. `ResourcePool.getWebMapServer` holds the store's lock
+  while it reads them, and building them waits on the same lock. Every REST request
+  then queued behind a configuration write lock until a restart. A workspace's own
+  service (`{base}/{ws}/wms`) of another workspace leaves those layers out, and did
+  not hang on 3.0.1. The form does not refuse such a URL: the plugin cannot tell
+  GeoServer's view of an address from its own.
   Names go into the library's path builders **pre-quoted** (`_q`,
   `quote(name, safe="")`): `RestEndpoints` interpolates them raw, and `requests`
   sends `stores/a#b.json` as `stores/a`. `tab_styles.py` (`_style_path`) and
