@@ -498,8 +498,14 @@ carries a `TODO(#1)` comment at the call site.
   accepts is the library's `publish_gwc_layer()` template. That comes back as a
   degraded configuration: no formats, 0×0 meta-tiles, one gridset, no STYLES filter.
   So `tab_gwc.py` reads JSON and writes XML. `GET .xml` → `PUT .xml` round-trips byte
-  for byte (200 "layer saved"). A new layer's document is the one GeoServer
-  writes itself, the id left to the server. Truncate is `POST /gwc/rest/masstruncate`
+  for byte (200 "layer saved"), with one exception. Renaming a global style that is
+  a layer's default makes GWC rewrite the layer's STYLES filter (2.28.5 and 3.0.1).
+  It writes the old name as `defaultValue`, and `<allowedStyles
+  class="java.util.Collections$UnmodifiableSet">` with the new one. A PUT of that
+  document is a 500 naming the class (XStream refuses it). So the plugin drops a
+  `java.util.Collections$` class before it sends. The stale default stays, and a seed
+  of that layer then aborts on the server with "No such style". A new layer's
+  document is the one GeoServer writes itself, the id left to the server. Truncate is `POST /gwc/rest/masstruncate`
   with `<truncateLayer><layerName>…` sent as **`text/xml`** (200, empty body).
   `application/xml` there is a 400 "Format extension unknown", while the layer PUTs
   take `application/xml`. The seed endpoint wants one request per gridset × format.

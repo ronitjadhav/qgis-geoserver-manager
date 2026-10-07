@@ -404,7 +404,9 @@ and its image formats, both picked from lists. Set the **From zoom** and
 **To zoom** of a gridset to serve only those levels; "all" leaves that end
 open. Meta-tiling, gutter and expiry are on the **Advanced** tab. The
 **Parameter filters** tab holds the filters of GeoWebCache as XML: which
-STYLES, CQL_FILTER or TIME values get a cache of their own.
+STYLES, CQL_FILTER or TIME values get a cache of their own. After you rename
+a layer's default style, check the STYLES filter. GeoWebCache can keep the
+old name as its `defaultValue`, and a seed of the layer then fails.
 
 ```{figure} ../static/screenshots/tile-cache-edit.png
 :alt: The tile cache settings of topp:states, with the enabled checkbox, gridsets and formats
