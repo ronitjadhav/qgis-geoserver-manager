@@ -18,6 +18,7 @@ import zipfile
 from pathlib import Path
 
 from qgis.core import (
+    Qgis,
     QgsCategorizedSymbolRenderer,
     QgsFeature,
     QgsFontMarkerSymbolLayer,
@@ -42,6 +43,9 @@ from geoserver_manager.toolbelt.sld import (
     sld_version,
     styleable_project_layers,
 )
+
+# QGIS 4.2 writes a label expression as SLD functions; older ones refuse it.
+WRITES_LABEL_EXPRESSIONS = Qgis.versionInt() >= 40200
 
 start_app()
 
@@ -197,17 +201,34 @@ class TestWhatQgisCannotExport(unittest.TestCase):
         self.assertIn('SE Export for upper("str1") not implemented yet', said)
         self.assertNotIn("Parametric SVG", said)
 
-    def test_an_expression_label_is_refused_with_its_expression(self):
-        # Refused by QGIS 3.44, written as a comment by 3.40.
+    @staticmethod
+    def labelled(expression):
         layer = point_layer("towns")
         settings = QgsPalLayerSettings()
-        settings.fieldName = "upper(\"kind\") || ' #'"
+        settings.fieldName = expression
         settings.isExpression = True
         layer.setLabeling(QgsVectorLayerSimpleLabeling(settings))
         layer.setLabelsEnabled(True)
+        return layer
+
+    @unittest.skipIf(WRITES_LABEL_EXPRESSIONS, "QGIS 4.2 writes it as SLD functions")
+    def test_an_expression_label_is_refused_with_its_expression(self):
+        # Refused by QGIS 3.44 and 4.0, written as a comment by 3.40.
         with self.assertRaises(RuntimeError) as raised:
-            layer_to_sld(layer)
+            layer_to_sld(self.labelled("upper(\"kind\") || ' #'"))
         self.assertIn("upper", str(raised.exception))
+
+    @unittest.skipUnless(WRITES_LABEL_EXPRESSIONS, "QGIS before 4.2 refuses it")
+    def test_an_expression_label_is_written_as_sld_functions(self):
+        sld = layer_to_sld(self.labelled("upper(\"kind\") || ' #'"))
+        self.assertIn('<ogc:Function name="Concatenate">', sld)
+        self.assertIn("<ogc:PropertyName>kind</ogc:PropertyName>", sld)
+
+    @unittest.skipUnless(WRITES_LABEL_EXPRESSIONS, "QGIS before 4.2 refuses it")
+    def test_a_label_with_no_sld_form_is_still_refused(self):
+        with self.assertRaises(RuntimeError) as raised:
+            layer_to_sld(self.labelled("round($area, 1)"))
+        self.assertIn("$area", str(raised.exception))
 
 
 class TestIconsAndFontsInTheExport(unittest.TestCase):

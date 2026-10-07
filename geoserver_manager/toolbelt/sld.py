@@ -311,6 +311,7 @@ def layer_to_sld(layer):
     3.44 refuses the export ("Cannot export label expression … to SLD"),
     3.40 writes what it cannot as a "… not implemented yet" comment and
     reports a success, which drew nothing, or "Placeholder" for each label.
+    4.2 writes a label expression as SLD functions under QGIS's own names.
     """
     from qgis.PyQt.QtCore import QCoreApplication
 
