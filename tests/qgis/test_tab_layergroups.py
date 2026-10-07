@@ -1016,12 +1016,19 @@ class TestDeleteAndAddToQgis(unittest.TestCase):
 
     def test_workspace_group_deletes_through_the_library_global_through_rest(self):
         self.dlg._delete_selected_layer_groups(
-            [["roads_group", "topp", "CONTAINER", "1"], ["tasmania", GLOBAL, "", "2"]]
+            [["roads_group", "topp", "CONTAINER", "1"], ["solo", GLOBAL, "", "1"]]
         )
         self.assertIn(("delete_layer_group", "topp", "roads_group"), self.dlg.gs.calls)
-        self.assertIn(
-            ("DELETE", "/rest/layergroups/tasmania.json", {}), self.dlg.gs.calls
-        )
+        self.assertIn(("DELETE", "/rest/layergroups/solo.json", {}), self.dlg.gs.calls)
+
+    def test_a_group_inside_another_is_refused_before_any_delete(self):
+        # GeoServer answered 200 once its layers were edited, and solo kept it.
+        errors = []
+        self.dlg.show_error_message = errors.append
+        self.dlg._delete_selected_layer_groups([["tasmania", GLOBAL, "", "2"]])
+        self.assertNotIn("DELETE", [call[0] for call in self.dlg.gs.calls])
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("'solo'", errors[0])
 
     def test_add_to_qgis_uses_the_groups_own_service_and_wms(self):
         built = []

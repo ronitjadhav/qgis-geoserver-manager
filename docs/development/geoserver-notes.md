@@ -4,7 +4,8 @@ Everything here was measured, not assumed: against GeoServer **2.28.5** in the
 [docker sandbox](environment.md), and against the
 [python-geoservercloud](https://github.com/camptocamp/python-geoservercloud)
 version bundled in `geoserver_manager/extras/`. Use these notes when you change
-server calls.
+server calls. The plugin was also driven end to end against **3.0.1** (October
+2026). Where 3.0.1 answers differently, the bullet says so.
 
 Two rules frame all of it. Every GeoServer call goes through the library. Each
 gap in the library is recorded as a row in
@@ -17,7 +18,9 @@ carries a `TODO(#1)` comment at the call site.
 - Every REST verb calls `raise_for_status()` **except** GET/DELETE on 404 and POST on
   409. Those three come back as `(content, status)`, which is exactly why `_check`
   exists. `requests` exceptions all subclass `OSError`, so catch `HTTPError` *before*
-  `OSError` (see `toolbelt/probe.py`).
+  `OSError` (see `toolbelt/probe.py`). GeoServer's own error bodies are the same
+  on 3.0.1. A path with no endpoint at all is new there: a 404
+  `application/problem+json` such as `{"detail": "No endpoint GET …"}`.
 - `create_workspace` and `create_datastore` **upsert**. There is no `update_*`, no
   `delete_datastore`, no workspace rename, no "set default workspace" call (the
   `set_default_workspace=True` kwarg only sets a client-side attribute). Those are
@@ -45,8 +48,8 @@ carries a `TODO(#1)` comment at the call site.
   then feature types, as the Layers tab did, misses the others.
   `GET /rest/layers/{ws}:{name}.json` gives `type` (VECTOR / RASTER / WMS / WMTS) and
   `defaultStyle` (`{"name": ""}` for a cascaded WMS layer). It also gives `resource`
-  with `@class` (featureType / coverage / wmsLayer / wmtsLayer) and an `href`, except
-  a **wmtsLayer, which has no href** on 2.28.5. Such a store is found by asking the
+  with `@class` (featureType / coverage / wmsLayer / wmtsLayer) and an `href`. A
+  **wmtsLayer has no href** (2.28.5 and 3.0.1). Such a store is found by asking the
   workspace's WMTS stores for their layers. The href carries GeoServer's own idea of
   its base URL (behind a proxy, an inside name). So the tab parses the store segment
   out of it and never follows it. `rest_service.get_layer()` exists, but its `Layer`
@@ -352,7 +355,10 @@ carries a `TODO(#1)` comment at the call site.
   wiped the contact and the charset. One of `contactPerson` alone cleared the city.
   One of `level` alone turned standard-output logging off. So `tab_server.py` reads
   them again, merges the form, and sends them whole. A `null` `proxyBaseUrl` unsets
-  it (`""` stores an empty one). The log is `GET /rest/resource/{location}`: served
+  it (`""` stores an empty one). GeoServer 3.0.1 has no `location` in its
+  logging settings. A `PUT` of one answers 200 and drops it, so the logging form
+  offers the log file only when the GET has it. The file is still
+  `logs/geoserver.log` there. The log is `GET /rest/resource/{location}`: served
   whole, gzip, no length, no Range, so it is streamed and only its end kept. A file
   that is not there is a 404 "Undefined resource path." (2.27 and 2.28.5). GeoServer
   Cloud writes no log file: each service logs to its standard output. There the log
@@ -477,6 +483,15 @@ carries a `TODO(#1)` comment at the call site.
   takes its layers along. Cascaded layers also appear in the Layers tab (it reads
   `/rest/layers`), which reaches this tab's detail and delete helpers for them. The
   tab's own *Cascaded layers* dialog is a viewer; deleting is the Layers tab's action.
+  **A WMS store that cascades the same GeoServer's global service locks it up**
+  (measured on 2.28.5). Creating it and publishing its layers worked. A later edit of
+  the store made GeoServer read the remote capabilities again, and those were its own:
+  they list the store's layers. `ResourcePool.getWebMapServer` holds the store's lock
+  while it reads them, and building them waits on the same lock. Every REST request
+  then queued behind a configuration write lock until a restart. A workspace's own
+  service (`{base}/{ws}/wms`) of another workspace leaves those layers out, and did
+  not hang on 3.0.1. The form does not refuse such a URL: the plugin cannot tell
+  GeoServer's view of an address from its own.
   Names go into the library's path builders **pre-quoted** (`_q`,
   `quote(name, safe="")`): `RestEndpoints` interpolates them raw, and `requests`
   sends `stores/a#b.json` as `stores/a`. `tab_styles.py` (`_style_path`) and
@@ -492,8 +507,14 @@ carries a `TODO(#1)` comment at the call site.
   accepts is the library's `publish_gwc_layer()` template. That comes back as a
   degraded configuration: no formats, 0×0 meta-tiles, one gridset, no STYLES filter.
   So `tab_gwc.py` reads JSON and writes XML. `GET .xml` → `PUT .xml` round-trips byte
-  for byte (200 "layer saved"). A new layer's document is the one GeoServer
-  writes itself, the id left to the server. Truncate is `POST /gwc/rest/masstruncate`
+  for byte (200 "layer saved"), with one exception. Renaming a global style that is
+  a layer's default makes GWC rewrite the layer's STYLES filter (2.28.5 and 3.0.1).
+  It writes the old name as `defaultValue`, and `<allowedStyles
+  class="java.util.Collections$UnmodifiableSet">` with the new one. A PUT of that
+  document is a 500 naming the class (XStream refuses it). So the plugin drops a
+  `java.util.Collections$` class before it sends. The stale default stays, and a seed
+  of that layer then aborts on the server with "No such style". A new layer's
+  document is the one GeoServer writes itself, the id left to the server. Truncate is `POST /gwc/rest/masstruncate`
   with `<truncateLayer><layerName>…` sent as **`text/xml`** (200, empty body).
   `application/xml` there is a 400 "Format extension unknown", while the layer PUTs
   take `application/xml`. The seed endpoint wants one request per gridset × format.
@@ -524,7 +545,11 @@ carries a `TODO(#1)` comment at the call site.
 - **Editing a layer group** (row 57, measured on 2.28.5): a partial `PUT` merges. On
   a group deleted meanwhile it is a 500 NullPointerException, and a `DELETE` a 500
   with no body, where a GET says 404. So a failed save or delete reads the group
-  again before it reports. A new `publishables` list needs a `styles` list of the
+  again before it reports. A nested group's `DELETE` is a 500 "Unable to delete layer
+  group referenced by layer group" until its `publishables` are edited. After that
+  it answers 200, and the parent keeps naming a group that is gone (2.28.5 and
+  3.0.1). So the delete reads every group first and refuses while one holds it.
+  A new `publishables` list needs a `styles` list of the
   same length (`""` for a layer's default), or it is refused. A group that holds a
   nested group needs `styles` even on a create (HTTP 500 without). GeoServer **never
   recomputes the bounds on a PUT**: a new layer list keeps the old box, and

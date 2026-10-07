@@ -455,6 +455,10 @@ class GwcTabMixin:
             replace_children(
                 "parameterFilters", GwcTabMixin._parse_filters(values["filters"])
             )
+        for element in child("parameterFilters").iter():
+            # GWC writes this after a style rename, then refuses it in a PUT.
+            if element.get("class", "").startswith("java.util.Collections$"):
+                del element.attrib["class"]
         replace_children(
             "metaWidthHeight",
             [

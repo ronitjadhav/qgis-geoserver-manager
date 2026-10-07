@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 
 The first release: a QGIS plugin that manages a GeoServer through its REST
 API, built on [python-geoservercloud](https://github.com/camptocamp/python-geoservercloud).
+Tested with GeoServer 2.28 and 3.0.
 
 ### Added
 

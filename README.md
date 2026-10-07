@@ -9,7 +9,7 @@
 
 <p>
   <a href="https://qgis.org"><img alt="QGIS 3.40+" src="https://img.shields.io/badge/QGIS-3.40%2B-589632?logo=qgis&logoColor=white"></a>
-  <a href="https://geoserver.org"><img alt="GeoServer 2.28" src="https://img.shields.io/badge/GeoServer-2.28-0099C0"></a>
+  <a href="https://geoserver.org"><img alt="GeoServer 2.28 and 3.0" src="https://img.shields.io/badge/GeoServer-2.28%20%7C%203.0-0099C0"></a>
   <a href="https://github.com/camptocamp/python-geoservercloud"><img alt="Built on python-geoservercloud" src="https://img.shields.io/badge/built%20on-python--geoservercloud-172F36"></a>
   <a href="LICENSE"><img alt="License GPLv2+" src="https://img.shields.io/badge/license-GPLv2%2B-172F36"></a>
 </p>
@@ -59,8 +59,9 @@ partial French locale.
 - QGIS 3.40 to 4.x, on Qt5 or Qt6.
 - Network access to a GeoServer REST API, with an account that can read and
   write the resources you manage.
-- GeoServer 2.28: the plugin's tests run against 2.28.5. Other versions and
-  GeoServer Cloud have no full test; the
+- GeoServer 2.28 or 3.0. The plugin's tests run against 2.28.5. The plugin
+  was also tested as a whole on 3.0.1. Other versions and GeoServer Cloud
+  have no full test; the
   [user guide](docs/usage/guide.md#supported-geoserver-versions) lists the
   known differences.
 

@@ -326,6 +326,9 @@ class ServerTabMixin:
                 values[key] = bool(values[key])
         if kind == "logging":
             values["stdout"] = bool(settings.get("stdOutLogging"))
+            if "location" not in settings:
+                # GeoServer 3 has no log file setting: a PUT of one is dropped.
+                del values["location"]
         if kind == "wfs":
             values["max_features"] = int(settings.get("maxFeatures") or 0)
         return values
@@ -417,7 +420,7 @@ class ServerTabMixin:
                 ),
             ]
         if kind == "logging":
-            return [
+            fields = [
                 {
                     "key": "level",
                     "label": translate("ServerTabMixin", "Profile"),
@@ -438,6 +441,9 @@ class ServerTabMixin:
                     "stdout", translate("ServerTabMixin", "Also log to standard output")
                 ),
             ]
+            if current is not None and "location" not in current:
+                del fields[1]
+            return fields
         fields = [
             check("enabled", translate("ServerTabMixin", "Enabled")),
             text(

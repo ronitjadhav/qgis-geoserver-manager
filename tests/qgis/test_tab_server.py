@@ -285,6 +285,24 @@ class TestServerFormSaves(unittest.TestCase):
         )
         self.assertEqual(form.get_values()["level"], "MY_LOGGING")
 
+    def test_no_log_file_field_when_the_server_has_none(self):
+        # GeoServer 3.0.1 answers a PUT of `location` with 200 and drops it.
+        dlg = SyncDialog()
+        keys = {
+            settings.get("location"): [
+                field["key"]
+                for field in dlg._server_fields(
+                    "logging", ServerTabMixin._server_form_values("logging", settings)
+                )
+            ]
+            for settings in (
+                {"level": "DEFAULT_LOGGING", "stdOutLogging": True},
+                LOGGING["logging"],
+            )
+        }
+        self.assertEqual(keys[None], ["level", "stdout"])
+        self.assertEqual(keys["logs/geoserver.log"], ["level", "location", "stdout"])
+
     def test_a_cancelled_save_or_reload_says_the_change_may_still_land(self):
         self.dlg._wait_for = _cancel_writes
         self.open_and_save(["WFS", "-"], title="Features")

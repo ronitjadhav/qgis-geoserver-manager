@@ -490,6 +490,21 @@ class TestDocument(unittest.TestCase):
                 STATES_XML, dict(values, filters="<stringParameterFilter>")
             )
 
+    def test_a_java_set_class_from_a_style_rename_is_dropped(self):
+        # Kept, the PUT was a 500 "java.util.Collections$UnmodifiableSet".
+        values = {
+            "gridsets": grid("EPSG:4326"),
+            "formats": fmts("image/png"),
+            "filters": (
+                "<styleParameterFilter><key>STYLES</key><defaultValue>a</defaultValue>"
+                '<allowedStyles class="java.util.Collections$UnmodifiableSet">'
+                "<string>b</string></allowedStyles></styleParameterFilter>"
+            ),
+        }
+        document = GwcTabMixin._gwc_xml_with_values(STATES_XML, values)
+        self.assertNotIn("class=", document)
+        self.assertIn("<string>b</string>", document)
+
     def test_an_empty_gridset_or_format_list_is_refused(self):
         values = {"gridsets": grid(""), "formats": fmts("image/png")}
         with self.assertRaises(ValueError):

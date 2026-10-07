@@ -321,6 +321,9 @@ bounds of the group, because GeoServer does not do that on an edit.
 GeoServer does not allow two things: renaming a group, and taking an Earth
 Observation group out of that mode.
 
+A delete removes the group only; its layers stay. A group that is inside
+another group is not deleted. Remove it from that group first.
+
 ```{figure} ../static/screenshots/layer-group-edit.png
 :alt: Editing the tasmania layer group, its Layers tab listing the layers in drawing order with their styles
 :width: 420px
@@ -404,7 +407,9 @@ and its image formats, both picked from lists. Set the **From zoom** and
 **To zoom** of a gridset to serve only those levels; "all" leaves that end
 open. Meta-tiling, gutter and expiry are on the **Advanced** tab. The
 **Parameter filters** tab holds the filters of GeoWebCache as XML: which
-STYLES, CQL_FILTER or TIME values get a cache of their own.
+STYLES, CQL_FILTER or TIME values get a cache of their own. After you rename
+a layer's default style, check the STYLES filter. GeoWebCache can keep the
+old name as its `defaultValue`, and a seed of the layer then fails.
 
 ```{figure} ../static/screenshots/tile-cache-edit.png
 :alt: The tile cache settings of topp:states, with the enabled checkbox, gridsets and formats
@@ -459,7 +464,8 @@ it.
   keywords and contact lines, and for WFS the maximum features per request.
   The form also gives the capabilities URL, the address to connect QGIS to.
 - **Logging:** the logging profile and the log file. **Show the log** opens
-  the last 500 lines.
+  the last 500 lines. GeoServer 3 has no log file setting, so the form shows
+  none there.
 - **Catalog:** **Reload** reads the whole configuration from the data
   directory again, after it changed outside GeoServer. **Reset** drops the
   caches of stores, feature types and styles.
@@ -528,15 +534,17 @@ tab.
 
 ## Supported GeoServer versions
 
-GeoServer Manager is developed and tested against **GeoServer 2.28**: every
-server behaviour it relies on was measured on 2.28.5. The status line names
+GeoServer Manager is developed against **GeoServer 2.28**: every server
+behaviour it relies on was measured on 2.28.5. It is also tested as a whole
+on **GeoServer 3.0.1**. The status line names
 the version of the server it is connected to. On another version the dialog
 works as usual, and says once that the version is not the tested one.
 
 | Server | What to expect |
 | :----- | :------------- |
 | GeoServer 2.28 | tested |
-| GeoServer 2.27 and 3.0 | not tested as a whole. Known differences: their GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404, and most datastores of the demo data of 2.27 have no type |
+| GeoServer 3.0 | tested on 3.0.1. Known differences: it has no log file setting, so the logging form shows none, and its GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404 |
+| GeoServer 2.27 | not tested as a whole. Known differences: its GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404, and most datastores of its demo data have no type |
 | GeoServer Cloud | recognised, and named in the status line with its own version (**GeoServer Cloud 2.28.5.1**). Not tested as a whole; the known differences are below |
 
 On GeoServer Cloud (measured on 2.28.5.1):
