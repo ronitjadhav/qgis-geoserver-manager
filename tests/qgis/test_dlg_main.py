@@ -509,6 +509,17 @@ class TestErrorText(unittest.TestCase):
     def test_plain_exceptions_pass_through(self):
         self.assertEqual(GeoServerMainDialog._error_text(ValueError("nope")), "nope")
 
+    def test_a_function_geoserver_lacks_is_named_plainly(self):
+        # QGIS 4.2 wrote upper(); GeoServer 3.0.1 refused the style with this 500.
+        body = (
+            "java.lang.RuntimeException: Parsing failed for Function: "
+            "java.lang.RuntimeException: Unable to find function upper"
+        )
+        for error in (http_error(500, body), RuntimeError(f"HTTP 500: {body}")):
+            text = GeoServerMainDialog._error_text(error)
+            self.assertIn("no function 'upper'", text)
+            self.assertNotIn("java.lang", text)
+
 
 # ############################################################################
 # ###### Background loading ######

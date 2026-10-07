@@ -158,7 +158,7 @@ CI, in `.github/workflows/`, has four workflows:
 
 - The linter runs flake8 and the PyQt6 check.
 - The tester runs the unit tests on Python 3.12, and the QGIS suite in the
-  `qgis/qgis:3.40` and `qgis/qgis:4.0` containers.
+  `qgis/qgis:3.40`, `qgis/qgis:4.0` and `qgis/qgis:stable` containers.
 - The documentation job builds the site with Sphinx and deploys it to GitHub
   Pages.
 - Package and release builds a zip on each push to main, and a release on a

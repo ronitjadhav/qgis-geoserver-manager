@@ -59,8 +59,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # the oldest QGIS supported, on Qt5, and the first QGIS 4, on Qt6
-        image: ["qgis/qgis:3.40", "qgis/qgis:4.0"]
+        # the oldest QGIS supported, on Qt5, the first QGIS 4 and the latest
+        # release, both on Qt6
+        image: ["qgis/qgis:3.40", "qgis/qgis:4.0", "qgis/qgis:stable"]
 
     container:
       image: ${{ matrix.image }}
@@ -81,6 +82,12 @@ jobs:
         - ${{ github.workspace }}:/home/root/
 
     steps:
+      # Without git, checkout downloads an archive, and the archive leaves out
+      # the .ts files (export-ignore) that test_i18n reads. The stable image
+      # (QGIS 4.2) has no git.
+      - name: Install git
+        run: command -v git || (apt-get update && apt-get install -y git)
+
       - name: Get source code
         uses: actions/checkout@v7
 

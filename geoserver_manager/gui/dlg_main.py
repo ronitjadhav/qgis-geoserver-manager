@@ -89,6 +89,8 @@ _WAIT_BEFORE_BOX = 0.3
 _TESTED_SERIES = ((2, 28), (3, 0))
 # The jar every GeoServer Cloud service is built on, then Cloud's own version.
 _CLOUD_JAR = "gs-cloud-base-spring-boot-"
+# GeoServer's 500 for a style naming a function it lacks.
+_UNKNOWN_FUNCTION = re.compile(r"Unable to find function (\w+)")
 
 
 def banner_html(text):
@@ -2015,6 +2017,15 @@ class GeoServerMainDialog(
                 "(a sign-in page?)",
             )
         response = getattr(error, "response", None)
+        # QGIS 4.2 writes a label expression as SLD functions under its own names.
+        unknown = _UNKNOWN_FUNCTION.search(getattr(response, "text", "") or str(error))
+        if unknown:
+            return QCoreApplication.translate(
+                "GeoServerMainDialog",
+                "GeoServer has no function '{}', which this style uses. QGIS writes "
+                "a label expression with its own function names: label with a plain "
+                "field, or use GeoServer's function in the SLD.",
+            ).format(unknown.group(1))
         # One line, markup reduced to its title: a Tomcat stack trace is not an
         # explanation, and an XML error document still says something.
         summary = summarise_body(getattr(response, "text", ""))
