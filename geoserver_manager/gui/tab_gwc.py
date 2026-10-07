@@ -220,7 +220,8 @@ class GwcTabMixin:
 
         TODO(#1): read from the list the tab shows. A GET of a layer GWC does
         not cache is a 404 "Unknown layer" on 2.28.5 but a 500 on 2.27 and
-        3.0 (measured), and get_gwc_layer() raises on the 500.
+        3.0 (measured). get_gwc_layer() raised on the 500 before 0.8.14,
+        which turns it into a 404.
         """
         return name in self._gwc_layer_names()
 

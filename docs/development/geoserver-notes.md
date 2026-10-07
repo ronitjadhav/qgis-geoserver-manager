@@ -18,15 +18,19 @@ carries a `TODO(#1)` comment at the call site.
 - Every REST verb calls `raise_for_status()` **except** GET/DELETE on 404 and POST on
   409. Those three come back as `(content, status)`, which is exactly why `_check`
   exists. `requests` exceptions all subclass `OSError`, so catch `HTTPError` *before*
-  `OSError` (see `toolbelt/probe.py`). GeoServer's own error bodies are the same
-  on 3.0.1. A path with no endpoint at all is new there: a 404
-  `application/problem+json` such as `{"detail": "No endpoint GET …"}`.
+  `OSError` (see `toolbelt/probe.py`). Since 0.8.14, GeoWebCache's 500 for a missing layer
+  or gridset comes back as a 404 too, on a GET or a DELETE. The client matches its
+  text: "Unknown layer: …" or "A GridSet with name … does not exist". GeoServer's own
+  error bodies are the same on 3.0.1. A path with no endpoint at all is new there: a
+  404 `application/problem+json` such as `{"detail": "No endpoint GET …"}`.
 - `create_workspace` and `create_datastore` **upsert**. There is no `update_*`, no
-  `delete_datastore`, no workspace rename, no "set default workspace" call (the
+  workspace rename, no "set default workspace" call (the
   `set_default_workspace=True` kwarg only sets a client-side attribute). Those are
   `_raw_rest` workarounds carrying `TODO(#1)`, each with a row in
   [issue #1](https://github.com/ronitjadhav/qgis-geoserver-manager/issues/1). The
   library-first rule in Conventions says how new ones are handled.
+  `delete_datastore()` (with `recurse=true`) exists since 0.8.14; the plugin's raw
+  DELETE predates it.
 - **GeoServer always has exactly one default workspace, and it cannot be unset.**
   `GET /rest/workspaces/default.json` never 404s: with `default.xml` deleted it
   answers the first workspace. The "Default Workspace" checkbox of GeoServer's web
@@ -133,7 +137,7 @@ carries a `TODO(#1)` comment at the call site.
   abstract, keywords, srs, projectionPolicy, enabled, advertised, cqlFilter and name
   merges. It keeps the rest (bounds, attributes, grid, bands). An empty title,
   abstract, keyword list or filter clears it. The library's `FeatureType` drops
-  `cqlFilter`, and drops `title` when an `internationalTitle` is set. So the edit form
+  `title` when an `internationalTitle` is set (and `cqlFilter` before 0.8.14). So the edit form
   reads the feature type with a raw GET (row 63). A rename carries the layer groups
   that use the layer and its GWC layer along (the native name stays). `enabled` is
   the resource's: `/rest/layers` ignores it. `?recalculate=nativebbox,latlonbbox`
@@ -478,7 +482,7 @@ carries a `TODO(#1)` comment at the call site.
   layer, and GeoServer fills title, abstract, SRS and bounds from the capabilities.
   That is why the WMTS publish does not use `create_wmts_layer()`. It fetches the
   remote capabilities from the *plugin's* machine, forces EPSG:4326 and deletes an
-  existing layer first. A cascaded layer DELETE needs `recurse=true`, or GeoServer
+  existing layer first. Version 0.8.14 overwrites it with a PUT instead. A cascaded layer DELETE needs `recurse=true`, or GeoServer
   answers 403 "wms layer referenced by layer(s)". A store DELETE with `recurse=true`
   takes its layers along. Cascaded layers also appear in the Layers tab (it reads
   `/rest/layers`), which reaches this tab's detail and delete helpers for them. The
@@ -504,8 +508,9 @@ carries a `TODO(#1)` comment at the call site.
   XML-first, and on 2.28.5 its **JSON writes are broken**. A PUT of the very document
   a GET returned fails with "Duplicate field mimeFormats" (any array) or
   "defaultValue" (the STYLES parameter filter loses its class). The one JSON shape it
-  accepts is the library's `publish_gwc_layer()` template. That comes back as a
+  accepts is 0.8.5's `publish_gwc_layer()` template. That comes back as a
   degraded configuration: no formats, 0×0 meta-tiles, one gridset, no STYLES filter.
+  Version 0.8.14 sends a whole configuration from a model; that is not measured yet.
   So `tab_gwc.py` reads JSON and writes XML. `GET .xml` → `PUT .xml` round-trips byte
   for byte (200 "layer saved"), with one exception. Renaming a global style that is
   a layer's default makes GWC rewrite the layer's STYLES filter (2.28.5 and 3.0.1).
@@ -523,8 +528,8 @@ carries a `TODO(#1)` comment at the call site.
   workspace and a layer, so a global layer group (cached under its bare name) goes
   raw, and `GwcEndpoints.layers(ws)` ignores its argument. A GET of a layer GWC does
   not cache is a 404 "Unknown layer" on 2.28.5. On 2.27 (GWC 1.27) and 3.0
-  (GWC 2.0) it is a 500. So is one of a gridset that does not exist. `get_gwc_layer()` raises on
-  the 500, so whether a layer is cached is read from `layers.json`. Gridsets: the
+  (GWC 2.0) it is a 500. So is one of a gridset that does not exist. `get_gwc_layer()` raised on
+  the 500 before 0.8.14, so whether a layer is cached is read from `layers.json`. Gridsets: the
   list is a JSON array of names. A JSON PUT fails the same way ("Duplicate field
   coords"). An XML PUT creates one (201), and DELETE removes it. Deleting a gridset
   in use answers 500 with an empty body.
@@ -572,8 +577,8 @@ carries a `TODO(#1)` comment at the call site.
   global group reached). In a workspace group, a bare `layerGroup` name is the global
   group, even when the workspace has a group of that name (`ws:name`). A group may
   share a layer's qualified name.
-- The bundled wheel is the upstream 0.8.5 with `geoserver_acceptance_tests/` removed
-  (15 MB of fixtures): 16 MB → 49 KB. On a version bump, strip the new wheel the same
+- The bundled wheel is the upstream 0.8.14 with `geoserver_acceptance_tests/` removed
+  (15 MB of fixtures): 16 MB → 58 KB. On a version bump, strip the new wheel the same
   way. The procedure is in `toolbelt/dependencies.py`; see
   [packaging and release](packaging.md). `GSC_REQUIRED` pins the version.
   `ensure_dependencies()` logs which copy was imported and from where, and pushes a
