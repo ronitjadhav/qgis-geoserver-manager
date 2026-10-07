@@ -350,8 +350,10 @@ Styles decide how GeoServer draws a layer.
   the SVG and image files its symbols draw. GeoServer takes SVG, PNG, JPEG,
   BMP and GIF files with a style. An icon in another format stops the
   upload, and the message names it, so that you can convert it. What QGIS
-  cannot write as SLD, such as a label made from an expression or a heatmap,
-  stops the upload with the reason QGIS gives.
+  cannot write as SLD, such as a heatmap, stops the upload with the reason
+  QGIS gives. QGIS 4.2 and newer write a label made from an expression; older
+  versions refuse it. GeoServer refuses a function it does not know, such as
+  `upper`, and the message names it.
 
 You pick the QGIS layer from QGIS's own layer list, with the icon of each
 layer. Two layers with the same name are two entries.

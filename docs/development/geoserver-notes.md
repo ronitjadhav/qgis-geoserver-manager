@@ -334,7 +334,12 @@ carries a `TODO(#1)` comment at the call site.
   back as the family. What QGIS cannot write, 3.44 refuses whole with its reason: an
   expression label, even `"name"`; a heatmap; a raster fill. QGIS 3.40 writes a "… not
   implemented yet" comment and reports success (read in its source, not run).
-  `layer_to_sld` refuses both. The other way, QGIS reads no SLD into a raster layer
+  `layer_to_sld` refuses both. QGIS 4.2.3 writes an expression label as SLD
+  functions under QGIS's names. The label `upper("kind") || ' #'` became `Concatenate`
+  of `upper(kind)` and a literal, and `"name"` a plain `PropertyName`. GeoServer 3.0.1
+  refused that style with a 500 "Unable to find function upper" (its name is
+  `strToUpperCase`), and kept nothing. So `_error_text` names the function plainly.
+  An expression with no SLD form (`$area`) is still refused by QGIS. The other way, QGIS reads no SLD into a raster layer
   ("Layer type 1 not supported"). It keeps a relative href relative and draws a "?",
   and it fetches an http one. GeoServer serves a style's folder without a login at
   `{base}/styles/{file}` and `{base}/styles/{ws}/{file}`. Its 1.0 rendition names
