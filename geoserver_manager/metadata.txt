@@ -1,9 +1,21 @@
 [general]
 name=GeoServer Manager
-about=Browse, create, edit and delete workspaces, datastores, coverage stores, cascaded WMS/WMTS stores, layers, layer groups and styles on a GeoServer. Configure and seed its tile cache, and edit the server settings. Publish a table, or a vector or raster layer of the open project. Bring layers and styles back into QGIS as WMS, WFS or WMTS. Unlike publishing tools, it manages the whole catalog: stores, layer groups, styles, tile cache and server settings. Lists load in the background and are searchable, sortable and paginated. The user name and password stay in the QGIS settings, or in the QGIS authentication database when you choose so. Built on python-geoservercloud. It bundles python-geoservercloud and xmltodict.
+about=GeoServer Manager is a QGIS plugin to administer a GeoServer through its REST API. Unlike publishing tools, it also manages what is already on the server.
+
+    - Workspaces, datastores, coverage stores and cascaded WMS/WMTS stores: browse, create, edit and delete.
+    - Layers and layer groups: publish, edit, restyle and preview on a map.
+    - Styles in SLD, CSS, YSLD or MBStyle: edit them beside their legend.
+    - Tile cache: configure, seed and truncate.
+    - Server: contact details, global and service settings, logging.
+    - Publish a vector or raster layer of the open project, with its symbology.
+    - Add GeoServer layers to the project as WMS, WFS or WMTS.
+    - Right-click a layer in the layer tree to publish it, or to push or apply its style.
+
+    Keeps several saved connections. The password can stay in the encrypted QGIS authentication database.
+    Tested with GeoServer 2.28 and 3.0. Built on python-geoservercloud, which it bundles with xmltodict.
 category=Web
 hasProcessingProvider=False
-description=Manage a GeoServer from QGIS: workspaces, stores, layers, layer groups, styles, tile cache and server settings.
+description=Manage a GeoServer from QGIS: workspaces, stores, layers, styles, tile cache and settings.
 icon=resources/images/default_icon.png
 tags=geoserver,rest,wms,wfs,wmts,workspace,datastore,coverage,layer,layer group,style,sld,publish
 
