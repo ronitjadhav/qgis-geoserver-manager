@@ -479,7 +479,7 @@ class CascadedStoreTabMixin:
                 "key": "password",
                 "label": translate("CascadedStoreTabMixin", "Password"),
                 "type": "text",
-                "echo_password": True,
+                "echo_password": True,  # nosec B105
                 "group": connection,
                 "help": (
                     translate(
@@ -732,7 +732,7 @@ class CascadedStoreTabMixin:
             "capabilities_url": detail.get("capabilitiesURL", ""),
             "enabled": bool(detail.get("enabled", True)),
             "user": detail.get("user") or "",
-            "password": "",  # never shown; blank keeps it (invariant 5)
+            "password": "",  # never shown; blank keeps it (invariant 5) # nosec B105
             "max_connections": int(detail.get("maxConnections") or 6),
             "read_timeout": int(detail.get("readTimeout") or 60),
             "connect_timeout": int(detail.get("connectTimeout") or 30),

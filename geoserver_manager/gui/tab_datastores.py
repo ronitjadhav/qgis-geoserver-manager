@@ -336,7 +336,7 @@ class DatastoreTabMixin:
                 "label": translate("DatastoreTabMixin", "Password"),
                 "type": "text",
                 "required": not edit_mode,
-                "echo_password": True,
+                "echo_password": True,  # nosec B105
                 "help": (
                     translate(
                         "DatastoreTabMixin", "Leave empty to keep the stored password"
@@ -512,7 +512,7 @@ class DatastoreTabMixin:
                 "key": "wfs_password",
                 "label": translate("DatastoreTabMixin", "Password"),
                 "type": "text",
-                "echo_password": True,
+                "echo_password": True,  # nosec B105
                 "visible": False,
                 "help": (
                     translate(
@@ -1172,7 +1172,7 @@ class DatastoreTabMixin:
             "pg_user": conn_params.get("user", ""),
             # Never prefilled: GeoServer returns it encrypted ("crypt1:…") or
             # not at all, and writing that back would replace the real password.
-            "pg_password": "",
+            "pg_password": "",  # nosec B105
             "pg_schema": conn_params.get("schema", "public"),
             # JNDI
             "jndi_reference": conn_params.get("jndiReferenceName", ""),
@@ -1196,7 +1196,7 @@ class DatastoreTabMixin:
             # Cascaded WFS; the password is never prefilled (see pg_password)
             "wfs_url": conn_params.get(_WFS_URL, ""),
             "wfs_user": conn_params.get(_WFS_USER, ""),
-            "wfs_password": "",
+            "wfs_password": "",  # nosec B105
             "wfs_timeout": _as_int(conn_params.get(_WFS_KEY + "TIMEOUT"), 3000),
             "wfs_max_features": _as_int(conn_params.get(_WFS_KEY + "MAXFEATURES"), 0),
             "wfs_lenient": str(conn_params.get(_WFS_KEY + "LENIENT", "true")).lower()

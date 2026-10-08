@@ -59,6 +59,14 @@ jobs:
           # exit-zero treats all errors as warnings.
           flake8 ${{ env.PROJECT_FOLDER }} --count --exit-zero --statistics
 
+      - name: Refuse what plugins.qgis.org blocks
+        # The site's Bandit rules that an upload cannot skip: one finding blocks
+        # the version, and only a new version number can replace it.
+        # A false positive takes "# nosec <rule>" on its line.
+        run: |
+          python -m pip install bandit
+          bandit -r ${{ env.PROJECT_FOLDER }} -q -t B102,B103,B105,B106,B107,B201,B202,B301,B302,B304,B305,B306,B307,B312,B321,B323,B401,B402,B412,B413,B501,B502,B503,B505,B506,B507,B601,B602,B604,B605,B609,B610,B611,B612,B613,B615,B701
+
   qt6-check:
     name: PyQt6 6️⃣
     runs-on: ubuntu-latest
