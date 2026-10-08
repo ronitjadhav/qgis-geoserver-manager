@@ -87,7 +87,8 @@ to work on them, and links to the page that teaches each practice.
 - **The icon and the screenshots are generated, not edited by hand.** Every
   brand asset is rendered from `resources/images/geoserver_manager.svg`. That
   includes the `resources/images/default_icon.png` that `metadata.txt` points at,
-  and the website's logo and favicon; `docs/branding.md` is the guide.
+  and the website's logo and favicon. The maintainer renders them; do not
+  edit the exported files.
   `scripts/capture_screenshot.py` takes every screenshot of the README and the
   user guide from the real dialog, against the docker sandbox, off screen. That
   is each tab, the main forms, the preview and the settings page. Run it

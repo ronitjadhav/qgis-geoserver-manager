@@ -120,7 +120,6 @@ caption: Project
 maxdepth: 1
 hidden:
 ---
-Branding <branding>
 Icon style guide <development/icon-style-guide>
 Code of conduct <development/code_of_conduct>
 ```
