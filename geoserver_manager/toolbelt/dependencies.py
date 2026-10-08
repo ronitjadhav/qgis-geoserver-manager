@@ -121,6 +121,27 @@ def ensure_dependencies() -> bool:
 
     logger = PlgLogger().log
 
+    # geoservercloud uses match statements, so it cannot import before 3.10
+    if sys.version_info < (3, 10):
+        version = f"{sys.version_info[0]}.{sys.version_info[1]}"
+        logger(
+            f"Python {version}: geoservercloud needs Python 3.10 or newer.",
+            log_level=Qgis.MessageLevel.Critical,
+        )
+        QMessageBox.critical(
+            None,
+            QCoreApplication.translate(
+                "Dependencies", "GeoServer Manager: Python too old"
+            ),
+            QCoreApplication.translate(
+                "Dependencies",
+                "<b>GeoServer Manager could not start.</b><br><br>It needs Python "
+                "3.10 or newer. This QGIS runs Python {version}. Install a newer "
+                "QGIS build.",
+            ).format(version=version),
+        )
+        return False
+
     # 1. Already importable? (an install in the QGIS profile wins over the
     #    bundled wheel, say so, and which version it is)
     if _try_import():

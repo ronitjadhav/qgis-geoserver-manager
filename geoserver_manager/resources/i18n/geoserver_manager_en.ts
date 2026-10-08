@@ -352,42 +352,42 @@
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="298" />
+        <location filename="../../gui/dlg_settings.py" line="300" />
         <source>QGIS did not store the user name and password in its authentication database. Set the master password, then save again.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="313" />
+        <location filename="../../gui/dlg_settings.py" line="315" />
         <source>{url} is plain HTTP, so every request sends the password unencrypted. Use https:// if the server offers it.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="325" />
+        <location filename="../../gui/dlg_settings.py" line="327" />
         <source>The GeoServer URL must start with http:// or https://.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="329" />
+        <location filename="../../gui/dlg_settings.py" line="331" />
         <source>Take the user name and password out of the URL: the fields below carry them.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="343" />
+        <location filename="../../gui/dlg_settings.py" line="345" />
         <source>Testing…</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="357" />
+        <location filename="../../gui/dlg_settings.py" line="359" />
         <source>Connected. GeoServer answered.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="408" />
+        <location filename="../../gui/dlg_settings.py" line="410" />
         <source>Reset settings</source>
         <translation type="unfinished" />
     </message>
     <message numerus="yes">
-        <location filename="../../gui/dlg_settings.py" line="409" />
+        <location filename="../../gui/dlg_settings.py" line="411" />
         <source>Remove %n saved connection(s) and their stored passwords? This cannot be undone.</source>
         <translation>
             <numerusform>Remove %n saved connection and its stored password? This cannot be undone.</numerusform>
@@ -395,78 +395,78 @@
         </translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="429" />
+        <location filename="../../gui/dlg_settings.py" line="431" />
         <source>The server connection shown below. Saving makes it the active one.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="433" />
+        <location filename="../../gui/dlg_settings.py" line="435" />
         <source>Add…</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="434" />
+        <location filename="../../gui/dlg_settings.py" line="436" />
         <source>Remove</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="439" />
+        <location filename="../../gui/dlg_settings.py" line="441" />
         <source>Removes the shown connection when you save. Cancel keeps it.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="441" />
+        <location filename="../../gui/dlg_settings.py" line="443" />
         <source>Connection</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="472" />
+        <location filename="../../gui/dlg_settings.py" line="474" />
         <source>Keep the password in QGIS's encrypted authentication database</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="476" />
+        <location filename="../../gui/dlg_settings.py" line="478" />
         <source>Ticked, QGIS asks for its master password once per session. It does not ask when your system keyring holds that password (Settings, Options, Authentication).</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="483" />
+        <location filename="../../gui/dlg_settings.py" line="485" />
         <source>Unticked, the password is plain text in your QGIS settings and in the layers the plugin adds.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="537" />
+        <location filename="../../gui/dlg_settings.py" line="539" />
         <source>None yet. Saving creates one.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="586" />
+        <location filename="../../gui/dlg_settings.py" line="588" />
         <source>The active connection: the dialog connects to it.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="588" />
+        <location filename="../../gui/dlg_settings.py" line="590" />
         <source>Active: {}. Saving makes '{}' active instead.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="591" />
+        <location filename="../../gui/dlg_settings.py" line="593" />
         <source>Saving makes '{}' the active connection.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="607" />
-        <location filename="../../gui/dlg_settings.py" line="599" />
+        <location filename="../../gui/dlg_settings.py" line="609" />
+        <location filename="../../gui/dlg_settings.py" line="601" />
         <source>Add a Connection</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="599" />
+        <location filename="../../gui/dlg_settings.py" line="601" />
         <source>Name of the new connection:</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/dlg_settings.py" line="608" />
+        <location filename="../../gui/dlg_settings.py" line="610" />
         <source>A connection named '{}' already exists.</source>
         <translation type="unfinished" />
     </message>
@@ -1463,12 +1463,22 @@
 </context><context>
     <name>Dependencies</name>
     <message>
-        <location filename="../../toolbelt/dependencies.py" line="147" />
+        <location filename="../../toolbelt/dependencies.py" line="133" />
+        <source>GeoServer Manager: Python too old</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../toolbelt/dependencies.py" line="136" />
+        <source>&lt;b&gt;GeoServer Manager could not start.&lt;/b&gt;&lt;br&gt;&lt;br&gt;It needs Python 3.10 or newer. This QGIS runs Python {version}. Install a newer QGIS build.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../toolbelt/dependencies.py" line="168" />
         <source>&lt;b&gt;GeoServer Manager could not start.&lt;/b&gt;&lt;br&gt;&lt;br&gt;The bundled &lt;code&gt;geoservercloud&lt;/code&gt; library did not import. Reinstall the plugin. If that does not help, install the library into the Python of QGIS: run &lt;code&gt;pip install geoservercloud&lt;/code&gt; in a terminal.&lt;br&gt;&lt;br&gt;Details are in the QGIS log panel, GeoServer Manager tab.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../toolbelt/dependencies.py" line="157" />
+        <location filename="../../toolbelt/dependencies.py" line="178" />
         <source>GeoServer Manager: missing library</source>
         <translation type="unfinished" />
     </message>
