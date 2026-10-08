@@ -9,7 +9,7 @@ tags=geoserver,rest,wms,wfs,wmts,workspace,datastore,coverage,layer,layer group,
 
 # credits and contact
 author=Ronit Jadhav
-email=ronit.jadhav@camptocamp.com
+email=dev@ronit.io
 homepage=https://geoserver-manager.ronit.io/
 repository=https://github.com/ronitjadhav/qgis-geoserver-manager
 tracker=https://github.com/ronitjadhav/qgis-geoserver-manager/issues/
