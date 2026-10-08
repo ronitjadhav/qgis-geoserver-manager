@@ -14,7 +14,7 @@ qgis-plugin-ci package latest
 ```
 
 CI packages each pull request and each push to main. The version is the one
-in `metadata.txt` followed by the commit count, such as `0.1.0.270`. The site
+in `metadata.txt` followed by the commit count, such as `1.0.0.270`. The site
 publishes main's zip with its `plugins.xml`, so QGIS offers each new build as
 an update to a tester who added that repository. A tag is packaged as its own
 version.
@@ -36,8 +36,11 @@ rest. For a tag `X.Y.Z`, which must be SemVer:
    `## X.Y.Z - YYYY-MM-DD` heading. This text becomes the release notes and
    the description on the plugin repository, so read it once as a stranger
    would.
-2. Set `version=X.Y.Z` in `geoserver_manager/metadata.txt`. Drop
-   `experimental=True` when the release is no longer experimental.
+   Put no `###` heading in an entry. qgis-plugin-ci ends the entry at the
+   first one, and drops the text after it.
+2. Set `version=X.Y.Z` in `geoserver_manager/metadata.txt`. Keep
+   `experimental=False`. A pre-release tag, such as `1.1.0-beta1`, makes
+   qgis-plugin-ci publish that version as experimental.
 3. Tag and push:
 
     ```sh
@@ -48,7 +51,8 @@ rest. For a tag `X.Y.Z`, which must be SemVer:
 4. The tag triggers *Package and release*. The job builds the zip, creates the
    GitHub release, and publishes to the
    [QGIS plugin repository](https://plugins.qgis.org/) with the `OSGEO_USER`
-   and `OSGEO_PASSWORD` secrets.
+   and `OSGEO_PASSWORD` secrets. The repository scans each version and holds
+   it until a staff member approves it, usually within one working day.
 
 The first upload decides the plugin's permanent identifier there: the package
 folder name, `geoserver_manager`. It cannot change afterwards; a different
@@ -56,9 +60,12 @@ folder name would be a different plugin. Once the plugin exists on that
 repository, set its numeric id as `official_repository_id` in `docs/conf.py`.
 Then the deployment snippet on the installation page is right.
 
-If a tag went out wrong, remove it and try again:
+If a tag went out wrong before the upload, remove it and try again:
 
 ```sh
 git tag -d X.Y.Z
 git push origin :refs/tags/X.Y.Z
 ```
+
+Once the plugin repository has the upload, it refuses that version number.
+Release the next patch version instead.

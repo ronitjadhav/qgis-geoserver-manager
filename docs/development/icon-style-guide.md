@@ -3,8 +3,8 @@
 `geoserver_manager/resources/icons/catalog.json` is the single inventory of
 the plugin's icons. Reuse an existing ID when the meaning matches. The SVGs
 live beside it. Qt's own checkboxes, message symbols and window controls are
-outside this registry. The [brand mark](../branding.md) keeps its original
-proportions.
+outside this registry. The plugin's logo,
+`resources/images/geoserver_manager.svg`, keeps its original proportions.
 
 ## Drawing rules
 

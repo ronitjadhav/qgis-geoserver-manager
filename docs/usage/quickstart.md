@@ -9,8 +9,8 @@ GeoServer Manager icon in its toolbar.
 
 ## 2. Tell it where your GeoServer is
 
-Open **Settings → Options → GeoServer Manager**. You can also use the
-**Settings** entry of the plugin menu.
+Open **Settings → Options → GeoServer Manager**. You can also use
+**Web → GeoServer Manager → Settings**.
 
 ```{figure} ../static/screenshots/settings.png
 :alt: The settings page, with a connection list, fields for the base URL, user name and password, a TLS checkbox and a Test connection button

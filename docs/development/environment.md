@@ -62,8 +62,7 @@ avoid conflicts with other plugins.
 
     ![QGIS - Enable the plugin in the plugin manager](../static/dev_qgis_enable_plugin.png)
 
-The plugin is `experimental=True`, so *Show also experimental plugins* must
-be on in the plugin manager. Before you assume the `default` profile, check
+Before you assume the `default` profile, check
 which profile QGIS starts: `lastProfile` in `profiles.ini`.
 
 ## A local GeoServer to test against

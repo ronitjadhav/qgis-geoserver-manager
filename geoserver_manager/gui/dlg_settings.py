@@ -192,7 +192,7 @@ class ConfigOptionsPage(QgsOptionsPageWidget):
             # left to connect with.
             settings.geoserver_url = ""
             settings.geoserver_auth_cfg_id = ""
-            settings.geoserver_username = settings.geoserver_password = ""
+            settings.geoserver_username = settings.geoserver_password = ""  # nosec B105
         # QGIS calls apply() on every options page for any OK. An untouched
         # profile is left alone: its fields hold ("", "") when the master
         # password prompt was dismissed, and "both blank" means "forget the
@@ -279,7 +279,8 @@ class ConfigOptionsPage(QgsOptionsPageWidget):
                 if settings.geoserver_auth_cfg_id:
                     settings.remove_credentials()
                     settings.geoserver_auth_cfg_id = ""
-                settings.geoserver_username = settings.geoserver_password = ""
+                settings.geoserver_username = ""
+                settings.geoserver_password = ""  # nosec B105
         elif not encrypted:
             # The plain store: an auth config the plugin made for them goes.
             if settings.geoserver_auth_cfg_id:
@@ -291,7 +292,8 @@ class ConfigOptionsPage(QgsOptionsPageWidget):
             auth_cfg_id = settings.save_credentials(username, password)
             if auth_cfg_id:
                 settings.geoserver_auth_cfg_id = auth_cfg_id
-                settings.geoserver_username = settings.geoserver_password = ""
+                settings.geoserver_username = ""
+                settings.geoserver_password = ""  # nosec B105
             else:
                 # Typically the user dismissed the master password prompt
                 warn(
@@ -565,7 +567,7 @@ class ConfigOptionsPage(QgsOptionsPageWidget):
             values = {
                 "url": "",
                 "username": "",
-                "password": "",
+                "password": "",  # nosec B105
                 "verify_tls": True,
                 "encrypted": False,
             }

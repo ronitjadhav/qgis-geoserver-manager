@@ -1,7 +1,7 @@
 # Contributing Guidelines
 
 Contributions are welcome through issues and pull requests. Start with the
-[development setup](https://ronitjadhav.github.io/qgis-geoserver-manager/development/environment.html).
+[development setup](https://geoserver-manager.ronit.io/development/environment.html).
 
 ## Git hooks
 
@@ -31,24 +31,24 @@ rather than one long sentence joined by a dash.
 
 Three pages of the documentation record what the code cannot tell you. Read
 them first, in this order:
-[architecture](https://ronitjadhav.github.io/qgis-geoserver-manager/development/architecture.html),
-[invariants](https://ronitjadhav.github.io/qgis-geoserver-manager/development/invariants.html),
-[conventions](https://ronitjadhav.github.io/qgis-geoserver-manager/development/conventions.html).
+[architecture](https://geoserver-manager.ronit.io/development/architecture.html),
+[invariants](https://geoserver-manager.ronit.io/development/invariants.html),
+[conventions](https://geoserver-manager.ronit.io/development/conventions.html).
 A change that breaks an invariant is a bug even when every test passes.
 
 ## Tests
 
 Every fix comes with a test that fails without it. Run the new test against the
 old code once to prove that it does. See
-[testing](https://ronitjadhav.github.io/qgis-geoserver-manager/development/testing.html).
+[testing](https://geoserver-manager.ronit.io/development/testing.html).
 
 ## Documentation
 
 Documentation is part of the change, not a follow-up. A pull request that
 changes what the user sees also updates the pages that describe it. That means
-the [usage guide](https://ronitjadhav.github.io/qgis-geoserver-manager/usage/guide.html)
+the [usage guide](https://geoserver-manager.ronit.io/usage/guide.html)
 for anything in the dialog, and `CHANGELOG.md` under *Unreleased* for anything
 worth telling a user. The
-[documentation page](https://ronitjadhav.github.io/qgis-geoserver-manager/development/documentation.html)
+[documentation page](https://geoserver-manager.ronit.io/development/documentation.html)
 lists what to touch for each kind of change. It also says how to rebuild the
 screenshots, which a script generates.

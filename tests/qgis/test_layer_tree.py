@@ -690,6 +690,30 @@ class TestPluginWiring(unittest.TestCase):
         self.assertEqual(tried, [1])
         self.assertIsNone(plugin.main_dialog)
 
+    def test_entries_go_to_the_web_menu_and_leave_it_on_unload(self):
+        """metadata.txt says category=Web, so the entries belong in that menu."""
+        calls = []
+        for name in (
+            "addPluginToMenu",
+            "removePluginMenu",
+            "addPluginToWebMenu",
+            "removePluginWebMenu",
+        ):
+            setattr(
+                self.iface,
+                name,
+                lambda title, action, name=name: calls.append((name, title)),
+            )
+        plugin = GeoServerManagerPlugin(self.iface)
+        plugin.initGui()
+        plugin.unload()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        self.assertEqual(
+            calls,
+            [("addPluginToWebMenu", "GeoServer Manager")] * 3
+            + [("removePluginWebMenu", "GeoServer Manager")] * 3,
+        )
+
     def test_menu_icons_follow_the_palette_and_stop_watching_on_unload(self):
         from geoserver_manager.plugin_main import _PaletteWatch
 
