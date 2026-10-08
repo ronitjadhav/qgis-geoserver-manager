@@ -32,7 +32,7 @@ latest_version: Optional[str] = next(
 author: str = __about__.__author__
 copyright: str = __about__.__copyright__
 description: str = __about__.__summary__
-official_repository_id: Optional[int] = None
+official_repository_id: Optional[int] = 6559
 project: str = __about__.__title__
 version: str = __about__.__version__  # defined in metadata.txt
 # Sphinx puts `release` in every page title; the version in development until
