@@ -139,10 +139,10 @@ class GeoServerManagerPlugin:
         # -- Toolbar
         self.iface.addToolBarIcon(self.action_main)
 
-        # -- Menu
-        self.iface.addPluginToMenu(__title__, self.action_main)
-        self.iface.addPluginToMenu(__title__, self.action_settings)
-        self.iface.addPluginToMenu(__title__, self.action_help)
+        # -- Web menu, as category=Web in metadata.txt says
+        self.iface.addPluginToWebMenu(__title__, self.action_main)
+        self.iface.addPluginToWebMenu(__title__, self.action_settings)
+        self.iface.addPluginToWebMenu(__title__, self.action_help)
 
         # -- Help menu
 
@@ -250,9 +250,9 @@ class GeoServerManagerPlugin:
 
         # -- Clean up menu and toolbar
         self.iface.removeToolBarIcon(self.action_main)
-        self.iface.removePluginMenu(__title__, self.action_main)
-        self.iface.removePluginMenu(__title__, self.action_help)
-        self.iface.removePluginMenu(__title__, self.action_settings)
+        self.iface.removePluginWebMenu(__title__, self.action_main)
+        self.iface.removePluginWebMenu(__title__, self.action_help)
+        self.iface.removePluginWebMenu(__title__, self.action_settings)
 
         # -- Clean up preferences panel in QGIS settings
         self.iface.unregisterOptionsWidgetFactory(self.options_factory)
