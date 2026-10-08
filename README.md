@@ -29,7 +29,7 @@ Built on [`python-geoservercloud`](https://github.com/camptocamp/python-geoserve
 [Issue #1](https://github.com/ronitjadhav/qgis-geoserver-manager/issues/1)
 lists what the library lacks and how the plugin works around it.
 
-> **Status:** experimental, not yet released. Developed against GeoServer 2.28.
+> **Status:** on the [QGIS plugin repository](https://plugins.qgis.org/plugins/geoserver_manager/). Tested with GeoServer 2.28 and 3.0.
 
 ## Features
 
@@ -56,7 +56,7 @@ partial French locale.
 
 ## Requirements
 
-- QGIS 3.40 to 4.x, on Qt5 or Qt6.
+- QGIS 3.40 to 4.x, on Qt5 or Qt6, with Python 3.10 or newer.
 - Network access to a GeoServer REST API, with an account that can read and
   write the resources you manage.
 - GeoServer 2.28 or 3.0. The plugin's tests run against 2.28.5. The plugin
@@ -72,26 +72,24 @@ and `requests` come with QGIS.
 
 ## Installation
 
-Until the plugin reaches <https://plugins.qgis.org>:
+In QGIS, open *Plugins → Manage and Install Plugins*, search for
+*GeoServer Manager* and install it.
 
-1. Open *Plugins → Manage and Install Plugins → Settings*.
-2. Enable experimental plugins.
-3. Add this repository URL:
+To test the development builds, add this repository URL in the settings of
+the plugin manager:
 
-   ```text
-   https://ronitjadhav.github.io/qgis-geoserver-manager/plugins.xml
-   ```
+```text
+https://geoserver-manager.ronit.io/plugins.xml
+```
 
-4. Install *GeoServer Manager* from the plugin manager's list.
-
-The feed contains development builds. See the
+These builds can be unstable. See the
 [installation guide](docs/usage/installation.md) for details.
 
 For a development install, see [Development](#development) below.
 
 ## Configuration
 
-*Settings → Options → GeoServer Manager*, or the plugin menu's *Settings* entry:
+*Settings → Options → GeoServer Manager*, or *Web → GeoServer Manager → Settings*:
 
 | Field | Notes |
 | :---- | :---- |
@@ -199,7 +197,7 @@ Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) and the
 ## Documentation
 
 The documentation is Markdown under `docs/`. Sphinx and myst-parser build it,
-and GitHub Pages serves it at <https://ronitjadhav.github.io/qgis-geoserver-manager/>.
+and GitHub Pages serves it at <https://geoserver-manager.ronit.io/>.
 
 Start with the [usage guide](docs/usage/guide.md): connecting, what each tab
 does, publishing from QGIS, styles both ways, keyboard shortcuts, troubleshooting.

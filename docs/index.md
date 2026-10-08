@@ -19,7 +19,7 @@ WMS, WFS or WMTS.
 :link: usage/installation
 :link-type: doc
 
-Get the plugin into QGIS from the development feed, until the first release.
+Install the plugin from the plugin manager of QGIS.
 :::
 
 :::{grid-item-card} {octicon}`rocket;1.5em` Quick start
@@ -67,8 +67,8 @@ The plugin uses
 with documented workarounds for the library operations it lacks.
 
 :::{note}
-The plugin is experimental, and not on the QGIS plugin repository yet.
-See [installation](usage/installation.md) for how to get it today.
+Install the plugin from the plugin manager of QGIS. See
+[installation](usage/installation.md).
 :::
 
 ## At a glance
@@ -77,7 +77,7 @@ See [installation](usage/installation.md) for how to get it today.
 | :-- | :-- |
 | Latest released version | {{ release_version }} |
 | Development version | {{ version }} |
-| QGIS | {{ qgis_version_min }} to {{ qgis_version_max }}, Qt5 and Qt6 |
+| QGIS | {{ qgis_version_min }} to 4.x, Qt5 and Qt6, Python 3.10 or newer |
 | GeoServer | 2.28 and 3.0, tested with 2.28.5 and 3.0.1; [other versions](usage/guide.md#supported-geoserver-versions) |
 | Author | {{ author }} |
 | Source code | {{ repo_url }} |

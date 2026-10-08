@@ -4,11 +4,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 
 ## Unreleased
 
+## 1.0.0 - 2026-10-08
+
 The first release: a QGIS plugin that manages a GeoServer through its REST
 API, built on [python-geoservercloud](https://github.com/camptocamp/python-geoservercloud).
 Tested with GeoServer 2.28 and 3.0.
-
-### Added
 
 - **Connection.** A settings page with the server URL, the user name and
   password, and *Test connection*. Several saved connections, with a switch
@@ -21,8 +21,9 @@ Tested with GeoServer 2.28 and 3.0.
 - **Workspaces.** List, add, edit and delete workspaces. Set the default
   workspace, the isolated flag and the namespace URI. Give a workspace its
   own WMS, WFS, WCS and WMTS settings, or send it back to the global ones.
-- **Datastores.** Every datastore type. PostGIS, shapefile, directory,
-  GeoPackage and Web Feature Server stores have a form of their own. Any
+- **Datastores.** Every datastore type. PostGIS (direct or JNDI), shapefile,
+  directory, GeoPackage, PMTiles and Web Feature Server stores have a form of
+  their own. Any
   other type takes GeoServer's name and parameters. Add, edit, rename, enable
   or disable, reset and delete. The plugin checks a saved store at once. A
   stored password stays when the form leaves it blank.

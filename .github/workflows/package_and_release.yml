@@ -117,7 +117,7 @@ jobs:
       - name: Package the development version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # 0.1.0.<commit count>, so QGIS offers each build as an update (not SemVer: --no-validation)
+        # <version>.<commit count>, so QGIS offers each build as an update (not SemVer: --no-validation)
         run: |
           version="$(sed -n 's/^version=//p' ${{ env.PROJECT_FOLDER }}/metadata.txt).$(git rev-list --count HEAD)"
           qgis-plugin-ci --no-validation package "$version" \
@@ -192,9 +192,14 @@ jobs:
           # a package run unstages the compiled translations
           git add ${{ env.PROJECT_FOLDER }}/
 
+      - name: Release notes from the changelog
+        # the pull requests alone say little; the changelog entry says what changed
+        run: qgis-plugin-ci changelog "${GITHUB_REF/refs\/tags\//}" > "$RUNNER_TEMP/release-notes.md"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
+          body_path: ${{ runner.temp }}/release-notes.md
           fail_on_unmatched_files: true
           generate_release_notes: true
 
