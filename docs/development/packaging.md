@@ -48,11 +48,17 @@ rest. For a tag `X.Y.Z`, which must be SemVer:
     git push origin X.Y.Z
     ```
 
-4. The tag triggers *Package and release*. The job builds the zip, creates the
-   GitHub release, and publishes to the
+4. The tag triggers *Package and release*. Its release job waits for a
+   maintainer's approval: open the run in the *Actions* tab and approve the
+   `plugins-qgis-org` deployment. The job then builds the zip and creates the
+   GitHub release. It publishes to the
    [QGIS plugin repository](https://plugins.qgis.org/) with the `OSGEO_USER`
-   and `OSGEO_PASSWORD` secrets. The repository scans each version and holds
-   it until a staff member approves it, usually within one working day.
+   and `OSGEO_PASSWORD` secrets of that environment. The repository scans each
+   version and holds it until a staff member approves it, usually within one
+   working day.
+
+Only maintainers can push a tag. The `plugins-qgis-org` environment only
+accepts version tags, so no branch and no pull request can read its secrets.
 
 The first upload decides the plugin's permanent identifier there: the package
 folder name, `geoserver_manager`. It cannot change afterwards; a different

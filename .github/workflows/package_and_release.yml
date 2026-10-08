@@ -144,6 +144,8 @@ jobs:
   release:
     name: "🚀 Release on tag"
     runs-on: ubuntu-latest
+    # holds the OSGeo secrets: only version tags reach it, after a maintainer approves
+    environment: plugins-qgis-org
     permissions:
       contents: write
     needs:
