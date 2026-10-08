@@ -12,13 +12,10 @@ on:
       - .github/workflows/linter.yml
       - requirements/development.txt
 
+  # every pull request, without a path filter: its jobs are required checks
   pull_request:
     branches:
       - main
-    paths:
-      - '**.py'
-      - .github/workflows/linter.yml
-      - requirements/development.txt
 
   # a run by hand, for a push the path filters skipped
   workflow_dispatch:

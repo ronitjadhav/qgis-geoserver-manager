@@ -2,6 +2,8 @@
 
 Contributions are welcome through issues and pull requests. Start with the
 [development setup](https://geoserver-manager.ronit.io/development/environment.html).
+Every change reaches `main` through a pull request. It needs the maintainer's
+review and green checks.
 
 ## Git hooks
 

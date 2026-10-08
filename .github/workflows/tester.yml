@@ -12,15 +12,10 @@ on:
       - .github/workflows/tester.yml
       - requirements/testing.txt
 
+  # every pull request, without a path filter: its jobs are required checks
   pull_request:
     branches:
       - main
-    paths:
-      - '**.py'
-      - 'geoserver_manager/**'
-      - setup.cfg
-      - .github/workflows/tester.yml
-      - requirements/testing.txt
 
   # a run by hand, for a push the path filters skipped
   workflow_dispatch:
