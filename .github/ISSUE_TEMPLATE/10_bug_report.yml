@@ -1,7 +1,7 @@
 name: Bug or crash report
 description: Report a bug or a crash.
 labels:
-  - "Bug"
+  - bug
 
 body:
   - type: markdown
@@ -28,6 +28,15 @@ body:
         2. Click on '...'
         3. Scroll down to '...'
         4. See error
+    validations:
+      required: true
+
+  - type: input
+    id: geoserver-version
+    attributes:
+      label: GeoServer version
+      description: The version on the server's welcome page, and whether it is GeoServer Cloud.
+      placeholder: 2.28.5, classic
     validations:
       required: true
 

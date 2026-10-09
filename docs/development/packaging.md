@@ -30,7 +30,21 @@ asserts that those two agree.
 ## Release a version
 
 One released version is one git tag, and the continuous deployment does the
-rest. For a tag `X.Y.Z`, which must be SemVer:
+rest. The *Unreleased* section of `CHANGELOG.md` decides the number:
+
+| *Unreleased* contains | Next version |
+|---|---|
+| Only fixes, documentation, translations, dependency updates | patch, `1.0.x` |
+| Something a user can newly do, or a new QGIS or GeoServer version supported | minor, `1.x.0` |
+| Something a user can no longer do: a dropped QGIS or Python version, a removed feature, settings that do not carry over | major, `x.0.0` |
+
+A minor with a risk in it, such as a new major version of the library or of
+GeoServer, goes out as a pre-release first. A tag such as `1.1.0-beta1`
+publishes as experimental. The final tag follows when nobody reports a
+problem. Each changelog bullet starts with its kind in bold: **Fixed.**,
+**Added.**, **Changed.** or **Removed.**
+
+For a tag `X.Y.Z`, which must be SemVer:
 
 1. Move the *Unreleased* entries of `CHANGELOG.md` under a new
    `## X.Y.Z - YYYY-MM-DD` heading. This text becomes the release notes and

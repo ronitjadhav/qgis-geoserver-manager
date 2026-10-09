@@ -54,3 +54,31 @@ worth telling a user. The
 [documentation page](https://geoserver-manager.ronit.io/development/documentation.html)
 lists what to touch for each kind of change. It also says how to rebuild the
 screenshots, which a script generates.
+
+## Issues and roadmap
+
+The [milestones](https://github.com/ronitjadhav/qgis-geoserver-manager/milestones)
+are the roadmap. A milestone is the next version with a one-line theme, and
+at most two are open at a time. An issue without a milestone is in the
+backlog: it is welcome, but it has no date yet. A bug report gets
+the `bug` label, a request the `enhancement` label, both from the issue form.
+`needs-info` means the report waits for an answer from its author.
+
+## Versions and releases
+
+The version number follows [Semantic Versioning](https://semver.org/), and
+the *Unreleased* section of `CHANGELOG.md` decides it. See
+[packaging](https://geoserver-manager.ronit.io/development/packaging.html)
+for the rule and the release steps. A release ships when users wait for
+something, not on a calendar. A patch ships when a fix is waiting, a minor
+when its milestone is empty. An issue that holds a release back moves to the backlog;
+the release does not wait for it.
+
+The plugin supports every QGIS version from `qgisMinimumVersion` on, for as
+long as the code can run there. The minimum rises only when QGIS forces it.
+GeoServer support covers the latest 2.x release and the latest 3.x release,
+both tested before a minor version ships. Every GeoServer call goes through
+[python-geoservercloud](https://github.com/camptocamp/python-geoservercloud);
+a gap in the library is a row in
+[issue #1](https://github.com/ronitjadhav/qgis-geoserver-manager/issues/1)
+first, and a workaround in the plugin second.
