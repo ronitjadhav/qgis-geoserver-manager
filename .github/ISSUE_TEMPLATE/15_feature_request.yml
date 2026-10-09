@@ -1,7 +1,7 @@
 name: Feature request
 description: Suggest a feature.
 labels:
-  - 'Feature Request'
+  - enhancement
 body:
   - type: markdown
     attributes:
@@ -15,6 +15,12 @@ body:
       description: What you want to do, and what the plugin does today instead.
     validations:
       required: true
+
+  - type: textarea
+    id: web-ui
+    attributes:
+      label: How the GeoServer web interface does it today
+      description: The page and the fields, if the web interface has them. That is where the plugin starts.
 
   - type: textarea
     id: Additional

@@ -4,7 +4,7 @@ changelog:
       - dependabot
       - pre-commit-ci
   categories:
-    - title: Bugs fixes 🐛
+    - title: Bug fixes 🐛
       labels:
         - bug
     - title: Features and enhancements 🎉
