@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 
 - **Changed.** Every tab is now tested each week against the latest GeoServer
   2.x and 3.x releases. The tests start with 2.28.6 and 3.0.2.
+- **Added.** A security policy: report a vulnerability privately, on GitHub
+  or by email, as `SECURITY.md` says.
 
 ## 1.0.0 - 2026-10-08
 

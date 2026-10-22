@@ -57,12 +57,15 @@ jobs:
           flake8 ${{ env.PROJECT_FOLDER }} --count --exit-zero --statistics
 
       - name: Refuse what plugins.qgis.org blocks
-        # The site's Bandit rules that an upload cannot skip: one finding blocks
-        # the version, and only a new version number can replace it.
+        # Every Bandit rule of the site: one finding blocks the version, and
+        # only a new version number can replace it. An upload with a token
+        # runs the skippable rules too.
         # A false positive takes "# nosec <rule>" on its line.
         run: |
           python -m pip install bandit
-          bandit -r ${{ env.PROJECT_FOLDER }} -q -t B102,B103,B105,B106,B107,B201,B202,B301,B302,B304,B305,B306,B307,B312,B321,B323,B401,B402,B412,B413,B501,B502,B503,B505,B506,B507,B601,B602,B604,B605,B609,B610,B611,B612,B613,B615,B701
+          blocking=B102,B103,B105,B106,B107,B201,B202,B301,B302,B304,B305,B306,B307,B312,B321,B323,B401,B402,B412,B413,B501,B502,B503,B505,B506,B507,B601,B602,B604,B605,B609,B610,B611,B612,B613,B615,B701
+          skippable=B101,B104,B108,B110,B112,B113,B303,B308,B310,B311,B313,B314,B315,B316,B317,B318,B319,B324,B403,B405,B406,B407,B408,B409,B504,B508,B509,B603,B606,B607,B608,B614,B702,B703,B704
+          bandit -r ${{ env.PROJECT_FOLDER }} -q -t "$blocking,$skippable"
 
   qt6-check:
     name: PyQt6 6️⃣
