@@ -4,6 +4,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 
 ## Unreleased
 
+- **Changed.** Every tab is now tested each week against the latest GeoServer
+  2.x and 3.x releases. The tests start with 2.28.6 and 3.0.2.
+
 ## 1.0.0 - 2026-10-08
 
 The first release: a QGIS plugin that manages a GeoServer through its REST

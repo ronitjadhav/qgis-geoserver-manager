@@ -1,0 +1,125 @@
+name: "🌍 Live GeoServer"
+
+# The other suites run against fakes: fast, but blind to what a GeoServer
+# release changes. This one drives every tab against the real thing, the
+# latest 2.x and 3.x releases, so a new release that breaks the plugin shows
+# here within a week.
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+
+  # before a release, or to try other GeoServer versions
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "GeoServer image tags, separated by spaces. Empty: the latest 2.x and 3.x releases."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.pick.outputs.versions }}
+
+    steps:
+      - name: Pick the GeoServer versions
+        id: pick
+        env:
+          WANTED: ${{ inputs.versions }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os, re, urllib.request
+
+          wanted = os.environ.get("WANTED", "").split()
+          if not wanted:
+              url = "https://docker.osgeo.org/v2/geoserver/tags/list"
+              with urllib.request.urlopen(url, timeout=60) as answer:
+                  tags = json.load(answer)["tags"]
+              releases = [
+                  tuple(map(int, tag.split(".")))
+                  for tag in tags
+                  if re.fullmatch(r"\d+\.\d+\.\d+", tag)
+              ]
+              # A major without a release yet (or no more) shrinks the matrix.
+              wanted = []
+              for major in (2, 3):
+                  latest = max((v for v in releases if v[0] == major), default=None)
+                  if latest:
+                      wanted.append(".".join(map(str, latest)))
+          print("versions=" + json.dumps(wanted))
+          EOF
+
+  live:
+    needs: versions
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        geoserver: ${{ fromJSON(needs.versions.outputs.versions) }}
+
+    name: "GeoServer ${{ matrix.geoserver }}"
+
+    container:
+      image: qgis/qgis:stable
+      env:
+        PYTHONPATH: "/usr/share/qgis/python/plugins:/usr/share/qgis/python:."
+        QT_QPA_PLATFORM: "offscreen"
+      volumes:
+        - ${{ github.workspace }}:/home/root/
+
+    services:
+      geoserver:
+        image: docker.osgeo.org/geoserver:${{ matrix.geoserver }}
+        env:
+          GEOSERVER_ADMIN_USER: admin
+          GEOSERVER_ADMIN_PASSWORD: geoserver
+          SKIP_DEMO_DATA: "false"
+        # the job starts once the REST API answers
+        options: >-
+          --health-cmd "curl -fsS -u admin:geoserver http://localhost:8080/geoserver/rest/about/version.json"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+          --health-start-period 60s
+
+      # the datastore steps connect GeoServer to it as host "postgis"
+      postgis:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: geoserver
+          POSTGRES_USER: geoserver
+          POSTGRES_PASSWORD: geoserver
+        options: >-
+          --health-cmd "pg_isready -U geoserver -d geoserver"
+          --health-interval 5s
+          --health-retries 20
+
+    steps:
+      # Without git, checkout downloads an archive without the .ts files.
+      - name: Install git
+        run: command -v git || (apt-get update && apt-get install -y git)
+
+      - name: Get source code
+        uses: actions/checkout@v7
+
+      - name: Install Python requirements
+        run: |
+          apt update && apt install -y python3-pip python3-venv pipx
+          cd /home/root/
+          pipx run qgis-venv-creator --venv-name ".venv"
+          . .venv/bin/activate
+          python3 -m pip install -U -r requirements/testing.txt
+
+      - name: Run the live suite
+        env:
+          GSM_LIVE_URL: "http://geoserver:8080/geoserver"
+        run: |
+          cd /home/root/
+          . .venv/bin/activate
+          xvfb-run python3 -m pytest -v tests/qgis/test_live_geoserver.py

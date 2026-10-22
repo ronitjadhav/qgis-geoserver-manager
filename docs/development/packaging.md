@@ -44,6 +44,10 @@ publishes as experimental. The final tag follows when nobody reports a
 problem. Each changelog bullet starts with its kind in bold: **Fixed.**,
 **Added.**, **Changed.** or **Removed.**
 
+Before a minor or a major release, run the *Live GeoServer* workflow by hand
+and wait for it to pass. It tests the plugin against the latest GeoServer
+releases ([testing](testing.md)).
+
 For a tag `X.Y.Z`, which must be SemVer:
 
 1. Move the *Unreleased* entries of `CHANGELOG.md` under a new

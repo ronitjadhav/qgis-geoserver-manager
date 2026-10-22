@@ -74,6 +74,10 @@ something, not on a calendar. A patch ships when a fix is waiting, a minor
 when its milestone is empty. An issue that holds a release back moves to the backlog;
 the release does not wait for it.
 
+`main` is the development branch, and a tag is a release. So `main` is always
+ready to release: a change merges complete, with its test, its documentation
+and its changelog entry, or stays on its branch.
+
 The plugin supports every QGIS version from `qgisMinimumVersion` on, for as
 long as the code can run there. The minimum rises only when QGIS forces it.
 GeoServer support covers the latest 2.x release and the latest 3.x release,

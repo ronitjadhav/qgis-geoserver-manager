@@ -537,15 +537,16 @@ tab.
 ## Supported GeoServer versions
 
 GeoServer Manager is developed against **GeoServer 2.28**: every server
-behaviour it relies on was measured on 2.28.5. It is also tested as a whole
-on **GeoServer 3.0.1**. The status line names
+behaviour it relies on was measured on 2.28.5. Every week, an automatic test
+uses every tab against the latest 2.x and 3.x releases of GeoServer. In
+October 2026 that was 2.28.6 and 3.0.2. The status line names
 the version of the server it is connected to. On another version the dialog
 works as usual, and says once that the version is not the tested one.
 
 | Server | What to expect |
 | :----- | :------------- |
-| GeoServer 2.28 | tested |
-| GeoServer 3.0 | tested on 3.0.1. Known differences: it has no log file setting, so the logging form shows none, and its GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404 |
+| GeoServer 2.28 | tested every week |
+| GeoServer 3.0 | tested every week. Known differences: it has no log file setting, so the logging form shows none, and its GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404 |
 | GeoServer 2.27 | not tested as a whole. Known differences: its GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404, and most datastores of its demo data have no type |
 | GeoServer Cloud | recognised, and named in the status line with its own version (**GeoServer Cloud 2.28.5.1**). Not tested as a whole; the known differences are below |
 
