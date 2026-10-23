@@ -78,7 +78,7 @@ PyQt5 **and** PyQt6 through `qgis.PyQt`.
 
   | Helper | Use it for |
   |---|---|
-  | `_run_action(fn, failure_message) -> bool` | any mutation: wait cursor, banner + QGIS log on failure |
+  | `_run_action(fn, failure_message) -> bool \| None` | any mutation: wait cursor, banner + QGIS log on failure. False on a refusal, None when the user stopped waiting (the save may still land): a form opens again with its typed values on False only |
   | `_setup_add_button`, `_setup_delete_selected_button`, `_setup_extra_button` | the header's buttons, armed by each loader and hidden again by `_reset_table_state`. The third one is for what a tab holds beside its rows: the Tile Cache tab's gridsets |
   | `_fetch(fn, failure_message) -> value \| None` | any read the UI needs before continuing: runs `fn` in a worker thread and waits behind an application-modal *Waiting for GeoServer* box (after 0.3 s) with Cancel, so a dead server cannot freeze QGIS. `in_worker=False` for work on a live QGIS layer. A map layer `fn` builds comes back moved to the GUI thread |
   | `_fetch_cancellable(work, failure_message) -> value \| None` | `_fetch` for a fan-out: `work(task)` gets a stand-in task whose `isCanceled()` turns true on Cancel, so no more GETs start once the user stopped waiting (a sort's detail fill, a gridset's users) |
@@ -127,7 +127,8 @@ everywhere, and run the whole suite, not only the tab's own tests.
 |---|---|
 | `LayerPublishMixin` | the Layers tab (`_push_qgis_style`, `_layer_summary`, `_view_fields`, the reload), Datastores (`_get_datastore`, `_datastore_names`, `_connection_params`), Coverage Stores (`_publish_qgis_raster`, `_check_raster_target`: a raster is published as a coverage store) |
 | `LayerTabMixin` | publishing (its *Publish* button), Coverage Stores and Cascaded Stores (the detail and the delete of a raster or cascaded layer), Styles (`_create_style`, `_put_sld_body`: a style pushed from QGIS) |
-| `CoverageStoreTabMixin` | publishing (`_refuse_layer_clash`, `_prefill_publish_name`) |
+| `CoverageStoreTabMixin` | publishing (`_refuse_layer_clash`, `_prefill_publish_name`), the Layers tab (`_refuse_taken_layer`) |
+| `CascadedStoreTabMixin` | the Layers tab (`_refuse_taken_layer`) |
 | `DatastoreTabMixin` | publishing (`_available_tables`, the check after a save), Workspaces (`_namespace_uri`) |
 | `LayerGroupTabMixin` | the Layers tab (layer names and boxes, the preview and *Add to QGIS* helpers, the style choices) |
 | `StyleTabMixin` | the Layers and Layer Groups tabs (*Used by*) |

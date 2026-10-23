@@ -650,6 +650,12 @@ class CoverageStoreTabMixin:
             ],
             parent=self,
             ok_label=translate("CoverageStoreTabMixin", "Publish"),
+            # A taken layer name is a 500 after the form closed (measured).
+            validate=self._form_check(
+                lambda v: self._refuse_taken_layer(
+                    ws_name, (v["name"] or v["native_name"]).strip()
+                )
+            ),
         )
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
@@ -855,6 +861,14 @@ class CoverageStoreTabMixin:
                 translate(
                     "CoverageStoreTabMixin", "Coverage store '{}' created."
                 ).format(values["name"])
+            )
+            # A wrong path is stored all the same (measured): say so now,
+            # as the edit form does, not at the first publish.
+            self._warn_if_store_unreachable(
+                values["name"],
+                lambda: self._fetch_list(
+                    self.gs.get_coverages, values["workspace"], values["name"]
+                ),
             )
             self._warn_if_cog_settings_dropped(values)
             self._load_coverage_stores()
