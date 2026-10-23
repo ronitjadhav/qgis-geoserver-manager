@@ -20,7 +20,13 @@ import xml.etree.ElementTree as ElementTree  # nosec B405
 from urllib.parse import quote
 from xml.sax.saxutils import escape  # nosec B406
 
-from qgis.core import Qgis
+from qgis.core import (
+    Qgis,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsProject,
+    QgsUnitTypes,
+)
 from qgis.PyQt import sip
 from qgis.PyQt.QtCore import QCoreApplication, QTimer
 from qgis.PyQt.QtWidgets import QDialog
@@ -106,6 +112,13 @@ class GwcTabMixin:
         self._setup_delete_selected_button(
             self._remove_selected_gwc_layers,
             translate("GwcTabMixin", "Remove Selected from Cache"),
+        )
+        self._setup_extra_button(
+            translate("GwcTabMixin", "Gridsets"),
+            translate(
+                "GwcTabMixin", "The gridsets of your own: view, add or delete one"
+            ),
+            self._show_gridsets,
         )
         self._name_click_callback = self._show_gwc_layer_info
         self._extra_click_callbacks = {
@@ -1173,6 +1186,383 @@ class GwcTabMixin:
         dlg.exec()
         closed.append(True)
         timer.stop()
+
+    # -- Gridsets -------------------------------------------------------------
+
+    def _gridset_path(self, name):
+        """REST path of one gridset's XML, by its name, quoted."""
+        return f"{self._gwc_base()}/gridsets/{quote(name, safe=':')}.xml"
+
+    def _custom_gridset_names(self):
+        """The gridsets a user made: the ones that can be deleted.
+
+        TODO(#1): nothing lists them apart from the built-in ones (row 84).
+        Measured on 2.28.5 and 3.0.2: 141 gridsets are built in, and a DELETE
+        of one is a bare 500. The others are kept in the data directory's
+        gwc/geowebcache.xml, which GeoWebCache rewrites on its first write; a
+        name there it never loaded (the demo's EPSG:2163) is not listed. So a
+        gridset of one's own is in that file and in the list.
+        """
+        base = self.gs.rest_service.rest_endpoints.base_url
+        answer = self._raw_rest(
+            "get", f"{base}/resource/gwc/geowebcache.xml", accept=(404,)
+        )
+        if answer.status_code == 404:
+            return []  # GeoWebCache wrote no file yet: none of one's own
+        text = answer.text
+        in_file = {
+            child.text
+            for element in self._parse_xml(text).iter()
+            if element.tag.rsplit("}", 1)[-1] == "gridSet"
+            for child in element
+            if child.tag.rsplit("}", 1)[-1] == "name"
+        }
+        return [name for name in self._gridset_names() if name in in_file]
+
+    @staticmethod
+    def _gridset_summary(xml_text):
+        """What the gridsets view shows of one gridset's XML. Pure."""
+        root = GwcTabMixin._parse_xml(xml_text)
+        levels = root.findall("resolutions/double") or root.findall(
+            "scaleDenominators/double"
+        )
+        return {
+            "srs": "EPSG:{}".format(root.findtext("srs/number") or "?"),
+            "extent": ", ".join(c.text for c in root.findall("extent/coords/double")),
+            "levels": str(len(levels)),
+            "tile_size": "{} x {}".format(
+                root.findtext("tileWidth") or "?", root.findtext("tileHeight") or "?"
+            ),
+            "description": root.findtext("description") or "",
+        }
+
+    @staticmethod
+    def _gridset_xml(values, extent, meters_per_unit):
+        """A new gridset's XML. Pure.
+
+        Level 0 holds the whole extent in one tile, and each level halves the
+        resolution, as GeoServer's web interface computes it. GeoWebCache
+        stores metersPerUnit 1.0 when it is missing, which gave a geographic
+        gridset a scale of 781 for 86 million (measured on 2.28.5).
+        """
+        tile = int(values["tile_size"])
+        minx, miny, maxx, maxy = extent
+        top = max(maxx - minx, maxy - miny) / tile
+        resolutions = "".join(
+            f"<double>{top / 2**level!r}</double>"
+            for level in range(int(values["levels"]))
+        )
+        description = (values.get("description") or "").strip()
+        return (
+            f"<gridSet><name>{escape(values['name'])}</name>"
+            + (
+                f"<description>{escape(description)}</description>"
+                if description
+                else ""
+            )
+            + f"<srs><number>{GwcTabMixin._epsg_number(values['epsg'])}</number></srs>"
+            + "<extent><coords>"
+            + "".join(f"<double>{float(v)!r}</double>" for v in extent)
+            + "</coords></extent><alignTopLeft>false</alignTopLeft>"
+            + f"<resolutions>{resolutions}</resolutions>"
+            + f"<metersPerUnit>{meters_per_unit!r}</metersPerUnit>"
+            + "<pixelSize>2.8E-4</pixelSize>"
+            + f"<tileHeight>{tile}</tileHeight><tileWidth>{tile}</tileWidth></gridSet>"
+        )
+
+    @staticmethod
+    def _epsg_number(text):
+        """The EPSG code of a form's text as a number; raises on anything else."""
+        code = str(text or "").strip().upper().removeprefix("EPSG:")
+        if not code.isdigit():
+            raise ValueError(
+                translate(
+                    "GwcTabMixin",
+                    "The SRS must be an EPSG code number, such as 2056 or 4326.",
+                )
+            )
+        return int(code)
+
+    @staticmethod
+    def _gridset_frame(values):
+        """(extent, metersPerUnit) of a new gridset, from QGIS's CRS: the
+        typed extent, or the CRS's area of use when it is empty."""
+        crs = QgsCoordinateReferenceSystem(
+            "EPSG:{}".format(GwcTabMixin._epsg_number(values["epsg"]))
+        )
+        if not crs.isValid():
+            raise ValueError(
+                translate("GwcTabMixin", "QGIS does not know {}.").format(
+                    values["epsg"]
+                )
+            )
+        text = (values.get("extent") or "").strip()
+        if text:
+            extent = [float(v) for v in text.split(",")]
+        else:
+            box = QgsCoordinateTransform(
+                QgsCoordinateReferenceSystem("EPSG:4326"), crs, QgsProject.instance()
+            ).transformBoundingBox(crs.bounds())
+            extent = [box.xMinimum(), box.yMinimum(), box.xMaximum(), box.yMaximum()]
+        if not (extent[0] < extent[2] and extent[1] < extent[3]):
+            raise ValueError(translate("GwcTabMixin", "The extent is empty."))
+        unit = QgsUnitTypes.fromUnitToUnitFactor(
+            crs.mapUnits(), Qgis.DistanceUnit.Meters
+        )
+        return extent, unit
+
+    def _check_new_gridset(self, values):
+        """Refuse a gridset that exists or cannot be built. Reads only."""
+        self._require_safe_name(values["name"])
+        self._gridset_frame(values)
+        if self.gs.rest_service.resource_exists(self._gridset_path(values["name"])):
+            raise ValueError(
+                translate("GwcTabMixin", "Gridset '{}' already exists.").format(
+                    values["name"]
+                )
+            )
+
+    def _put_gridset(self, values):
+        """Create the gridset. TODO(#1): create_gridset(epsg) PUTs one of three
+        shipped definitions only (row 84). Workaround: PUT the XML (201)."""
+        self._check_new_gridset(values)
+        extent, meters_per_unit = self._gridset_frame(values)
+        self._raw_rest(
+            "put",
+            self._gridset_path(values["name"]),
+            data=self._gridset_xml(values, extent, meters_per_unit).encode("utf-8"),
+            headers=_XML,
+        )
+
+    def _gridset_users(self, name, task=None):
+        """The cached layers whose gridsets include this one."""
+        names = self._gwc_layer_names()
+        users = []
+        for layer, (detail, error) in zip(
+            names, self._fan_out(self._gwc_layer_detail, names, task)
+        ):
+            if error is not None:
+                raise error
+            subsets = as_list((detail or {}).get("gridSubsets"))
+            if any(
+                (s.get("gridSetName") if isinstance(s, dict) else s) == name
+                for s in subsets
+            ):
+                users.append(layer)
+        return users
+
+    def _gridset_fields(self, names):
+        """The gridsets view: a picker and the picked gridset's definition."""
+
+        def read_only(key, label):
+            return {"key": key, "label": label, "type": "text", "read_only": True}
+
+        return [
+            {
+                "key": "gridset",
+                "label": translate("GwcTabMixin", "Gridset"),
+                "type": "combo",
+                "options": names,
+            },
+            read_only("srs", translate("GwcTabMixin", "SRS")),
+            read_only("extent", translate("GwcTabMixin", "Extent")),
+            read_only("levels", translate("GwcTabMixin", "Zoom levels")),
+            read_only("tile_size", translate("GwcTabMixin", "Tile size")),
+            read_only("description", translate("GwcTabMixin", "Description")),
+        ]
+
+    def _show_gridsets(self):
+        """The gridsets of one's own: view one at a time, add, delete."""
+        names = self._fetch(
+            self._custom_gridset_names,
+            translate("GwcTabMixin", "Failed to load the gridsets"),
+        )
+        if names is None:
+            return
+        dlg = ResourceFormDialog(
+            title=translate("GwcTabMixin", "Gridsets"),
+            description=(
+                translate(
+                    "GwcTabMixin",
+                    "The gridsets made on this server. The built-in ones, such as "
+                    "EPSG:4326 and EPSG:900913, are not listed: they cannot change.",
+                )
+                if names
+                else translate(
+                    "GwcTabMixin",
+                    "No gridset of your own yet. The built-in ones, such as "
+                    "EPSG:4326 and EPSG:900913, cannot change.",
+                )
+            ),
+            fields=self._gridset_fields(names),
+            parent=self,
+        )
+        dlg.hide_save_button()
+        if not names:
+            for field in self._gridset_fields(names):
+                dlg.set_field_visible(field["key"], False)
+        chosen = []
+
+        def then(action):
+            chosen.append(action)
+            dlg.reject()
+
+        dlg.add_button(translate("GwcTabMixin", "Add a Gridset")).clicked.connect(
+            lambda: then(self._add_gridset)
+        )
+        delete = dlg.add_button(translate("GwcTabMixin", "Delete"))
+        delete.setEnabled(bool(names))
+        delete.clicked.connect(
+            lambda: then(
+                lambda name=dlg.get_values()["gridset"]: self._delete_gridset(name)
+            )
+        )
+        self._wire_picker(
+            dlg,
+            "gridset",
+            names[0] if names else "",
+            lambda name: self._fetch(
+                lambda: self._gridset_summary(
+                    self._raw_rest("get", self._gridset_path(name)).text
+                ),
+                translate("GwcTabMixin", "Failed to load gridset '{}'").format(name),
+            ),
+        )
+        dlg.exec()
+        for action in chosen:
+            action()
+
+    def _add_gridset(self):
+        """The form of a new gridset."""
+        dlg = ResourceFormDialog(
+            title=translate("GwcTabMixin", "Add a Gridset"),
+            description=translate(
+                "GwcTabMixin",
+                "A gridset is how the tile cache cuts a CRS into tiles: an extent, "
+                "a tile size and zoom levels. Level 0 holds the whole extent in one "
+                "tile, and each level halves the size of a pixel.",
+            ),
+            fields=[
+                {
+                    "key": "name",
+                    "label": translate("GwcTabMixin", "Name"),
+                    "type": "text",
+                    "required": True,
+                },
+                {
+                    "key": "epsg",
+                    "label": translate("GwcTabMixin", "SRS (EPSG code)"),
+                    "type": "text",
+                    "required": True,
+                    "crs": True,
+                    "placeholder": translate("GwcTabMixin", "for example 2056"),
+                },
+                {
+                    "key": "extent",
+                    "label": translate("GwcTabMixin", "Extent"),
+                    "type": "extent",
+                    "help": translate(
+                        "GwcTabMixin", "Empty: the area of use of the CRS."
+                    ),
+                },
+                {
+                    "key": "levels",
+                    "label": translate("GwcTabMixin", "Zoom levels"),
+                    "type": "spinbox",
+                    "min": 1,
+                    "max": 30,
+                    "default": 18,
+                },
+                {
+                    "key": "tile_size",
+                    "label": translate("GwcTabMixin", "Tile size"),
+                    "type": "spinbox",
+                    "min": 64,
+                    "max": 2048,
+                    "default": 256,
+                    "help": translate(
+                        "GwcTabMixin", "In pixels, for the width and the height."
+                    ),
+                },
+                {
+                    "key": "description",
+                    "label": translate("GwcTabMixin", "Description"),
+                    "type": "text",
+                },
+            ],
+            parent=self,
+            ok_label=translate("GwcTabMixin", "Create"),
+            validate=self._form_check(self._check_new_gridset),
+        )
+        epsg = dlg.get_widget("epsg")
+
+        def retarget():
+            code = epsg.text().strip().upper().removeprefix("EPSG:")
+            dlg.set_extent_crs("extent", f"EPSG:{code}")
+
+        # A code picked or typed before any extent is followed at once. An
+        # extent already typed follows a finished code only: QGIS transforms
+        # it on every CRS change, and each keystroke of "21781" would have
+        # sent it through EPSG:2178 (measured: 8 km off at the end).
+        epsg.editingFinished.connect(retarget)
+        epsg.textChanged.connect(
+            lambda _text: dlg.get_widget("extent").isValid() or retarget()
+        )
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        values = dlg.get_values()
+        if self._run_action(
+            lambda: self._wait_for_save(lambda: self._put_gridset(values)),
+            translate("GwcTabMixin", "Failed to create gridset '{}'").format(
+                values["name"]
+            ),
+        ):
+            self.show_success_message(
+                translate("GwcTabMixin", "Gridset '{}' created.").format(values["name"])
+            )
+
+    def _delete_gridset(self, name):
+        """Delete a gridset no cached layer uses.
+
+        TODO(#1): no gridset delete in the library (row 84). Measured on 2.28.5
+        and 3.0.2: a DELETE of a gridset a layer uses answers 200, the layer
+        keeps naming it, and the WMTS capabilities of the whole server are then
+        a 400. So the layers are read first.
+        """
+        users = self._fetch_cancellable(
+            lambda task: self._gridset_users(name, task),
+            translate("GwcTabMixin", "Failed to read which layers use '{}'").format(
+                name
+            ),
+        )
+        if users is None:
+            return
+        if users:
+            self.show_warning_message(
+                translate(
+                    "GwcTabMixin",
+                    "Gridset '{}' is used by {}. Remove it from those layers first: "
+                    "deleted while in use, it stops the WMTS service of the whole "
+                    "server.",
+                ).format(name, ", ".join(users))
+            )
+            return
+        self._delete_many(
+            [
+                (
+                    name,
+                    lambda: self._raw_rest("delete", self._gridset_path(name)),
+                )
+            ],
+            self._load_gwc_layers,
+            # One gridset at a time: no plural forms to keep translated.
+            ask=lambda labels: translate("GwcTabMixin", "Delete gridset '{}'?").format(
+                name
+            ),
+            done=lambda labels: translate(
+                "GwcTabMixin", "Gridset '{}' deleted."
+            ).format(name),
+        )
 
     # -- Truncate / remove ----------------------------------------------------
 

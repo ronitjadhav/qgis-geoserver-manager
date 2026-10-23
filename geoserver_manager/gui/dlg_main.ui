@@ -147,6 +147,13 @@
                     </widget>
                   </item>
                   <item>
+                    <widget class="QPushButton" name="btn_extra">
+                      <property name="visible">
+                        <bool>false</bool>
+                      </property>
+                    </widget>
+                  </item>
+                  <item>
                     <spacer name="headerSpacer">
                       <property name="orientation">
                         <enum>Qt::Horizontal</enum>

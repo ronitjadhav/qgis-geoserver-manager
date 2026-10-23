@@ -13,6 +13,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   back, so the layer keeps working.
 - **Added.** Time and elevation dimensions on a vector layer, on the **Time**
   and **Elevation** tabs of its edit form.
+- **Added.** Gridsets of your own in the Tile Cache tab: view them, add one
+  for any CRS, and delete one no layer uses.
 
 ## 1.0.0 - 2026-10-08
 

@@ -49,6 +49,7 @@ AUTH = ("admin", "geoserver")
 WS = "gsm_live"
 LAYER = f"{WS}:archsites"
 VIEW = f"{WS}:live_view"
+GRIDSET = "gsm_live_26713"
 VIEW_SQL = (
     "SELECT g AS id, 'p' || g AS label,"
     " TIMESTAMP '2026-01-01' + g * INTERVAL '1 day' AS t, g * 100.0 AS z,"
@@ -167,6 +168,7 @@ class TestLiveGeoServer(unittest.TestCase):
         cls.connecting = list(cls.banners)
         # A run that stopped half-way left its workspace behind.
         cls.rest("delete", f"workspaces/{WS}", params={"recurse": "true"}, accept=404)
+        cls.dlg._raw_rest("delete", cls.dlg._gridset_path(GRIDSET), accept=(404,))
         # Server-wide settings the steps change, put back at the end.
         cls.server = {
             path: cls.rest("get", path).json()
@@ -181,6 +183,7 @@ class TestLiveGeoServer(unittest.TestCase):
             cls.rest(
                 "delete", f"workspaces/{WS}", params={"recurse": "true"}, accept=404
             )
+            cls.dlg._raw_rest("delete", cls.dlg._gridset_path(GRIDSET), accept=(404,))
             for path, settings in cls.server.items():
                 cls.rest("put", path, json=settings)
         cls.dlg.close()
@@ -619,6 +622,71 @@ class TestLiveGeoServer(unittest.TestCase):
             self.dlg._add_gwc_layer()
         self.assertEqual(len(self.said()), 1)
         self.assertIn(LAYER, self.dlg._gwc_layer_names())
+
+    def test_54_add_a_gridset(self):
+        with answering(
+            {"name": GRIDSET, "epsg": "26713", "levels": 10, "tile_size": 256}
+        ):
+            self.dlg._add_gridset()
+        self.assertEqual(self.said(), [f"Gridset '{GRIDSET}' created."])
+        xml = self.dlg._raw_rest("get", self.dlg._gridset_path(GRIDSET)).text
+        self.assertIn("<number>26713</number>", xml)
+        resolutions = xml[xml.index("<resolutions>") : xml.index("</resolutions>")]
+        self.assertEqual(resolutions.count("<double>"), 10)
+        with answering(None) as forms:
+            self.dlg._show_gridsets()
+        self.said()
+        self.assertEqual(forms.shown[0]["gridset"], GRIDSET)
+        self.assertEqual(forms.shown[0]["srs"], "EPSG:26713")
+
+    def cache_in(self, gridsets):
+        with answering({"gridsets": [[name, None, None] for name in gridsets]}):
+            self.dlg._show_gwc_layer_info(self.row("Tile Cache", LAYER))
+        self.said()
+        self.banners.clear()
+
+    def gone_gwc(self, name):
+        path = self.dlg._gridset_path(name)
+        return self.dlg._raw_rest("get", path, accept=(404,)).status_code == 404
+
+    def test_55_a_gridset_in_use_is_not_deleted(self):
+        self.cache_in([GRIDSET, "EPSG:4326", "EPSG:900913"])
+        tile = requests.get(
+            f"{URL}/gwc/service/wmts",
+            params={
+                "SERVICE": "WMTS",
+                "REQUEST": "GetTile",
+                "VERSION": "1.0.0",
+                "LAYER": LAYER,
+                "STYLE": "",
+                "TILEMATRIXSET": GRIDSET,
+                "TILEMATRIX": f"{GRIDSET}:0",
+                "TILEROW": 0,
+                "TILECOL": 0,
+                "FORMAT": "image/png",
+            },
+            auth=AUTH,
+            timeout=60,
+        )
+        self.assertEqual(tile.headers.get("content-type"), "image/png")
+        self.dlg._delete_gridset(GRIDSET)
+        (warning,) = [text for level, text in self.banners if level == "warning"]
+        self.assertIn(LAYER, warning)
+        # Deleted in use, it would turn the WMTS capabilities into a 400.
+        self.assertFalse(self.gone_gwc(GRIDSET))
+
+    def test_56_an_unused_gridset_is_deleted(self):
+        self.cache_in(["EPSG:4326", "EPSG:900913"])
+        self.dlg._delete_gridset(GRIDSET)
+        self.assertEqual(self.said(), [f"Gridset '{GRIDSET}' deleted."])
+        self.assertTrue(self.gone_gwc(GRIDSET))
+        capabilities = requests.get(
+            f"{URL}/gwc/service/wmts",
+            params={"SERVICE": "WMTS", "REQUEST": "GetCapabilities"},
+            auth=AUTH,
+            timeout=60,
+        )
+        self.assertEqual(capabilities.status_code, 200)
 
     # -- Coverage stores -----------------------------------------------------
 
