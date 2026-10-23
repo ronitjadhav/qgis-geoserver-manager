@@ -7,6 +7,7 @@ preview, style, add to QGIS, delete.
 Used as a mixin for GeoServerMainDialog.
 """
 
+import math
 import re
 from urllib.parse import quote, unquote, urlencode, urlsplit
 
@@ -519,6 +520,7 @@ class LayerTabMixin:
             "hours": translate("LayerTabMixin", "hours"),
             "minutes": translate("LayerTabMixin", "minutes"),
             "seconds": translate("LayerTabMixin", "seconds"),
+            "milliseconds": translate("LayerTabMixin", "milliseconds"),
         }
         fields = []
         for dimension in DIMENSIONS:
@@ -708,7 +710,7 @@ class LayerTabMixin:
                     resolution = float(values.get("elevation_resolution") or "")
                 except ValueError:
                     resolution = 0
-                if resolution <= 0:
+                if not math.isfinite(resolution) or resolution <= 0:
                     raise ValueError(
                         translate(
                             "LayerTabMixin",
