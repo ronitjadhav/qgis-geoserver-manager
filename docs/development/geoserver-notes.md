@@ -177,6 +177,20 @@ carries a `TODO(#1)` comment at the call site.
   the entries again, swaps the view's, reads the feature type back, and puts
   the old entries back on a failure. A new column appears at once, without a
   reset.
+- **Dimensions** (row 83 of #1; measured on 2.28.5, the live suite runs them on
+  3.0.2 too): a `time` and an `elevation` metadata entry on the feature type,
+  each a `dimensionInfo` with `enabled`, `attribute`, `endAttribute`,
+  `presentation` (`LIST`, `CONTINUOUS_INTERVAL`, `DISCRETE_INTERVAL`),
+  `resolution`, `units`, `unitSymbol` and `defaultValue` (`strategy` among
+  `MINIMUM`, `MAXIMUM`, `NEAREST`, `FIXED`, with a `referenceValue`). A time
+  resolution is in milliseconds: 86400000 shows as `P1D`. Off, the entry
+  stays with `enabled` false and the capabilities leave it out. A PUT of the
+  feature type without `metadata` keeps them. The same replace rule as for a
+  SQL view applies to a metadata PUT. **A wrong attribute is answered 200**:
+  the layer's dimensions then vanish from the capabilities, and a GetMap is
+  an exception. So the form offers only date and time attributes for time,
+  and numeric ones for elevation. The library's `FeatureType` models the
+  time dimension only, and sends it as the whole map.
 - **An emptied datastore description has to be sent as `""`.** The library leaves a
   `None` field out of the payload. A PUT without `description` keeps the old one.
   Measured on 2.28.5: "old text" survived a PUT with `description=None`, and `""`

@@ -51,6 +51,7 @@ LAYER = f"{WS}:archsites"
 VIEW = f"{WS}:live_view"
 VIEW_SQL = (
     "SELECT g AS id, 'p' || g AS label,"
+    " TIMESTAMP '2026-01-01' + g * INTERVAL '1 day' AS t, g * 100.0 AS z,"
     " ST_SetSRID(ST_MakePoint(7 + g * 0.1, 46 + g * 0.1), 4326) AS geom"
     " FROM generate_series(1, %n%) AS g"
 )
@@ -506,6 +507,34 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertIn("previous one", error)
         # The layer still reads, with the SQL it had.
         self.assertIn("extra", self.features()[0]["properties"])
+
+    def test_39c_serve_time_and_elevation(self):
+        with answering(
+            {
+                "time_enabled": True,
+                "time_attribute": "t",
+                "time_default": "MAXIMUM",
+                "elevation_enabled": True,
+                "elevation_attribute": "z",
+                "elevation_presentation": "DISCRETE_INTERVAL",
+                "elevation_resolution": "100",
+            }
+        ):
+            self.dlg._show_layer_info(self.row("Layers", "live_view"))
+        self.assertEqual(self.said(), ["Layer 'live_view' saved."])
+        capabilities = requests.get(
+            f"{URL}/{WS}/wms",
+            params={"service": "WMS", "version": "1.3.0", "request": "GetCapabilities"},
+            auth=AUTH,
+            timeout=60,
+        ).text
+        self.assertIn('<Dimension name="time" default="2026-01-06', capabilities)
+        self.assertIn(">100.0/500.0/100.0</Dimension>", capabilities)
+        # The SQL view is still there, beside the dimensions.
+        keys = sorted(e["@key"] for e in self.view()["metadata"]["entry"])
+        self.assertEqual(
+            keys, ["JDBC_VIRTUAL_TABLE", "cachingEnabled", "elevation", "time"]
+        )
 
     # -- Layer groups --------------------------------------------------------
 

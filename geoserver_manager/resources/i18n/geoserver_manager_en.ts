@@ -3328,564 +3328,771 @@ The settings page opens next. Enter the URL, user name and password of your GeoS
 </context><context>
     <name>LayerTabMixin</name>
     <message>
-        <location filename="../../gui/tab_layers.py" line="76" />
+        <location filename="../../gui/tab_layers.py" line="82" />
         <source>Vector</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="77" />
+        <location filename="../../gui/tab_layers.py" line="83" />
         <source>Raster</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="78" />
+        <location filename="../../gui/tab_layers.py" line="84" />
         <source>Cascaded WMS</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="79" />
+        <location filename="../../gui/tab_layers.py" line="85" />
         <source>Cascaded WMTS</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="112" />
+        <location filename="../../gui/tab_layers.py" line="127" />
         <source>Publish a Layer</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="113" />
+        <location filename="../../gui/tab_layers.py" line="128" />
         <source>Publish a table of a datastore, or a layer of this QGIS project</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="426" />
-        <location filename="../../gui/tab_layers.py" line="170" />
-        <location filename="../../gui/tab_layers.py" line="122" />
+        <location filename="../../gui/tab_layers.py" line="442" />
+        <location filename="../../gui/tab_layers.py" line="185" />
+        <location filename="../../gui/tab_layers.py" line="137" />
         <source>Workspace</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="129" />
+        <location filename="../../gui/tab_layers.py" line="144" />
         <source>Add to QGIS</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="134" />
+        <location filename="../../gui/tab_layers.py" line="149" />
         <source>Preview</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="139" />
+        <location filename="../../gui/tab_layers.py" line="154" />
         <source>Preview in a browser</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="144" />
+        <location filename="../../gui/tab_layers.py" line="159" />
         <source>Set style</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="149" />
+        <location filename="../../gui/tab_layers.py" line="164" />
         <source>Push style from QGIS</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="154" />
+        <location filename="../../gui/tab_layers.py" line="169" />
         <source>Update from the data</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="156" />
+        <location filename="../../gui/tab_layers.py" line="171" />
         <source>GeoServer re-reads the data and recomputes the bounds</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="163" />
+        <location filename="../../gui/tab_layers.py" line="178" />
         <source>Delete</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="169" />
+        <location filename="../../gui/tab_layers.py" line="184" />
         <source>Name</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="171" />
+        <location filename="../../gui/tab_layers.py" line="186" />
         <source>Type</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="427" />
-        <location filename="../../gui/tab_layers.py" line="172" />
+        <location filename="../../gui/tab_layers.py" line="443" />
+        <location filename="../../gui/tab_layers.py" line="187" />
         <source>Store</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="929" />
-        <location filename="../../gui/tab_layers.py" line="173" />
+        <location filename="../../gui/tab_layers.py" line="1219" />
+        <location filename="../../gui/tab_layers.py" line="188" />
         <source>Default style</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="182" />
+        <location filename="../../gui/tab_layers.py" line="197" />
         <source>Failed to load layers</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="334" />
+        <location filename="../../gui/tab_layers.py" line="350" />
         <source>Data</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="338" />
+        <location filename="../../gui/tab_layers.py" line="354" />
         <source>Layer name</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="341" />
+        <location filename="../../gui/tab_layers.py" line="357" />
         <source>Renaming keeps the data: GeoServer updates the layer groups and the tile cache that use it. Clients that ask for the old name stop finding it.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="350" />
+        <location filename="../../gui/tab_layers.py" line="366" />
         <source>Title</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="355" />
+        <location filename="../../gui/tab_layers.py" line="371" />
         <source>Abstract</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="361" />
+        <location filename="../../gui/tab_layers.py" line="377" />
         <source>Keywords</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="366" />
+        <location filename="../../gui/tab_layers.py" line="382" />
         <source>SRS (EPSG code)</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="370" />
+        <location filename="../../gui/tab_layers.py" line="386" />
         <source>The SRS GeoServer declares for the layer. Changing it recomputes the bounds.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="378" />
+        <location filename="../../gui/tab_layers.py" line="394" />
         <source>Projection policy</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="381" />
+        <location filename="../../gui/tab_layers.py" line="397" />
         <source>FORCE_DECLARED uses the declared SRS as it is. REPROJECT_TO_DECLARED reprojects from the data's own SRS. NONE keeps the data's own SRS.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="390" />
+        <location filename="../../gui/tab_layers.py" line="406" />
         <source>Enabled</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="392" />
+        <location filename="../../gui/tab_layers.py" line="408" />
         <source>Off: GeoServer stops serving the layer, and keeps it.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="399" />
+        <location filename="../../gui/tab_layers.py" line="415" />
         <source>Advertised</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="401" />
+        <location filename="../../gui/tab_layers.py" line="417" />
         <source>Off: the layer is not in the capabilities, but GeoServer still serves it to whoever names it.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="412" />
+        <location filename="../../gui/tab_layers.py" line="428" />
         <source>CQL filter</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="414" />
+        <location filename="../../gui/tab_layers.py" line="430" />
         <source>Optional, for example pop &gt; 1000</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="417" />
+        <location filename="../../gui/tab_layers.py" line="433" />
         <source>GeoServer serves only the features that match it. Empty for all.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="425" />
+        <location filename="../../gui/tab_layers.py" line="441" />
         <source>Native name</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="428" />
+        <location filename="../../gui/tab_layers.py" line="444" />
         <source>Native bounding box</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="432" />
+        <location filename="../../gui/tab_layers.py" line="448" />
         <source>Native format</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="433" />
+        <location filename="../../gui/tab_layers.py" line="449" />
         <source>Size in pixels</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="450" />
+        <location filename="../../gui/tab_layers.py" line="466" />
         <source>Attributes</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="452" />
+        <location filename="../../gui/tab_layers.py" line="468" />
         <source>Bands</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="460" />
+        <location filename="../../gui/tab_layers.py" line="476" />
         <source>SQL view</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="470" />
-        <source>SQL</source>
+        <location filename="../../gui/tab_layers.py" line="498" />
+        <source>A list of values</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="475" />
-        <source>One SELECT. Write a parameter as %name%: a request can then give it a value through viewparams.</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
-        <location filename="../../gui/tab_layers.py" line="483" />
-        <source>Geometry column</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
-        <location filename="../../gui/tab_layers.py" line="487" />
-        <source>Without one, GeoServer gives the geometry the type Geometry.</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
-        <location filename="../../gui/tab_layers.py" line="494" />
-        <source>Geometry type</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
-        <location filename="../../gui/tab_layers.py" line="501" />
-        <source>Key columns</source>
+        <location filename="../../gui/tab_layers.py" line="500" />
+        <source>A continuous interval</source>
         <translation type="unfinished" />
     </message>
     <message>
         <location filename="../../gui/tab_layers.py" line="504" />
-        <source>The columns that identify a feature. Without them, a feature gets a new id at every request.</source>
+        <source>An interval with a resolution</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="509" />
+        <source>The smallest value</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="510" />
+        <source>The largest value</source>
         <translation type="unfinished" />
     </message>
     <message>
         <location filename="../../gui/tab_layers.py" line="512" />
-        <source>Parameters</source>
+        <source>The value nearest to the reference</source>
         <translation type="unfinished" />
     </message>
     <message>
         <location filename="../../gui/tab_layers.py" line="515" />
-        <source>Parameter</source>
+        <source>The reference value</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="516" />
-        <source>Default value</source>
+        <location filename="../../gui/tab_layers.py" line="518" />
+        <source>weeks</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="517" />
-        <source>Validator</source>
+        <location filename="../../gui/tab_layers.py" line="519" />
+        <source>days</source>
         <translation type="unfinished" />
     </message>
     <message>
         <location filename="../../gui/tab_layers.py" line="520" />
-        <source>An empty validator gets GeoServer's default, ^[\w\d\s]+$: letters, digits and spaces only. Without a validator, a request could put any SQL into the view.</source>
+        <source>hours</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="533" />
-        <source>The details of '{}' could not be read. Refresh the list, then try again.</source>
+        <location filename="../../gui/tab_layers.py" line="521" />
+        <source>minutes</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1554" />
+        <location filename="../../gui/tab_layers.py" line="522" />
+        <source>seconds</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="523" />
+        <source>milliseconds</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="530" />
+        <source>Time</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="532" />
+        <source>Elevation</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="539" />
+        <source>Serve a time dimension</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="541" />
+        <source>Serve an elevation dimension</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="547" />
+        <source>Attribute</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
         <location filename="../../gui/tab_layers.py" line="551" />
-        <source>Unsupported layer type '{}'</source>
+        <source>The layer's date and time attributes.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1418" />
-        <location filename="../../gui/tab_layers.py" line="578" />
-        <source>Failed to load layer details</source>
+        <location filename="../../gui/tab_layers.py" line="555" />
+        <source>The layer's numeric attributes.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="613" />
-        <location filename="../../gui/tab_layers.py" line="586" />
-        <source>Layer '{}'</source>
+        <location filename="../../gui/tab_layers.py" line="562" />
+        <source>End attribute</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="587" />
-        <source>Cascaded through {type} store {ws}/{store}. Read-only: GeoServer's REST API cannot change a cascaded layer, only its web interface can.</source>
+        <location filename="../../gui/tab_layers.py" line="565" />
+        <source>None</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="568" />
+        <source>For a feature that covers a range: where the range ends.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="575" />
+        <source>Capabilities show</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="603" />
+        <location filename="../../gui/tab_layers.py" line="584" />
+        <source>Resolution</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="588" />
+        <source>For an interval with a resolution.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="594" />
+        <source>Resolution unit</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="605" />
+        <source>For an interval with a resolution, in the units below.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="612" />
+        <source>Units</source>
         <translation type="unfinished" />
     </message>
     <message>
         <location filename="../../gui/tab_layers.py" line="614" />
+        <source>EPSG:5030 is metres above the WGS 84 ellipsoid.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="621" />
+        <source>Unit symbol</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="774" />
+        <location filename="../../gui/tab_layers.py" line="628" />
+        <source>Default value</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="631" />
+        <source>What a request that names no value gets.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="638" />
+        <source>Reference value</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="641" />
+        <source>For the nearest or the reference value. A time in ISO 8601, such as 2026-01-01T00:00:00Z.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="647" />
+        <source>For the nearest or the reference value.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="683" />
+        <source>time</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="685" />
+        <source>elevation</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="689" />
+        <source>The {} dimension needs an attribute, and this layer has none it can use.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="700" />
+        <source>The {} dimension's default needs a reference value.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="715" />
+        <source>An elevation interval with a resolution needs a resolution above 0.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="728" />
+        <source>SQL</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="733" />
+        <source>One SELECT. Write a parameter as %name%: a request can then give it a value through viewparams.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="741" />
+        <source>Geometry column</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="745" />
+        <source>Without one, GeoServer gives the geometry the type Geometry.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="752" />
+        <source>Geometry type</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="759" />
+        <source>Key columns</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="762" />
+        <source>The columns that identify a feature. Without them, a feature gets a new id at every request.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="770" />
+        <source>Parameters</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="773" />
+        <source>Parameter</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="775" />
+        <source>Validator</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="778" />
+        <source>An empty validator gets GeoServer's default, ^[\w\d\s]+$: letters, digits and spaces only. Without a validator, a request could put any SQL into the view.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="791" />
+        <source>The details of '{}' could not be read. Refresh the list, then try again.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="1844" />
+        <location filename="../../gui/tab_layers.py" line="809" />
+        <source>Unsupported layer type '{}'</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="1708" />
+        <location filename="../../gui/tab_layers.py" line="836" />
+        <source>Failed to load layer details</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="878" />
+        <location filename="../../gui/tab_layers.py" line="844" />
+        <source>Layer '{}'</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="845" />
+        <source>Cascaded through {type} store {ws}/{store}. Read-only: GeoServer's REST API cannot change a cascaded layer, only its web interface can.</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="879" />
         <source>Published from {ws}/{store}.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="639" />
+        <location filename="../../gui/tab_layers.py" line="900" />
         <source>Failed to save layer '{}'</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="642" />
+        <location filename="../../gui/tab_layers.py" line="903" />
         <source>Layer '{}' saved.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="698" />
+        <location filename="../../gui/tab_layers.py" line="959" />
         <source>Layer '{}' already exists in '{}'.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="704" />
+        <location filename="../../gui/tab_layers.py" line="965" />
         <source>The SRS must be an EPSG code number, such as 3857 or 4326.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="738" />
+        <location filename="../../gui/tab_layers.py" line="1000" />
         <source>Layer '{}' saved, but not its SQL view: {}</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="792" />
+        <location filename="../../gui/tab_layers.py" line="1013" />
+        <source>Layer '{}' saved, but not its dimensions: {}</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_layers.py" line="1082" />
         <source>The SQL view was saved, but reading it back failed: {}</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="801" />
+        <location filename="../../gui/tab_layers.py" line="1091" />
         <source>GeoServer cannot run the new SQL, so the view keeps its previous one. {}</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="822" />
+        <location filename="../../gui/tab_layers.py" line="1112" />
         <source>'{}' is a cascaded layer: GeoServer's REST API cannot update it. Use GeoServer's web interface.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="843" />
+        <location filename="../../gui/tab_layers.py" line="1133" />
         <source>Failed to update '{}' from its data</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="848" />
+        <location filename="../../gui/tab_layers.py" line="1138" />
         <source>'{}' re-read from its data, bounds recomputed.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="907" />
+        <location filename="../../gui/tab_layers.py" line="1197" />
         <source>Failed to load styles for '{}'</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="914" />
+        <location filename="../../gui/tab_layers.py" line="1204" />
         <source>Global styles and the styles of workspace '{}'.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="920" />
+        <location filename="../../gui/tab_layers.py" line="1210" />
         <source>A cascaded WMS layer keeps the remote server's default style: you can set only its other styles.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="938" />
+        <location filename="../../gui/tab_layers.py" line="1228" />
         <source>Styles of '{}'</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="944" />
+        <location filename="../../gui/tab_layers.py" line="1234" />
         <source>Other styles</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="949" />
+        <location filename="../../gui/tab_layers.py" line="1239" />
         <source>Style</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="950" />
+        <location filename="../../gui/tab_layers.py" line="1240" />
         <source>The styles a client can also ask for. Empty for none.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="957" />
+        <location filename="../../gui/tab_layers.py" line="1247" />
         <source>Set styles</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="988" />
+        <location filename="../../gui/tab_layers.py" line="1278" />
         <source>Failed to set the styles of '{}'</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="991" />
+        <location filename="../../gui/tab_layers.py" line="1281" />
         <source>Styles of '{}' saved.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1005" />
+        <location filename="../../gui/tab_layers.py" line="1295" />
         <source>No style named {} on the server.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1037" />
+        <location filename="../../gui/tab_layers.py" line="1327" />
         <source>This QGIS project has no vector or raster layer to take a style from.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1044" />
+        <location filename="../../gui/tab_layers.py" line="1334" />
         <source>The plugin exports the layer's symbology as SLD and uploads it to workspace '{}'. A style of that name there is replaced: that is how you push a change made in QGIS.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1052" />
+        <location filename="../../gui/tab_layers.py" line="1342" />
         <source>A cascaded WMS layer keeps the remote server's default style: the style is uploaded, not assigned.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1061" />
+        <location filename="../../gui/tab_layers.py" line="1351" />
         <source>Make it the layer's default style</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1070" />
+        <location filename="../../gui/tab_layers.py" line="1360" />
         <source>Style '{}' from QGIS</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1075" />
+        <location filename="../../gui/tab_layers.py" line="1365" />
         <source>QGIS layer</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1085" />
+        <location filename="../../gui/tab_layers.py" line="1375" />
         <source>No project layer matches '{}' by name.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1092" />
+        <location filename="../../gui/tab_layers.py" line="1382" />
         <source>Style name</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1100" />
+        <location filename="../../gui/tab_layers.py" line="1390" />
         <source>Upload</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1111" />
+        <location filename="../../gui/tab_layers.py" line="1401" />
         <source>Could not export the symbology of '{}'</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1127" />
+        <location filename="../../gui/tab_layers.py" line="1417" />
         <source>Failed to upload the style of '{}'</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1134" />
+        <location filename="../../gui/tab_layers.py" line="1424" />
         <source>Style '{}' left as it is.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1140" />
+        <location filename="../../gui/tab_layers.py" line="1430" />
         <source>'{}' styled from '{}'.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1144" />
+        <location filename="../../gui/tab_layers.py" line="1434" />
         <source>Style '{}' uploaded to '{}'.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1201" />
+        <location filename="../../gui/tab_layers.py" line="1491" />
         <source>Replace the style?</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1202" />
+        <location filename="../../gui/tab_layers.py" line="1492" />
         <source>Style '{style}' already exists in '{workspace}'. Replacing it changes how every layer that uses it renders.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1257" />
+        <location filename="../../gui/tab_layers.py" line="1547" />
         <source>GeoServer advertises its WFS at {}, not at {} where the plugin connects, and QGIS would send the user name and password there. Check the Proxy base URL in the Global settings of the Server tab, or add the layer as WMS.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1408" />
+        <location filename="../../gui/tab_layers.py" line="1698" />
         <source>Could not open a browser for {}</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1450" />
+        <location filename="../../gui/tab_layers.py" line="1740" />
         <source>Could not build the preview of '{}'</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1477" />
+        <location filename="../../gui/tab_layers.py" line="1767" />
         <source>WFS loads the features themselves (editable, styled in QGIS). WMS and WMTS load rendered images. The user name and password come from the plugin's connection, not from the layer.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1486" />
+        <location filename="../../gui/tab_layers.py" line="1776" />
         <source>WMS and WMTS load rendered images; this layer has no features to serve over WFS. The user name and password come from the plugin's connection, not from the layer.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1493" />
+        <location filename="../../gui/tab_layers.py" line="1783" />
         <source>Add '{}' to QGIS</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1498" />
+        <location filename="../../gui/tab_layers.py" line="1788" />
         <source>Load as</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1507" />
+        <location filename="../../gui/tab_layers.py" line="1797" />
         <source>Add</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1522" />
+        <location filename="../../gui/tab_layers.py" line="1812" />
         <source>Could not add '{}' to QGIS</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1527" />
+        <location filename="../../gui/tab_layers.py" line="1817" />
         <source>'{}' added to the project as {}.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1571" />
+        <location filename="../../gui/tab_layers.py" line="1861" />
         <source>Are you sure you want to delete layer '{}'?</source>
         <translation type="unfinished" />
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_layers.py" line="1574" />
+        <location filename="../../gui/tab_layers.py" line="1864" />
         <source>Are you sure you want to delete %n layer(s)?</source>
         <translation>
             <numerusform>Are you sure you want to delete %n layer?</numerusform>
@@ -3893,12 +4100,12 @@ The settings page opens next. Enter the URL, user name and password of your GeoS
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1582" />
+        <location filename="../../gui/tab_layers.py" line="1872" />
         <source>Layer '{}' deleted.</source>
         <translation type="unfinished" />
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_layers.py" line="1583" />
+        <location filename="../../gui/tab_layers.py" line="1873" />
         <source>%n layer(s) deleted.</source>
         <translation>
             <numerusform>%n layer deleted.</numerusform>
@@ -3906,7 +4113,7 @@ The settings page opens next. Enter the URL, user name and password of your GeoS
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1588" />
+        <location filename="../../gui/tab_layers.py" line="1878" />
         <source>The published layer goes too; the table, file or remote layer behind it is not touched. GeoServer refuses while a layer group still uses the layer: remove it from the group first.</source>
         <translation type="unfinished" />
     </message>

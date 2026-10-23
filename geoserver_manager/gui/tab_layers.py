@@ -7,6 +7,7 @@ preview, style, add to QGIS, delete.
 Used as a mixin for GeoServerMainDialog.
 """
 
+import math
 import re
 from urllib.parse import quote, unquote, urlencode, urlsplit
 
@@ -19,9 +20,13 @@ from geoserver_manager.gui.dlg_preview import LayerPreviewDialog, load_error
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
 from geoserver_manager.gui.scope import PENDING
 from geoserver_manager.toolbelt.payload import (
+    DIMENSIONS,
     GEOMETRY_TYPES,
+    TIME_UNITS,
     VIEW_FIELDS,
     bbox_text,
+    dimension_attributes,
+    dimension_form_values,
     keyword_list,
     metadata_entries,
     text_of,
@@ -29,6 +34,7 @@ from geoserver_manager.toolbelt.payload import (
     view_form_values,
     view_of,
     virtual_table,
+    with_dimensions,
     with_view,
     words,
 )
@@ -78,6 +84,15 @@ def _kind_label(kind):
         WMS: translate("LayerTabMixin", "Cascaded WMS"),
         WMTS: translate("LayerTabMixin", "Cascaded WMTS"),
     }.get(kind, kind)
+
+
+def _dimension_values(detail):
+    """A vector layer's dimensions as the form shows them, and the attributes
+    each one can use (`time_choices`, `elevation_choices`)."""
+    values = dimension_form_values(detail)
+    for dimension in DIMENSIONS:
+        values[f"{dimension}_choices"] = dimension_attributes(detail, dimension)
+    return values
 
 
 def _origin(url):
@@ -321,9 +336,10 @@ class LayerTabMixin:
             "bbox": bounds,
             "attributes": attribute_text,
             **({} if view is None else view_form_values(view)),
+            **(_dimension_values(detail) if row_data[2] == VECTOR else {}),
         }
 
-    def _layer_fields(self, kind=VECTOR, view=False):
+    def _layer_fields(self, kind=VECTOR, values=None):
         """The layer edit form: what GeoServer lets a partial PUT change on the
         resource first, read-only details on the Data tab, and a SQL view's
         own fields on a tab of their own.
@@ -456,10 +472,252 @@ class LayerTabMixin:
                     "group": data,
                 }
             )
-        if view:
+        if values is not None and "sql" in values:  # a SQL view's layer
             group = translate("LayerTabMixin", "SQL view")
             fields += [dict(field, group=group) for field in self._view_fields()]
+        if kind == VECTOR and values is not None:
+            fields += self._dimension_fields(values)
         return fields
+
+    def _dimension_fields(self, values):
+        """The Time and Elevation tabs of a vector layer.
+
+        :param values: the form's prefill, with the attributes each dimension
+            can use. A stored value is always among the options: the combo
+            would show another one, and an untouched Save would send it.
+        """
+
+        def options(choices, key):
+            stored = values.get(key)
+            known = [
+                choice[1] if isinstance(choice, tuple) else choice for choice in choices
+            ]
+            return list(choices) + ([stored] if stored and stored not in known else [])
+
+        presentations = [
+            (translate("LayerTabMixin", "A list of values"), "LIST"),
+            (
+                translate("LayerTabMixin", "A continuous interval"),
+                "CONTINUOUS_INTERVAL",
+            ),
+            (
+                translate("LayerTabMixin", "An interval with a resolution"),
+                "DISCRETE_INTERVAL",
+            ),
+        ]
+        strategies = [
+            (translate("LayerTabMixin", "The smallest value"), "MINIMUM"),
+            (translate("LayerTabMixin", "The largest value"), "MAXIMUM"),
+            (
+                translate("LayerTabMixin", "The value nearest to the reference"),
+                "NEAREST",
+            ),
+            (translate("LayerTabMixin", "The reference value"), "FIXED"),
+        ]
+        units = {
+            "weeks": translate("LayerTabMixin", "weeks"),
+            "days": translate("LayerTabMixin", "days"),
+            "hours": translate("LayerTabMixin", "hours"),
+            "minutes": translate("LayerTabMixin", "minutes"),
+            "seconds": translate("LayerTabMixin", "seconds"),
+            "milliseconds": translate("LayerTabMixin", "milliseconds"),
+        }
+        fields = []
+        for dimension in DIMENSIONS:
+            start = len(fields)
+            time = dimension == "time"
+            group = (
+                translate("LayerTabMixin", "Time")
+                if time
+                else translate("LayerTabMixin", "Elevation")
+            )
+            attributes = values.get(f"{dimension}_choices") or []
+            fields += [
+                {
+                    "key": f"{dimension}_enabled",
+                    "label": (
+                        translate("LayerTabMixin", "Serve a time dimension")
+                        if time
+                        else translate("LayerTabMixin", "Serve an elevation dimension")
+                    ),
+                    "type": "checkbox",
+                },
+                {
+                    "key": f"{dimension}_attribute",
+                    "label": translate("LayerTabMixin", "Attribute"),
+                    "type": "combo",
+                    "options": options(attributes, f"{dimension}_attribute"),
+                    "help": (
+                        translate(
+                            "LayerTabMixin", "The layer's date and time attributes."
+                        )
+                        if time
+                        else translate(
+                            "LayerTabMixin", "The layer's numeric attributes."
+                        )
+                    ),
+                },
+                {
+                    "key": f"{dimension}_end_attribute",
+                    "label": translate("LayerTabMixin", "End attribute"),
+                    "type": "combo",
+                    "options": options(
+                        [(translate("LayerTabMixin", "None"), "")] + attributes,
+                        f"{dimension}_end_attribute",
+                    ),
+                    "help": translate(
+                        "LayerTabMixin",
+                        "For a feature that covers a range: where the range ends.",
+                    ),
+                },
+                {
+                    "key": f"{dimension}_presentation",
+                    "label": translate("LayerTabMixin", "Capabilities show"),
+                    "type": "combo",
+                    "options": options(presentations, f"{dimension}_presentation"),
+                },
+            ]
+            if time:
+                fields += [
+                    {
+                        "key": "time_resolution",
+                        "label": translate("LayerTabMixin", "Resolution"),
+                        "type": "spinbox",
+                        "min": 1,
+                        "max": 1_000_000,
+                        "help": translate(
+                            "LayerTabMixin", "For an interval with a resolution."
+                        ),
+                    },
+                    {
+                        "key": "time_resolution_unit",
+                        "label": translate("LayerTabMixin", "Resolution unit"),
+                        "type": "combo",
+                        "options": [(units[unit], unit) for unit, _ in TIME_UNITS],
+                    },
+                ]
+            else:
+                fields += [
+                    {
+                        "key": "elevation_resolution",
+                        "label": translate("LayerTabMixin", "Resolution"),
+                        "type": "text",
+                        "help": translate(
+                            "LayerTabMixin",
+                            "For an interval with a resolution, in the units below.",
+                        ),
+                    },
+                    {
+                        "key": "elevation_units",
+                        "label": translate("LayerTabMixin", "Units"),
+                        "type": "text",
+                        "help": translate(
+                            "LayerTabMixin",
+                            "EPSG:5030 is metres above the WGS 84 ellipsoid.",
+                        ),
+                    },
+                    {
+                        "key": "elevation_unit_symbol",
+                        "label": translate("LayerTabMixin", "Unit symbol"),
+                        "type": "text",
+                    },
+                ]
+            fields += [
+                {
+                    "key": f"{dimension}_default",
+                    "label": translate("LayerTabMixin", "Default value"),
+                    "type": "combo",
+                    "options": options(strategies, f"{dimension}_default"),
+                    "help": translate(
+                        "LayerTabMixin",
+                        "What a request that names no value gets.",
+                    ),
+                },
+                {
+                    "key": f"{dimension}_reference",
+                    "label": translate("LayerTabMixin", "Reference value"),
+                    "type": "text",
+                    "help": (
+                        translate(
+                            "LayerTabMixin",
+                            "For the nearest or the reference value. A time in "
+                            "ISO 8601, such as 2026-01-01T00:00:00Z.",
+                        )
+                        if time
+                        else translate(
+                            "LayerTabMixin",
+                            "For the nearest or the reference value.",
+                        )
+                    ),
+                },
+            ]
+            fields[start:] = [dict(field, group=group) for field in fields[start:]]
+        return fields
+
+    @staticmethod
+    def _dimensions_changed(before, after):
+        """Whether the form changed a dimension. Pure.
+
+        A dimension off before and after is unchanged: its fields are not
+        saved, and an empty attribute reads back as the combo's first one.
+        """
+        for dimension in DIMENSIONS:
+            on = f"{dimension}_enabled"
+            if on not in before or not (before[on] or after.get(on)):
+                continue
+            if any(
+                before[key] != after.get(key)
+                for key in before
+                if key.startswith(f"{dimension}_") and not key.endswith("_choices")
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _check_dimensions(values):
+        """Refuse a dimension GeoServer would store and then break on. Pure."""
+        for dimension in DIMENSIONS:
+            if not values.get(f"{dimension}_enabled"):
+                continue
+            name = (
+                translate("LayerTabMixin", "time")
+                if dimension == "time"
+                else translate("LayerTabMixin", "elevation")
+            )
+            if not values.get(f"{dimension}_attribute"):
+                raise ValueError(
+                    translate(
+                        "LayerTabMixin",
+                        "The {} dimension needs an attribute, and this layer has "
+                        "none it can use.",
+                    ).format(name)
+                )
+            if (
+                values.get(f"{dimension}_default") in ("NEAREST", "FIXED")
+                and not (values.get(f"{dimension}_reference") or "").strip()
+            ):
+                raise ValueError(
+                    translate(
+                        "LayerTabMixin",
+                        "The {} dimension's default needs a reference value.",
+                    ).format(name)
+                )
+            if (
+                dimension == "elevation"
+                and values.get("elevation_presentation") == "DISCRETE_INTERVAL"
+            ):
+                try:
+                    resolution = float(values.get("elevation_resolution") or "")
+                except ValueError:
+                    resolution = 0
+                if not math.isfinite(resolution) or resolution <= 0:
+                    raise ValueError(
+                        translate(
+                            "LayerTabMixin",
+                            "An elevation interval with a resolution needs a "
+                            "resolution above 0.",
+                        )
+                    )
 
     def _view_fields(self, visible=True):
         """A SQL view's fields: the publish form's, and a view's edit form's."""
@@ -609,25 +867,28 @@ class LayerTabMixin:
                 bands=coverage.get("bands", ""),
             )
         before = dict(values)
+
+        def check(after):
+            self._check_dimensions(after)
+            self._check_layer_edit(
+                ws_name, self._layer_changes(before, after, kind)[0] or {}
+            )
+
         dlg = ResourceFormDialog(
             title=translate("LayerTabMixin", "Layer '{}'").format(name),
             description=translate(
                 "LayerTabMixin", "Published from {ws}/{store}."
             ).format(ws=ws_name, store=store),
-            fields=self._layer_fields(kind, view="sql" in values),
+            fields=self._layer_fields(kind, values=values),
             values=values,
             parent=self,
-            validate=self._form_check(
-                lambda after: self._check_layer_edit(
-                    ws_name, self._layer_changes(before, after, kind)[0] or {}
-                )
-            ),
+            validate=self._form_check(check),
         )
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
         after = dlg.get_values()
         if self._layer_changes(before, after, kind)[0] is None and not (
-            self._view_changed(before, after)
+            self._view_changed(before, after) or self._dimensions_changed(before, after)
         ):
             return  # nothing changed: no request
         if self._run_action(
@@ -728,17 +989,46 @@ class LayerTabMixin:
                     {"recalculate": "nativebbox,latlonbbox"} if recalculate else None
                 ),
             )
+        saved = body is not None
         if self._view_changed(before, after):
             try:
                 self._save_view(ws_name, store, after)
             except Exception as error:
-                if body is None:
+                if not saved:
                     raise
                 raise PartlySaved(
                     translate(
                         "LayerTabMixin", "Layer '{}' saved, but not its SQL view: {}"
                     ).format(after["name"], self._error_text(error))
                 ) from error
+            saved = True
+        if self._dimensions_changed(before, after):
+            try:
+                self._check_dimensions(after)
+                self._save_dimensions(ws_name, store, after)
+            except Exception as error:
+                if not saved:
+                    raise
+                raise PartlySaved(
+                    translate(
+                        "LayerTabMixin", "Layer '{}' saved, but not its dimensions: {}"
+                    ).format(after["name"], self._error_text(error))
+                ) from error
+
+    def _save_dimensions(self, ws_name, store, values):
+        """PUT the layer's time and elevation, keeping its other metadata.
+
+        TODO(#1): the library's FeatureType models the time dimension only,
+        and writes it as the whole metadata map (row 83). Measured on 2.28.5:
+        a metadata PUT replaces the map, so that would drop a SQL view and the
+        elevation. Workaround: read the entries again, swap the dimensions'.
+        """
+        path = self._resource_path(ws_name, VECTOR, store, values["name"])
+        current = self._raw_rest("get", path).json().get("featureType") or {}
+        entries = with_dimensions(metadata_entries(current), values)
+        self._raw_rest(
+            "put", path, json={"featureType": {"metadata": {"entry": entries}}}
+        )
 
     @staticmethod
     def _view_changed(before, after):
