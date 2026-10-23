@@ -4,3 +4,6 @@ contact_links:
   - name: Documentation
     url: https://geoserver-manager.ronit.io/
     about: Check the user guide and troubleshooting steps before submitting an issue.
+  - name: Security vulnerability
+    url: https://github.com/ronitjadhav/qgis-geoserver-manager/security/advisories/new
+    about: Report it privately, never in a public issue.

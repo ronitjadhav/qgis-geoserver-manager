@@ -144,7 +144,7 @@ jobs:
   release:
     name: "🚀 Release on tag"
     runs-on: ubuntu-latest
-    # holds the OSGeo secrets: only version tags reach it, after a maintainer approves
+    # holds the upload secrets: only version tags reach it, after a maintainer approves
     environment: plugins-qgis-org
     permissions:
       contents: write
@@ -206,11 +206,21 @@ jobs:
           generate_release_notes: true
 
       - name: Deploy plugin
-        run: >-
-          qgis-plugin-ci
-          release ${GITHUB_REF/refs\/tags\//}
-          --allow-uncommitted-changes
-          --create-plugin-repo
-          --github-token ${{ secrets.GITHUB_TOKEN }}
-          --osgeo-username ${{ secrets.OSGEO_USER }}
-          --osgeo-password ${{ secrets.OSGEO_PASSWORD }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QGIS_PLUGIN_TOKEN: ${{ secrets.QGIS_PLUGIN_TOKEN }}
+          OSGEO_USER: ${{ secrets.OSGEO_USER }}
+          OSGEO_PASSWORD: ${{ secrets.OSGEO_PASSWORD }}
+        run: |
+          # The plugin's upload token; the account password only until the
+          # token is in the environment, then its two secrets go.
+          if [ -n "$QGIS_PLUGIN_TOKEN" ]; then
+            upload=(--qgis-token "$QGIS_PLUGIN_TOKEN")
+          else
+            upload=(--osgeo-username "$OSGEO_USER" --osgeo-password "$OSGEO_PASSWORD")
+          fi
+          qgis-plugin-ci release "${GITHUB_REF/refs\/tags\//}" \
+            --allow-uncommitted-changes \
+            --create-plugin-repo \
+            --github-token "$GITHUB_TOKEN" \
+            "${upload[@]}"

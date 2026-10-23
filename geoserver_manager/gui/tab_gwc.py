@@ -13,9 +13,12 @@ loses its class). Every write here is therefore XML: GET `.xml`, edit the
 document, PUT `.xml`, which round-trips byte for byte. Reads stay JSON.
 """
 
-import xml.etree.ElementTree as ElementTree
+# The XML is the user's own GeoServer's, or the user's own filters, and expat
+# refuses entity expansion; ElementTree never fetches an external entity.
+# escape() parses nothing.
+import xml.etree.ElementTree as ElementTree  # nosec B405
 from urllib.parse import quote
-from xml.sax.saxutils import escape
+from xml.sax.saxutils import escape  # nosec B406
 
 from qgis.core import Qgis
 from qgis.PyQt import sip
@@ -243,7 +246,7 @@ class GwcTabMixin:
         """
         base = self.gs.rest_service.gwc_endpoints.base_url
         text = self._raw_rest("get", f"{base}/gridsets/{quote(name, safe='')}.xml").text
-        number = ElementTree.fromstring(text).findtext("srs/number")
+        number = ElementTree.fromstring(text).findtext("srs/number")  # nosec B314
         return f"EPSG:{number}" if number else None
 
     def _uncached_layer_names(self):
@@ -334,7 +337,7 @@ class GwcTabMixin:
         if isinstance(xml_text, str):
             # fromstring() refuses a str that carries an encoding declaration
             xml_text = xml_text.encode("utf-8")
-        return ElementTree.fromstring(xml_text)
+        return ElementTree.fromstring(xml_text)  # nosec B314
 
     @staticmethod
     def _gwc_form_values(xml_text):
@@ -481,7 +484,7 @@ class GwcTabMixin:
         answers a misspelt one with a bare 500 naming only the element.
         """
         try:
-            wrapper = ElementTree.fromstring(
+            wrapper = ElementTree.fromstring(  # nosec B314
                 f"<parameterFilters>{text or ''}</parameterFilters>"
             )
         except ElementTree.ParseError as error:

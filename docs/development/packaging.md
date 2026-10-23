@@ -70,8 +70,13 @@ For a tag `X.Y.Z`, which must be SemVer:
    maintainer's approval: open the run in the *Actions* tab and approve the
    `plugins-qgis-org` deployment. The job then builds the zip and creates the
    GitHub release. It publishes to the
-   [QGIS plugin repository](https://plugins.qgis.org/) with the `OSGEO_USER`
-   and `OSGEO_PASSWORD` secrets of that environment. The repository scans each
+   [QGIS plugin repository](https://plugins.qgis.org/) with the plugin's upload
+   token, the `QGIS_PLUGIN_TOKEN` secret of that environment. A maintainer
+   creates the token on the plugin's page there, under *Tokens*. Until that
+   secret exists, the job uploads with the OSGeo account in the `OSGEO_USER`
+   and `OSGEO_PASSWORD` secrets. A first upload always does: a token belongs
+   to a plugin that is already there. Once a release went out with the token,
+   delete those two secrets. The repository scans each
    version and holds it until a staff member approves it, usually within one
    working day.
 

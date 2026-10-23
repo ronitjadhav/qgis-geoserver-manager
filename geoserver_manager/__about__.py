@@ -97,25 +97,3 @@ __version_info__: tuple = tuple(
         for num in __version__.replace("-", ".", 1).split(".")
     ]
 )
-
-# #############################################################################
-# ##### Main #######################
-# ##################################
-if __name__ == "__main__":
-    plugin_md = plugin_metadata_as_dict()
-    assert isinstance(plugin_md, dict)
-    assert plugin_md.get("general").get("name") == __title__
-    print(f"Plugin: {__title__}")
-    print(f"By: {__author__}")
-    print(f"Version: {__version__}")
-    print(f"Description: {__summary__}")
-    print(f"Icon: {__icon_path__}")
-    print(
-        "For: %s > QGIS > %s"
-        % (
-            plugin_md.get("general").get("qgisminimumversion"),
-            plugin_md.get("general").get("qgismaximumversion"),
-        )
-    )
-    print(__title_clean__)
-    print(f"Depends on other plugins: {__plugin_dependencies__}")
