@@ -2,8 +2,8 @@ name: "🌍 Live GeoServer"
 
 # The other suites run against fakes: fast, but blind to what a GeoServer
 # release changes. This one drives every tab against the real thing, the
-# latest 2.x and 3.x releases, so a new release that breaks the plugin shows
-# here within a week.
+# latest 2.x and 3.x releases of GeoServer and of GeoServer Cloud (both its
+# catalogs), so a new release that breaks the plugin shows here within a week.
 
 on:
   schedule:
@@ -14,6 +14,10 @@ on:
     inputs:
       versions:
         description: "GeoServer image tags, separated by spaces. Empty: the latest 2.x and 3.x releases."
+        required: false
+        default: ""
+      cloud_versions:
+        description: "GeoServer Cloud versions, separated by spaces. Empty: the latest 2.x and 3.x releases."
         required: false
         default: ""
 
@@ -123,3 +127,70 @@ jobs:
           cd /home/root/
           . .venv/bin/activate
           xvfb-run python3 -m pytest -v tests/qgis/test_live_geoserver.py
+
+  cloud-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.pick.outputs.versions }}
+
+    steps:
+      - name: Pick the GeoServer Cloud versions
+        id: pick
+        env:
+          WANTED: ${{ inputs.cloud_versions }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os, re, urllib.request
+
+          wanted = os.environ.get("WANTED", "").split()
+          if not wanted:
+              request = urllib.request.Request(
+                  "https://api.github.com/repos/geoserver/geoserver-cloud/releases?per_page=30",
+                  headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"]},
+              )
+              with urllib.request.urlopen(request, timeout=60) as answer:
+                  releases = json.load(answer)
+              tags = [
+                  release["tag_name"][1:]
+                  for release in releases
+                  if not release["prerelease"]
+                  and re.fullmatch(r"v\d+(\.\d+)+", release["tag_name"])
+              ]
+              number = lambda tag: tuple(map(int, tag.split(".")))
+              # A major without a release (or no more) shrinks the matrix.
+              wanted = []
+              for major in (2, 3):
+                  latest = max(
+                      (tag for tag in tags if number(tag)[0] == major),
+                      key=number,
+                      default=None,
+                  )
+                  if latest:
+                      wanted.append(latest)
+          print("versions=" + json.dumps(wanted))
+          EOF
+
+  cloud:
+    needs: cloud-versions
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud: ${{ fromJSON(needs.cloud-versions.outputs.versions) }}
+        catalog: [datadir, pgconfig]
+
+    name: "GeoServer Cloud ${{ matrix.cloud }} (${{ matrix.catalog }})"
+
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v7
+
+      # Cloud's own compose files, its stack, a PostGIS and the suite in a
+      # QGIS container: all in one script, to run the same way by hand.
+      - name: Run the live suite
+        env:
+          VERSION: ${{ matrix.cloud }}
+          CATALOG: ${{ matrix.catalog }}
+        run: .github/cloud/run_live.sh "$VERSION" "$CATALOG"

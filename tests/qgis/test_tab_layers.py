@@ -2994,6 +2994,45 @@ class TestDimensions(unittest.TestCase):
         self.assertEqual(keys, ["cachingEnabled", "time", "elevation"])
 
 
+class TestQualifiedWmts(unittest.TestCase):
+    def test_the_qualified_name_is_asked_for_when_the_bare_one_is_not_there(self):
+        """GeoServer Cloud 3.0.2 names a workspace's tile layers qualified on
+        its endpoint: the bare name was "Tile layer or tile matrix set not
+        found". GeoServer and Cloud 2.28.6 name them bare there."""
+        uri, _ = GeoServerMainDialog._layer_uri(
+            "WMTS", "http://gs/geoserver", "topp:states", qualified_tiles=True
+        )
+        self.assertIn("layers=topp:states&", uri)
+        self.assertIn("url=http://gs/geoserver/topp/gwc/service/wmts", uri)
+        uri, _ = GeoServerMainDialog._layer_uri(
+            "WMTS", "http://gs/geoserver", "topp:states"
+        )
+        self.assertIn("layers=states&", uri)
+
+    def test_a_bare_name_qgis_cannot_find_is_tried_qualified_on_cloud_only(self):
+        dlg = SyncDialog()
+        dlg.plg_settings = FakePrefs(url="http://gs/geoserver")
+        tried = []
+
+        class Layer:
+            def __init__(self, uri, title, provider):
+                tried.append(uri)
+
+            def isValid(self):
+                return "layers=topp:states&" in tried[-1]
+
+        with patch.object(tab_layers, "QgsRasterLayer", Layer):
+            dlg._server_layer("WMTS", "topp:states", "states")
+            self.assertEqual(len(tried), 1)  # GeoServer: its error stands
+            dlg.gs_cloud = True
+            layer = dlg._server_layer("WMTS", "topp:states", "states")
+        self.assertTrue(layer.isValid())
+        self.assertEqual(
+            [("layers=states&" in u, "layers=topp:states&" in u) for u in tried[1:]],
+            [(True, False), (False, True)],
+        )
+
+
 # ############################################################################
 # ####### Stand-alone run ########
 # ################################

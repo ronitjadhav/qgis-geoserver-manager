@@ -561,7 +561,7 @@ class TestNamespaceAndOtherServices(unittest.TestCase):
             )
         values["wfs_max_features"] = 0
         values.update(changes)
-        self.dlg._save_workspace_and_wms(
+        return self.dlg._save_workspace_and_wms(
             values, workspace_name, False, had, "http://ne.org"
         )
 
@@ -588,6 +588,16 @@ class TestNamespaceAndOtherServices(unittest.TestCase):
         self.assertEqual(
             put[2]["json"],
             {"namespace": {"uri": "http://example.org/ne", "isolated": False}},
+        )
+
+    def test_on_cloud_a_changed_uri_says_that_wfs_needs_a_catalog_reload(self):
+        """Cloud's WFS answered "Feature type unknown" for every layer of the
+        workspace until POST /rest/reload (Cloud 3.0.2)."""
+        self.assertFalse(self.save("ne", {}, uri="http://example.org/ne"))
+        self.dlg.gs_cloud = True
+        self.assertFalse(self.save("ne", {}))  # the URI did not change
+        self.assertIn(
+            "catalog reload", self.save("ne", {}, uri="http://example.org/ne")
         )
 
     def test_an_isolated_workspace_stays_isolated_when_its_uri_changes(self):
