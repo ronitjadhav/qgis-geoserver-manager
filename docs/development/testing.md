@@ -42,6 +42,31 @@ file lacks:
 python scripts/update_translations.py
 ```
 
+## Against a real GeoServer
+
+The two suites never reach a server. `tests/qgis/test_live_geoserver.py` does.
+It drives every tab through the handler a click reaches, with the real form
+filled and saved. Then it reads the result back from GeoServer. It runs only when
+`GSM_LIVE_URL` names a GeoServer with its demo data. That GeoServer must reach a
+PostGIS as host `postgis`, which the [docker sandbox](environment.md) gives:
+
+```bash
+GSM_LIVE_URL=http://localhost:8080/geoserver QT_QPA_PLATFORM=offscreen \
+    python -m pytest tests/qgis/test_live_geoserver.py
+```
+
+Everything it creates is in the workspace `gsm_live`, which it deletes at the
+end. The server-wide settings it changes are set back. The *Live GeoServer*
+workflow runs it every Monday against the latest 2.x and 3.x releases of
+GeoServer. A release that changes an answer shows within a week. Run the
+workflow by hand before a minor release, from the *Actions* tab. Its
+*versions* field takes other image tags, such as `2.27.6`.
+
+When a new GeoServer series comes out, the first step fails: the dialog warns
+that the series is not tested. Run the suite against it and fix what fails.
+Then add the series to `_TESTED_SERIES` in `gui/dlg_main.py`, and to the table
+of supported versions in the user guide.
+
 ## How the tests are written
 
 - **A fix ships with a test that fails without it.** Run the new test against
