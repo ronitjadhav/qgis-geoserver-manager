@@ -207,7 +207,7 @@ class GwcTabMixin:
         return sorted(str(name) for name in self._as_list(payload))
 
     def _gwc_layer_detail(self, name):
-        """The GeoServerLayer document: enabled, gridSubsets, mimeFormats, …"""
+        """The GeoServerLayer (or standalone wmsLayer) document: gridSubsets, …"""
         workspace, _, layer = name.rpartition(":")
         if workspace:
             payload = self._check(self.gs.get_gwc_layer(workspace, layer))
@@ -221,7 +221,7 @@ class GwcTabMixin:
                     summarise_body(str(payload))
                 )
             )
-        return payload.get("GeoServerLayer") or {}
+        return payload.get("GeoServerLayer") or payload.get("wmsLayer") or {}
 
     def _gwc_layer_xml(self, name):
         """The same document as XML: the only form a PUT accepts.
