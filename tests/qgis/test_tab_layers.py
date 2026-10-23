@@ -14,6 +14,7 @@ Usage from the repo root folder:
 # standard library
 import shutil
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from qgis.PyQt.QtWidgets import QDialog
@@ -2691,6 +2692,208 @@ class TestPreviewInBrowser(unittest.TestCase):
             dlg._open_in_browser("http://gs/geoserver/wms")
         self.assertEqual(len(warnings), 1)
         self.assertIn("http://gs/geoserver/wms", warnings[0])
+
+
+class SqlViewGS:
+    """A server with one database store: the REST calls of a SQL view."""
+
+    class rest_service:  # noqa: N801 (the client's attribute name)
+        class rest_endpoints:  # noqa: N801
+            base_url = "/rest"
+
+            @staticmethod
+            def featuretypes(ws, ds):
+                return f"/rest/workspaces/{ws}/datastores/{ds}/featuretypes.json"
+
+            @staticmethod
+            def featuretype(ws, ds, name):
+                return f"/rest/workspaces/{ws}/datastores/{ds}/featuretypes/{name}.json"
+
+        @staticmethod
+        def resource_exists(path):
+            return False
+
+
+class Answer:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def json(self):
+        return self.payload
+
+
+SQL_VALUES = {
+    "source": tab_layers_publish._SOURCE_SQL,
+    "workspace": "topp",
+    "datastore": "pg",
+    "view_name": "pts",
+    "epsg": "4326",
+    "sql": "SELECT id, geom FROM t WHERE n < %n%",
+    "geometry_column": "geom",
+    "geometry_type": "Point",
+    "key_columns": ["id"],
+    "parameters": [["n", "5", ""]],
+    "title": "Points",
+    "abstract": "",
+    "keywords": [],
+}
+STORED = {
+    "name": "pts",
+    "nativeName": "pts",
+    "srs": "EPSG:4326",
+    "metadata": {
+        "entry": [
+            {"@key": "cachingEnabled", "$": "true"},
+            {
+                "@key": "JDBC_VIRTUAL_TABLE",
+                "virtualTable": {
+                    "name": "pts",
+                    "sql": "SELECT id, geom FROM t\n",
+                    "escapeSql": False,
+                    "keyColumn": "id",
+                    "geometry": {"name": "geom", "type": "Point", "srid": 4326},
+                },
+            },
+        ]
+    },
+}
+
+
+class TestSqlView(unittest.TestCase):
+    def setUp(self):
+        self.dlg = SyncDialog()
+        self.dlg.gs = SqlViewGS()
+        self.sent = []
+        self.dlg._get_datastore = lambda ws, ds: (
+            {"connectionParameters": {"entry": {"dbtype": "postgis"}}},
+            200,
+        )
+
+    def record(self, answers):
+        """_raw_rest answering GETs in turn, and noting every call."""
+
+        def raw_rest(method, path, **kwargs):
+            self.sent.append((method, path, kwargs.get("json")))
+            if method == "get":
+                answer = answers.pop(0)
+                if isinstance(answer, Exception):
+                    raise answer
+                return Answer({"featureType": answer})
+            return Answer({})
+
+        self.dlg._raw_rest = raw_rest
+
+    def test_a_view_is_published_with_a_validator_on_each_parameter(self):
+        self.record([])
+        self.dlg._publish_sql_view(dict(SQL_VALUES))
+        ((method, path, body),) = self.sent
+        self.assertEqual(method, "post")
+        self.assertEqual(path, "/rest/workspaces/topp/datastores/pg/featuretypes.json")
+        feature_type = body["featureType"]
+        self.assertEqual(feature_type["name"], "pts")
+        self.assertEqual(feature_type["srs"], "EPSG:4326")
+        self.assertEqual(feature_type["title"], "Points")
+        self.assertNotIn("abstract", feature_type)
+        (entry,) = feature_type["metadata"]["entry"]
+        view = entry["virtualTable"]
+        self.assertEqual(entry["@key"], "JDBC_VIRTUAL_TABLE")
+        self.assertEqual(
+            view["geometry"], {"name": "geom", "type": "Point", "srid": 4326}
+        )
+        self.assertEqual(view["keyColumn"], "id")
+        # Without a validator, any viewparams value would reach the SQL.
+        self.assertEqual(view["parameter"][0]["regexpValidator"], r"^[\w\d\s]+$")
+
+    def test_a_store_of_files_is_refused_before_any_write(self):
+        # GeoServer answers a bare 500 "Not available" there.
+        self.record([])
+        self.dlg._get_datastore = lambda ws, ds: (
+            {"connectionParameters": {"entry": {"url": "file:data/sf"}}},
+            200,
+        )
+        with self.assertRaises(ValueError) as ctx:
+            self.dlg._publish_sql_view(dict(SQL_VALUES))
+        self.assertIn("database store", str(ctx.exception))
+        self.assertEqual(self.sent, [])
+
+    def test_the_form_shows_the_view_fields_for_the_sql_source_only(self):
+        self.dlg._refill_publish_combos = lambda *args, **kwargs: None
+        form = ResourceFormDialog(title="t", fields=self.dlg._publish_fields(["topp"]))
+        self.dlg._on_publish_source_changed(form, tab_layers_publish._SOURCE_SQL)
+        shown = {f["key"] for f in form._fields} - form._hidden_keys
+        self.assertTrue({"sql", "view_name", "parameters", "epsg"} <= shown)
+        self.assertFalse({"table", "qgis_layer", "name"} & shown)
+        self.dlg._on_publish_source_changed(form, tab_layers_publish._SOURCE_TABLE)
+        shown = {f["key"] for f in form._fields} - form._hidden_keys
+        self.assertIn("table", shown)
+        self.assertNotIn("sql", shown)
+
+    def test_an_untouched_view_form_sends_nothing(self):
+        values = self.dlg._layer_form_values(["pts", "topp", "VECTOR", "pg"], STORED)
+        form = ResourceFormDialog(
+            title="t",
+            fields=self.dlg._layer_fields(tab_layers.VECTOR, view=True),
+            values=values,
+        )
+        self.assertEqual(values["sql"], "SELECT id, geom FROM t")
+        self.assertFalse(self.dlg._view_changed(values, form.get_values()))
+        form.set_values({"sql": "SELECT id, geom FROM t2"})
+        self.assertTrue(self.dlg._view_changed(values, form.get_values()))
+
+    def test_a_new_sql_keeps_the_other_metadata(self):
+        # A metadata PUT replaces the whole map (measured on 2.28.5).
+        self.record([STORED, STORED])
+        after = dict(SQL_VALUES, name="pts", srs="EPSG:4326")
+        self.dlg._save_view("topp", "pg", after)
+        _get, (method, _path, body), _check = self.sent
+        self.assertEqual(method, "put")
+        keys = [entry["@key"] for entry in body["featureType"]["metadata"]["entry"]]
+        self.assertEqual(keys, ["cachingEnabled", "JDBC_VIRTUAL_TABLE"])
+
+    def test_a_sql_geoserver_cannot_run_is_put_back(self):
+        # GeoServer answers 200, then fails every read of the layer with a 500.
+        class Refused(Exception):
+            response = SimpleNamespace(status_code=500)
+
+        self.record([STORED, Refused("HTTP 500: Could not get native attributes")])
+        after = dict(SQL_VALUES, name="pts", srs="EPSG:4326", sql="SELECT nope")
+        with self.assertRaises(RuntimeError) as ctx:
+            self.dlg._save_view("topp", "pg", after)
+        self.assertIn("previous one", str(ctx.exception))
+        restore = self.sent[-1]
+        self.assertEqual(restore[0], "put")
+        self.assertEqual(
+            restore[2]["featureType"]["metadata"]["entry"], STORED["metadata"]["entry"]
+        )
+
+    def test_a_read_that_failed_on_the_way_does_not_undo_the_save(self):
+        # A proxy 502 or a dropped connection says nothing about the SQL.
+        self.record([STORED, ConnectionError("Connection reset")])
+        after = dict(SQL_VALUES, name="pts", srs="EPSG:4326", sql="SELECT 2")
+        with self.assertRaises(RuntimeError) as ctx:
+            self.dlg._save_view("topp", "pg", after)
+        self.assertIn("saved, but reading it back failed", str(ctx.exception))
+        self.assertEqual([method for method, _, _ in self.sent], ["get", "put", "get"])
+
+    def test_an_edit_keeps_the_views_own_srid(self):
+        # The data's CRS and the layer's declared SRS differ on purpose.
+        stored = dict(STORED)
+        stored["metadata"] = {
+            "entry": [
+                {
+                    "@key": "JDBC_VIRTUAL_TABLE",
+                    "virtualTable": dict(
+                        STORED["metadata"]["entry"][1]["virtualTable"],
+                        geometry={"name": "geom", "type": "Point", "srid": 2056},
+                    ),
+                }
+            ]
+        }
+        self.record([stored, stored])
+        after = dict(SQL_VALUES, name="pts", srs="EPSG:3857", sql="SELECT 2")
+        self.dlg._save_view("topp", "pg", after)
+        (entry,) = self.sent[1][2]["featureType"]["metadata"]["entry"]
+        self.assertEqual(entry["virtualTable"]["geometry"]["srid"], 2056)
 
 
 # ############################################################################

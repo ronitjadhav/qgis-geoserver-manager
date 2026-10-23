@@ -208,7 +208,7 @@ WMTS.
 
 ### Publish a layer
 
-**Publish a Layer** has two sources:
+**Publish a Layer** has three sources:
 
 - **A table in a datastore:** pick the workspace, the datastore and the
   table. Give the EPSG code of its SRS: type it, or look it up with the
@@ -217,6 +217,8 @@ WMTS.
   GeoPackage, and a raster as a GeoTIFF. GeoServer creates the store and the
   layer in one request. The QGIS symbology of a vector becomes its default
   style.
+- **A SQL view of a database store:** a layer made from a query on a
+  PostGIS store, or on another database store. See [SQL views](#sql-views).
 
 ```{figure} ../static/screenshots/layer-publish.png
 :alt: The Publish a Layer form, with source, workspace, datastore and table
@@ -232,6 +234,31 @@ dropped (*Rivière* becomes *Riviere*). The plugin reprojects a vector whose CRS
 no EPSG code to EPSG:4326 on the way. It refuses a raster in such a CRS
 instead, because rasters are uploaded as they are: reproject the raster in
 QGIS first.
+
+### SQL views
+
+A SQL view publishes the result of one `SELECT` as a layer. Pick the
+datastore, give the layer a name, its SRS and the query:
+
+- **Geometry column** and **Geometry type**: the column that holds the
+  geometry, and its type. Without them, GeoServer types the geometry as
+  *Geometry*.
+- **Key columns**: the columns that identify a feature. Without them, a
+  feature gets a new id at every request.
+- **Parameters**: write a parameter in the query as `%name%`. A request then
+  gives it a value through `viewparams`, for example
+  `viewparams=n:3`. Each parameter has a default value and a validator, a
+  regular expression the value must match. An empty validator gets
+  GeoServer's default, `^[\w\d\s]+$`: letters, digits and spaces only.
+  A parameter without a validator would let a request put any SQL into the
+  view.
+
+GeoServer computes the bounds and the attributes from the query. A query it
+cannot run is refused, and nothing is created.
+
+A SQL view's edit form has a **SQL view** tab with the same fields. When
+GeoServer cannot run a new query, the plugin puts the previous one back and
+says why, so the layer keeps working.
 
 ### Row actions
 

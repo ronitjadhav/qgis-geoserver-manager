@@ -48,6 +48,12 @@ URL = os.environ.get("GSM_LIVE_URL", "").rstrip("/")
 AUTH = ("admin", "geoserver")
 WS = "gsm_live"
 LAYER = f"{WS}:archsites"
+VIEW = f"{WS}:live_view"
+VIEW_SQL = (
+    "SELECT g AS id, 'p' || g AS label,"
+    " ST_SetSRID(ST_MakePoint(7 + g * 0.1, 46 + g * 0.1), 4326) AS geom"
+    " FROM generate_series(1, %n%) AS g"
+)
 SLD = """<?xml version="1.0" encoding="UTF-8"?>
 <StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld"
     xmlns:ogc="http://www.opengis.net/ogc">
@@ -421,6 +427,86 @@ class TestLiveGeoServer(unittest.TestCase):
                 if protocol == "WFS":
                     self.assertGreater(added[0].featureCount(), 0)
 
+    def features(self, **params):
+        """The SQL view's features over WFS, or GeoServer's refusal."""
+        answer = requests.get(
+            f"{URL}/wfs",
+            params=dict(
+                service="WFS",
+                version="2.0.0",
+                request="GetFeature",
+                typeNames=VIEW,
+                outputFormat="application/json",
+                **params,
+            ),
+            auth=AUTH,
+            timeout=60,
+        )
+        if "json" not in answer.headers.get("content-type", ""):
+            return answer.text
+        return answer.json()["features"]
+
+    def view(self):
+        path = f"workspaces/{WS}/datastores/pg/featuretypes/live_view.json"
+        return self.get(path)["featureType"]
+
+    def test_38_publish_a_sql_view(self):
+        with answering(
+            {
+                "source": "A SQL view of a database store",
+                "workspace": WS,
+                "datastore": "pg",
+                "view_name": "live_view",
+                "epsg": "4326",
+                "sql": VIEW_SQL,
+                "geometry_column": "geom",
+                "geometry_type": "Point",
+                "key_columns": ["id"],
+                "parameters": [["n", "5", ""]],
+            }
+        ):
+            self.dlg._publish_layer()
+        self.assertEqual(self.said(), ["Layer 'live_view' published."])
+        self.assertEqual(len(self.features()), 5)
+        self.assertEqual(len(self.features(viewparams="n:3")), 3)
+        # The default validator refuses what is not letters, digits or spaces.
+        self.assertIsInstance(self.features(viewparams="n:3) AS g; --"), str)
+        box = self.view()["latLonBoundingBox"]
+        self.assertTrue(7 < box["minx"] < box["maxx"] < 8, box)
+
+    def test_39_edit_the_sql_view(self):
+        # Another client's metadata entry, which the edit must keep.
+        feature_type = self.view()
+        entries = feature_type["metadata"]["entry"]
+        entries = entries if isinstance(entries, list) else [entries]
+        path = f"workspaces/{WS}/datastores/pg/featuretypes/live_view.json"
+        self.rest(
+            "put",
+            path,
+            json={
+                "featureType": {
+                    "metadata": {
+                        "entry": entries + [{"@key": "cachingEnabled", "$": "true"}]
+                    }
+                }
+            },
+        )
+        new_sql = VIEW_SQL.replace("AS label,", "AS label, g * 10 AS extra,")
+        with answering({"sql": new_sql}):
+            self.dlg._show_layer_info(self.row("Layers", "live_view"))
+        self.assertEqual(self.said(), ["Layer 'live_view' saved."])
+        self.assertIn("extra", self.features()[0]["properties"])
+        keys = [entry["@key"] for entry in self.view()["metadata"]["entry"]]
+        self.assertEqual(sorted(keys), ["JDBC_VIRTUAL_TABLE", "cachingEnabled"])
+
+    def test_39b_a_sql_geoserver_cannot_run_is_put_back(self):
+        with answering({"sql": "SELECT nope FROM nowhere"}):
+            self.dlg._show_layer_info(self.row("Layers", "live_view"))
+        (error,) = [text for level, text in self.banners if level == "error"]
+        self.assertIn("previous one", error)
+        # The layer still reads, with the SQL it had.
+        self.assertIn("extra", self.features()[0]["properties"])
+
     # -- Layer groups --------------------------------------------------------
 
     def test_40_create_a_layer_group(self):
@@ -573,10 +659,15 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(self.gone(f"workspaces/{WS}/layergroups/live_group.json"))
 
     def test_91_delete_the_layers(self):
-        rows = [self.row("Layers", "archsites"), self.row("Layers", "dem_layer")]
+        rows = [
+            self.row("Layers", "archsites"),
+            self.row("Layers", "dem_layer"),
+            self.row("Layers", "live_view"),
+        ]
         self.dlg._delete_selected_layers(rows)
         self.assertEqual(len(self.said()), 1)
         self.assertTrue(self.gone(f"layers/{LAYER}.json"))
+        self.assertTrue(self.gone(f"layers/{VIEW}.json"))
         self.assertTrue(self.gone(f"layers/{WS}:dem_layer.json"))
 
     def test_92_delete_the_styles(self):

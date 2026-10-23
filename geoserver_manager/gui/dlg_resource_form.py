@@ -92,6 +92,7 @@ from qgis.gui import (
     QgsCodeEditorCSS,
     QgsCodeEditorHTML,
     QgsCodeEditorJson,
+    QgsCodeEditorSQL,
     QgsExtentWidget,
     QgsFileWidget,
     QgsKeyValueWidget,
@@ -132,6 +133,7 @@ _CODE_EDITORS = {
     "xml": QgsCodeEditorHTML,
     "css": QgsCodeEditorCSS,
     "json": QgsCodeEditorJson,
+    "sql": QgsCodeEditorSQL,
 }
 
 

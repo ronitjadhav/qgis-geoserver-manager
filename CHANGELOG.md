@@ -8,6 +8,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   2.x and 3.x releases. The tests start with 2.28.6 and 3.0.2.
 - **Added.** A security policy: report a vulnerability privately, on GitHub
   or by email, as `SECURITY.md` says.
+- **Added.** SQL views: publish a layer from one query on a PostGIS store,
+  with parameters, and edit its query. A query GeoServer cannot run is put
+  back, so the layer keeps working.
 
 ## 1.0.0 - 2026-10-08
 
