@@ -662,6 +662,6 @@ On GeoServer Cloud (measured on 2.28.5.1):
   non-administrator**. An empty tab says that GeoServer lists nothing this
   account administers there. GeoServer refuses a change outside what the
   account administers (HTTP 403).
-- The interface follows the QGIS theme, dark themes included. A partial
-  French translation exists;
-  [contributions are welcome](../development/translation.md).
+- The interface follows the QGIS theme, dark themes included, and the
+  language of QGIS: English, French or German.
+  [Corrections and other languages are welcome](../development/translation.md).
