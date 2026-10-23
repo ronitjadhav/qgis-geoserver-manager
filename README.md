@@ -51,8 +51,8 @@ paginated, 20 rows per page. Lists load in the background: QGIS stays usable,
 and *Cancel* stops a slow one. Deletes ask first and name what they cascade
 to. Keyboard: F5 refreshes, Ctrl+F jumps to the search box, Enter opens the
 selected row, Del deletes the selection, Esc clears the filter. Colours follow
-the QGIS theme, dark ones included. The interface is translatable and ships a
-partial French locale.
+the QGIS theme, dark ones included. The interface is in English, French and
+German, and follows the language of QGIS.
 
 ## Requirements
 

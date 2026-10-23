@@ -15,6 +15,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   and **Elevation** tabs of its edit form.
 - **Added.** Gridsets of your own in the Tile Cache tab: view them, add one
   for any CRS, and delete one no layer uses.
+- **Added.** The whole interface in French and in German. The plugin follows
+  the language of QGIS.
 
 ## 1.0.0 - 2026-10-08
 
