@@ -2972,6 +2972,19 @@ class TestDimensions(unittest.TestCase):
                 ),
                 "resolution",
             ),
+            *(
+                (
+                    dict(
+                        self.values,
+                        elevation_enabled=True,
+                        elevation_attribute="z",
+                        elevation_presentation="DISCRETE_INTERVAL",
+                        elevation_resolution=text,
+                    ),
+                    "resolution",
+                )
+                for text in ("inf", "nan")  # float() takes both
+            ),
         ):
             with self.assertRaises(ValueError, msg=said) as ctx:
                 self.dlg._check_dimensions(values)
