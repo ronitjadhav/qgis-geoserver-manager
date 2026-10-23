@@ -964,5 +964,154 @@ class TestSeed(unittest.TestCase):
         )
 
 
+GRIDSET_FORM = {
+    "name": "swiss<&>",
+    "epsg": "EPSG:2056",
+    "extent": "",
+    "levels": 3,
+    "tile_size": 256,
+    "description": "",
+}
+
+
+class TestGridsets(unittest.TestCase):
+    def test_level_0_holds_the_extent_and_each_level_halves(self):
+        xml = GwcTabMixin._gridset_xml(GRIDSET_FORM, [0, 0, 512000, 256000], 1.0)
+        root = ElementTree.fromstring(xml)
+        self.assertEqual(root.findtext("name"), "swiss<&>")  # escaped, parsed back
+        self.assertEqual(root.findtext("srs/number"), "2056")
+        self.assertEqual(
+            [float(d.text) for d in root.findall("resolutions/double")],
+            [2000.0, 1000.0, 500.0],
+        )
+        self.assertEqual(root.findtext("tileWidth"), "256")
+
+    def test_a_geographic_crs_gets_its_metres_per_degree(self):
+        """Without it GeoWebCache stores 1.0, and a level 0 scale of 781
+        instead of 86 million (measured on 2.28.5)."""
+        _extent, unit = GwcTabMixin._gridset_frame(dict(GRIDSET_FORM, epsg="4258"))
+        self.assertAlmostEqual(unit, 111319.49079327358)
+        xml = GwcTabMixin._gridset_xml(GRIDSET_FORM, [-16, 32, 40, 84], unit)
+        self.assertIn("<metersPerUnit>111319.49079327358</metersPerUnit>", xml)
+
+    def test_an_empty_extent_is_the_area_of_use_of_the_crs(self):
+        extent, unit = GwcTabMixin._gridset_frame(GRIDSET_FORM)
+        self.assertEqual(unit, 1.0)
+        self.assertTrue(2400000 < extent[0] < extent[2] < 2900000, extent)
+        self.assertTrue(1000000 < extent[1] < extent[3] < 1350000, extent)
+
+    def test_a_crs_qgis_does_not_know_is_refused(self):
+        for epsg in ("999999", "abc"):
+            with self.assertRaises(ValueError, msg=epsg):
+                GwcTabMixin._gridset_frame(dict(GRIDSET_FORM, epsg=epsg))
+
+    def test_a_gridset_of_ones_own_is_in_the_file_and_in_the_list(self):
+        """The demo's file names EPSG:2163, which GeoWebCache never loaded."""
+        dlg = SyncDialog()
+        dlg.gs = type("GS", (), {})()
+        dlg.gs.rest_service = type("R", (), {})()
+        dlg.gs.rest_service.rest_endpoints = type("E", (), {"base_url": "/rest"})()
+
+        class Answer:
+            status_code = 200
+            text = (
+                '<gwcConfiguration xmlns="http://geowebcache.org/schema/1.28.0">'
+                "<gridSets><gridSet><name>EPSG:2163</name></gridSet>"
+                "<gridSet><name>mine</name></gridSet></gridSets></gwcConfiguration>"
+            )
+
+        dlg._raw_rest = lambda method, path, **kwargs: Answer()
+        dlg._gridset_names = lambda: ["EPSG:4326", "mine"]
+        self.assertEqual(dlg._custom_gridset_names(), ["mine"])
+
+    def test_a_gridset_in_use_is_not_deleted(self):
+        """GeoServer answers 200, and the WMTS capabilities of the whole
+        server are then a 400 (2.28.5 and 3.0.2)."""
+        dlg = SyncDialog()
+        dlg.gs = object()
+        warnings, deleted = [], []
+        dlg.show_warning_message = warnings.append
+        dlg._gridset_users = lambda name, task=None: ["topp:states"]
+        dlg._delete_many = lambda *args, **kwargs: deleted.append(args)
+        dlg._delete_gridset("mine")
+        self.assertEqual(deleted, [])
+        self.assertIn("topp:states", warnings[0])
+
+    def test_a_standalone_tile_layer_on_the_gridset_counts_as_a_user(self):
+        """GeoWebCache's own wmsLayer entries are listed with the cached
+        layers, under that key (measured on 2.28.5)."""
+        dlg = SyncDialog()
+        dlg.gs = FakeGS(cached=("topp:states",))
+        standalone = {
+            "wmsLayer": {"name": "ortho", "gridSubsets": [{"gridSetName": "mine"}]}
+        }
+        dlg._gwc_layer_names = lambda: ["topp:states", "ortho"]
+        dlg._raw_rest = lambda method, path, **kwargs: Response(standalone)
+        self.assertEqual(dlg._gridset_users("mine"), ["ortho"])
+
+    def test_the_gridsets_button_is_guarded_like_the_other_two(self):
+        # Invariant 10: a loaded table outlives its connection.
+        dlg = SyncDialog()
+        dlg.gs = object()
+        dlg._fetch_gwc_rows = lambda task=None: ([], [])
+        dlg._load_gwc_layers()
+        opened, warnings = [], []
+        dlg._show_gridsets = lambda: opened.append(1)
+        dlg.show_warning_message = warnings.append
+        dlg.gs = None  # a Refresh dropped the client
+        dlg.btn_extra.click()
+        self.assertEqual(opened, [])
+        self.assertEqual(len(warnings), 1)
+
+    def test_no_gridsets_file_means_none_of_ones_own(self):
+        dlg = SyncDialog()
+        dlg.gs = type("GS", (), {})()
+        dlg.gs.rest_service = type("R", (), {})()
+        dlg.gs.rest_service.rest_endpoints = type("E", (), {"base_url": "/rest"})()
+        dlg._raw_rest = lambda method, path, **kwargs: type(
+            "A", (), {"status_code": 404, "text": ""}
+        )()
+        dlg._gridset_names = lambda: ["EPSG:4326"]
+        self.assertEqual(dlg._custom_gridset_names(), [])
+
+    def test_a_typed_extent_follows_a_finished_code_only(self):
+        from unittest.mock import patch
+
+        from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
+
+        opened = []
+
+        class Peek(ResourceFormDialog):
+            def exec(inner):
+                opened.append(inner)
+                return QDialog.DialogCode.Rejected
+
+        dlg = SyncDialog()
+        dlg.gs = object()
+        with patch.object(tab_gwc, "ResourceFormDialog", Peek):
+            dlg._add_gridset()
+        (form,) = opened
+        extent = form.get_widget("extent")
+        form.get_widget("epsg").setText("2056")  # before any extent: followed
+        self.assertEqual(extent.outputCrs().authid(), "EPSG:2056")
+        extent.setOutputExtentFromUser(
+            QgsRectangle(2600000, 1200000, 2650000, 1250000),
+            QgsCoordinateReferenceSystem("EPSG:2056"),
+        )
+        form.get_widget("epsg").setText("2178")  # a keystroke on the way to 21781
+        self.assertEqual(extent.outputCrs().authid(), "EPSG:2056")  # untouched
+        form.get_widget("epsg").editingFinished.emit()
+        self.assertEqual(extent.outputCrs().authid(), "EPSG:2178")
+
+    def test_the_gridsets_button_shows_on_the_tile_cache_tab_only(self):
+        dlg = SyncDialog()
+        dlg.gs = object()
+        dlg._fetch_gwc_rows = lambda task=None: ([], [])
+        dlg._load_gwc_layers()
+        self.assertFalse(dlg.btn_extra.isHidden())
+        dlg._reset_table_state()
+        self.assertTrue(dlg.btn_extra.isHidden())
+
+
 if __name__ == "__main__":
     unittest.main()

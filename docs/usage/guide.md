@@ -489,6 +489,29 @@ yet.
 Each zoom level has 4 times the tiles of the one before.
 ```
 
+### Gridsets
+
+A gridset is how the tile cache cuts a CRS into tiles: an extent, a tile size
+and zoom levels. GeoWebCache has 141 built in, such as EPSG:4326 and
+EPSG:900913. **Gridsets** above the table lists the ones made on this server,
+one at a time, with their SRS, extent, zoom levels and tile size.
+
+**Add a Gridset** asks for a name, the EPSG code of the CRS, the extent and
+the number of zoom levels. Leave the extent empty to take the area of use of
+the CRS. Level 0 holds the whole extent in one tile, and each level halves the
+size of a pixel, as GeoServer's web interface computes it. Then add the
+gridset to a layer: click its name in the table.
+
+```{figure} ../static/screenshots/gridset-add.png
+:alt: The Add a Gridset form, with name, EPSG code, extent, zoom levels, tile size and description
+:width: 420px
+```
+
+**Delete** removes a gridset that no cached layer uses. When layers use it,
+the plugin names them and deletes nothing. GeoServer would delete it, and the
+WMTS service of the whole server would then stop working. The built-in
+gridsets cannot be deleted.
+
 ## Server
 
 The settings that belong to the whole GeoServer, one row each. Click a row

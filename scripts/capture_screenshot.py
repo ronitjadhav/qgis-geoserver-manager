@@ -238,6 +238,7 @@ def main():
                     "tile-cache-seed",
                     lambda: dialog._seed_gwc_layer(row("topp:states")),
                 ),
+                ("gridset-add", dialog._add_gridset),
             ],
         ),
         (
@@ -250,6 +251,7 @@ def main():
     # The first workspace, cite, has no datastore: pick one with tables.
     prepare = {
         "layer-publish": lambda f: f.get_widget("workspace").setCurrentText("sf"),
+        "gridset-add": lambda f: f.set_values({"name": "swiss_lv95", "epsg": "2056"}),
         # The layers and their styles are what an edit is mostly about.
         "layer-group-edit": lambda f: f._tabs.setCurrentIndex(1),
     }

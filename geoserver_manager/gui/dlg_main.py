@@ -749,6 +749,7 @@ class GeoServerMainDialog(
         # re-arms these once the probe lands.
         self.btn_add.setEnabled(False)
         self.btn_delete_selected.setEnabled(False)
+        self.btn_extra.setEnabled(False)
         settings = self.plg_settings.get_plg_settings()
         # Credentials come out of QgsAuthManager, so the client is built here on
         # the GUI thread; its constructor makes no network call.
@@ -1264,6 +1265,7 @@ class GeoServerMainDialog(
         """
         self.btn_add.setVisible(False)
         self.btn_delete_selected.setVisible(False)
+        self.btn_extra.setVisible(False)
         self._name_click_callback = None
         self._delete_selected_callback = None
         self._row_actions = []
@@ -1311,6 +1313,21 @@ class GeoServerMainDialog(
             pass
         # Guarded: the button stays armed while a refresh re-probes the server.
         self.btn_add.clicked.connect(lambda: self._require_connection() and callback())
+
+    def _setup_extra_button(self, text, tooltip, callback):
+        """Configure the header's third button, for what a tab holds beside
+        its rows (the Tile Cache tab's gridsets). Hidden on the other tabs."""
+        self.btn_extra.setEnabled(True)
+        self.btn_extra.setText(text)
+        self.btn_extra.setToolTip(tooltip)
+        self.btn_extra.setVisible(True)
+        try:
+            self.btn_extra.clicked.disconnect()
+        except TypeError:
+            pass
+        self.btn_extra.clicked.connect(
+            lambda: self._require_connection() and callback()
+        )
 
     def _setup_delete_selected_button(self, callback, text=None):
         """Configure the header Delete Selected button for the current tab.
@@ -1935,12 +1952,11 @@ class GeoServerMainDialog(
         if took_over:
             # The page's fill is after these rows too (a sort): GET them once.
             self._detail.cancel()
-        detail, stop = self._row_detail, threading.Event()
+        detail = self._row_detail
         # The waiting box's Cancel starts no more GETs (a dropped sort read every row).
-        results = self._fetch(
-            lambda: self._fan_out(detail, todo, _Stop(stop)),
+        results = self._fetch_cancellable(
+            lambda task: self._fan_out(detail, todo, task),
             self.tr("Failed to load the details"),
-            stop=stop,
         )
         if results is None:
             if took_over and (self._detail is None or self._detail.isCanceled()):
@@ -2128,6 +2144,13 @@ class GeoServerMainDialog(
         if self._run_action(lambda: result.append(run(action)), failure_message):
             return result[0]
         return None
+
+    def _fetch_cancellable(self, work, failure_message):
+        """_fetch for a fan-out: `work(task)` gets a stand-in task whose
+        isCanceled() turns true on the waiting box's Cancel, so no more GETs
+        start once the user stopped waiting."""
+        stop = threading.Event()
+        return self._fetch(lambda: work(_Stop(stop)), failure_message, stop=stop)
 
     def _wait_for(self, action, write=False, stop=None):
         """Run action() in a worker thread and return its value, or raise its error.

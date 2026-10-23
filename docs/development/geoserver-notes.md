@@ -573,6 +573,22 @@ carries a `TODO(#1)` comment at the call site.
   list is a JSON array of names. A JSON PUT fails the same way ("Duplicate field
   coords"). An XML PUT creates one (201), and DELETE removes it. Deleting a gridset
   in use answers 500 with an empty body.
+- **Gridsets of one's own** (row 84 of #1; measured on 2.28.5 and 3.0.2): 141
+  are built in, and a DELETE of one is a bare 500. The ones a user makes are
+  kept in the data directory's `gwc/geowebcache.xml`, readable at
+  `GET /rest/resource/gwc/geowebcache.xml`. GeoWebCache rewrites that file on
+  its first write, from what it loaded: the demo's file names EPSG:2163, which
+  is not listed and is gone after a write. So a gridset of one's own is one in
+  the file and in the list. An XML `PUT /gwc/rest/gridsets/{name}.xml` of the
+  name, the SRS number, the extent, `resolutions` and the tile size creates
+  one (201; again, 200 replaces it). GeoWebCache adds the scale names, and
+  `pixelSize` 0.00028. It stores **`metersPerUnit` 1.0 when it is missing**,
+  also for a geographic CRS: the WMTS scale of level 0 was then 781 instead of
+  86 million. The built-in EPSG:4326 has 111319.49079327358, which is also
+  QGIS's factor for degrees. **A DELETE of a gridset a layer uses answers
+  200**: the layer keeps naming it, and the WMTS capabilities of the whole
+  server are a 400 until the layer is fixed. Issue #6 had recorded a 500. A
+  tile outside a gridset's extent is a 400 `TileOutOfRange`.
 - **Layer-group modes** are shown as GeoServer's web interface names them: Single,
   Opaque Container, Named Tree, Container Tree, Earth Observation Tree
   (`tab_layergroups._mode_label`). They are mapped back to the enum for the payload. `MODES`
