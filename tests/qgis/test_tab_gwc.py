@@ -1035,6 +1035,18 @@ class TestGridsets(unittest.TestCase):
         self.assertEqual(deleted, [])
         self.assertIn("topp:states", warnings[0])
 
+    def test_a_standalone_tile_layer_on_the_gridset_counts_as_a_user(self):
+        """GeoWebCache's own wmsLayer entries are listed with the cached
+        layers, under that key (measured on 2.28.5)."""
+        dlg = SyncDialog()
+        dlg.gs = FakeGS(cached=("topp:states",))
+        standalone = {
+            "wmsLayer": {"name": "ortho", "gridSubsets": [{"gridSetName": "mine"}]}
+        }
+        dlg._gwc_layer_names = lambda: ["topp:states", "ortho"]
+        dlg._raw_rest = lambda method, path, **kwargs: Response(standalone)
+        self.assertEqual(dlg._gridset_users("mine"), ["ortho"])
+
     def test_the_gridsets_button_is_guarded_like_the_other_two(self):
         # Invariant 10: a loaded table outlives its connection.
         dlg = SyncDialog()

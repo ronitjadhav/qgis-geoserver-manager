@@ -811,12 +811,24 @@ class WorkspaceTabMixin:
         name = values["name"]
         uri = (values.get("uri") or "").strip()
         uri_changed = old_uri is not None and uri != old_uri
+        # Measured on Cloud 3.0.2: its WFS answered "Feature type unknown"
+        # for every layer of the workspace until POST /rest/reload.
+        reload_note = ""
+        if uri_changed and self.gs_cloud:
+            reload_note = translate(
+                "WorkspaceTabMixin",
+                "On GeoServer Cloud, WFS serves this workspace's layers again only "
+                "after a catalog reload: on the Server tab, open Catalog and choose "
+                "Reload.",
+            )
+        uri_saved = False
         try:
             if uri_changed:
                 # Emptied: back to GeoServer's own default, not left as it was.
                 self._put_namespace_uri(
                     name, uri or f"http://{name}", values["isolated"]
                 )
+                uri_saved = True
             self._apply_wms_settings(name, values, had_wms, before)
             for service in OTHER_SERVICES:
                 if f"{service}_own" in values:
@@ -834,17 +846,13 @@ class WorkspaceTabMixin:
                 "were not: {}",
             ).format(name, self._error_text(error))
             # A failed "make default" is only a warning, and would be lost here.
-            raise PartlySaved(f"{message} {warning}" if warning else message) from error
-        if uri_changed and self.gs_cloud:
-            # Measured on Cloud 3.0.2: its WFS answered "Feature type unknown"
-            # for every layer of the workspace until POST /rest/reload.
-            note = translate(
-                "WorkspaceTabMixin",
-                "On GeoServer Cloud, WFS serves this workspace's layers again only "
-                "after a catalog reload: on the Server tab, open Catalog and choose "
-                "Reload.",
-            )
-            warning = f"{warning} {note}" if warning else note
+            if warning:
+                message = f"{message} {warning}"
+            if uri_saved and reload_note:
+                message = f"{message} {reload_note}"
+            raise PartlySaved(message) from error
+        if reload_note:
+            warning = f"{warning} {reload_note}" if warning else reload_note
         return warning
 
     def _delete_workspace(self, row_data):

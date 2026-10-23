@@ -146,7 +146,7 @@ jobs:
           wanted = os.environ.get("WANTED", "").split()
           if not wanted:
               request = urllib.request.Request(
-                  "https://api.github.com/repos/geoserver/geoserver-cloud/releases?per_page=30",
+                  "https://api.github.com/repos/geoserver/geoserver-cloud/releases?per_page=100",
                   headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"]},
               )
               with urllib.request.urlopen(request, timeout=60) as answer:

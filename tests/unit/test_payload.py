@@ -249,8 +249,9 @@ class TestDimensions(unittest.TestCase):
     def test_a_time_resolution_takes_the_largest_unit_it_fills(self):
         self.assertEqual(time_resolution(2 * 604_800_000), (2, "weeks"))
         self.assertEqual(time_resolution(36 * 3_600_000), (36, "hours"))
-        self.assertEqual(time_resolution(1500), (1, "seconds"))
+        self.assertEqual(time_resolution(1500), (1500, "milliseconds"))
         self.assertEqual(time_resolution(None), (1, "days"))
+        self.assertEqual(time_resolution(0), (1, "days"))
 
     def test_untouched_values_give_the_stored_dimension_back(self):
         entries = DIMENSIONED["metadata"]["entry"]

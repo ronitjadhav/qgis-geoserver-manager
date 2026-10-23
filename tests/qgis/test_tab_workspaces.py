@@ -600,6 +600,25 @@ class TestNamespaceAndOtherServices(unittest.TestCase):
             "catalog reload", self.save("ne", {}, uri="http://example.org/ne")
         )
 
+    def test_on_cloud_a_partial_save_after_the_uri_still_says_reload(self):
+        # The namespace PUT landed and a service PUT failed: WFS is broken,
+        # and the failure message used to leave out how to repair it.
+        self.dlg.gs_cloud = True
+        client = self.dlg.gs.rest_service.rest_client
+        original = client.put
+
+        def put(path, **kwargs):
+            if "/services/wcs/" in path:
+                raise RuntimeError("HTTP 500: boom")
+            return original(path, **kwargs)
+
+        client.put = put
+        with self.assertRaises(PartlySaved) as ctx:
+            self.save(
+                "ne", {}, uri="http://example.org/ne", wcs_own=True, wcs_title="C"
+            )
+        self.assertIn("catalog reload", str(ctx.exception))
+
     def test_an_isolated_workspace_stays_isolated_when_its_uri_changes(self):
         # A URI PUT without `isolated` un-isolated it, and refused a shared URI.
         self.save("ne", {}, isolated=True, uri="http://shared.example.org")

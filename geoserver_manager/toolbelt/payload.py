@@ -201,6 +201,7 @@ TIME_UNITS = (
     ("hours", 3_600_000),
     ("minutes", 60_000),
     ("seconds", 1000),
+    ("milliseconds", 1),
 )
 # The attribute bindings each dimension can use. Another one is stored and
 # then breaks the layer (measured on 2.28.5), so the form offers only these.
@@ -266,15 +267,17 @@ def dimension_form_values(resource):
 
 def time_resolution(milliseconds):
     """(count, unit) for a stored time resolution: the largest unit it fills
-    exactly; (1, "days") when there is none."""
+    exactly, down to milliseconds, so a saved value comes back as it was;
+    (1, "days") when there is none."""
     try:
         milliseconds = int(milliseconds)
     except (TypeError, ValueError):
         return 1, "days"
-    for unit, size in TIME_UNITS:
-        if milliseconds > 0 and milliseconds % size == 0:
+    if milliseconds <= 0:
+        return 1, "days"
+    for unit, size in TIME_UNITS:  # the last unit, milliseconds, always fits
+        if milliseconds % size == 0:
             return milliseconds // size, unit
-    return max(1, milliseconds // 1000), "seconds"
 
 
 def dimension_info(dimension, values, stored=None):
