@@ -2103,7 +2103,9 @@ class GeoServerMainDialog(
         For the inline work that is left: a form's checks and export before an
         upload, a small edit. On an exception the message bar gets
         "<failure_message>: <error>", the QGIS log gets the same, and False
-        comes back so the caller can stop.
+        comes back so the caller can stop. None comes back when the user
+        stopped waiting: the save may still land, so a form must not reopen
+        on it as it does on a refusal.
         """
         self.setCursor(Qt.CursorShape.WaitCursor)
         try:
@@ -2123,7 +2125,7 @@ class GeoServerMainDialog(
                         "tab reloads when it answers."
                     )
                 )
-            return False
+            return None
         except Exception as e:
             self._report_failure(failure_message, e)
             return False
@@ -2420,9 +2422,11 @@ class GeoServerMainDialog(
             return
         except Exception as error:  # the reason is what the user needs
             self.show_warning_message(
-                self.tr("'{}' was saved, but GeoServer cannot read it: {}").format(
-                    name, self._error_text(error)
-                )
+                self.tr(
+                    "'{}' was saved, but GeoServer cannot read it: {} Check the "
+                    "connection, the path and the password. The server log says "
+                    "why: Server tab, Logging, Show the log."
+                ).format(name, self._error_text(error))
             )
 
     def _report_partial_failures(self, failures):

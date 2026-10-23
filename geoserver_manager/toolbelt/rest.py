@@ -11,6 +11,21 @@ No QGIS import: the unit suite runs this on a plain Python.
 import html
 import re
 
+_EXCEPTION_TEXT = re.compile(
+    r"<(?:\w+:)?ExceptionText>(.*?)</(?:\w+:)?ExceptionText>", re.I | re.S
+)
+
+
+def ows_exception(text):
+    """The reason of an OWS exception report; "" for any other body.
+
+    GeoServer answers a report with a 400, GeoServer Cloud 3.0.2 with a 200,
+    so the status alone cannot tell a refusal from an answer. A tag cannot
+    hide in a GML body: its text escapes every "<".
+    """
+    found = _EXCEPTION_TEXT.search(text or "")
+    return " ".join(html.unescape(found.group(1)).split()) if found else ""
+
 
 def summarise_body(text, limit=300):
     """One line of a response body, for a banner and a log line.
@@ -25,6 +40,9 @@ def summarise_body(text, limit=300):
     if not text:
         return ""
     if text.startswith("<"):
+        reason = ows_exception(text)
+        if reason:
+            return reason[:limit]
         # Tomcat's page carries GeoServer's reason as its "Message" line
         # ("Invalid style: … (line 1, column 18)"); the title only says 400.
         message = re.search(r"<b>Message</b>(.*?)</p>", text, re.I | re.S)

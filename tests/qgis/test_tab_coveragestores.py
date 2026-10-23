@@ -1298,6 +1298,42 @@ class TestRasterUploadRunsInATask(RasterFixture):
 
 # ############################################################################
 # ####### Stand-alone run ########
+
+
+class TestANewStoreIsChecked(unittest.TestCase):
+    def test_a_store_geoserver_cannot_open_says_so_at_once(self):
+        """A wrong path is stored all the same; the first publish used to be
+        where it showed, as "Error getting coverages from coverage reader"."""
+        dlg = SyncDialog()
+
+        class GS:
+            def get_coverages(self, ws, name):
+                raise RuntimeError(
+                    "HTTP 500: Error getting coverages from coverage reader"
+                )
+
+        dlg.gs = GS()
+        dlg._get_workspace_names = lambda: ["sf"]
+        dlg._create_coverage_store_from_values = lambda values: None
+        dlg._warn_if_cog_settings_dropped = lambda values: None
+        dlg._load_coverage_stores = lambda: None
+        warnings = []
+        dlg.show_warning_message = warnings.append
+        dlg.show_success_message = lambda text: None
+
+        class Filling(ResourceFormDialog):
+            def exec(inner):
+                inner.get_widget("name").setText("dem_bad")
+                inner.get_widget("url").setText("file:data/nope.tif")
+                return QDialog.DialogCode.Accepted
+
+        with patch.object(tab_coveragestores, "ResourceFormDialog", Filling):
+            dlg._add_coverage_store()
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("cannot read it", warnings[0])
+        self.assertIn("Show the log", warnings[0])
+
+
 # ################################
 if __name__ == "__main__":
     unittest.main()

@@ -436,6 +436,13 @@ class CascadedStoreTabMixin:
             ],
             parent=self,
             ok_label=translate("CascadedStoreTabMixin", "Publish"),
+            validate=self._form_check(
+                lambda v: self._refuse_taken_layer(
+                    ws_name,
+                    (v.get("name") or "").strip()
+                    or v["native_name"].rsplit(":", 1)[-1],
+                )
+            ),
         )
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
@@ -604,6 +611,16 @@ class CascadedStoreTabMixin:
                 translate(
                     "CascadedStoreTabMixin", "Cascaded store '{}' created."
                 ).format(values["name"])
+            )
+            # As after an edit: a wrong address is stored all the same.
+            self._warn_if_store_unreachable(
+                values["name"].strip(),
+                lambda: self._cascaded_layer_names(
+                    values["workspace"],
+                    values["name"].strip(),
+                    values["type"],
+                    available=True,
+                ),
             )
             self._load_cascaded_stores()
 

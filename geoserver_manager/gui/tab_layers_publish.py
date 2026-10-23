@@ -397,11 +397,13 @@ class LayerPublishMixin:
         else:
             self._refuse_vector_clash(ws_name, name, values)
 
-    def _publish_layer(self, layer=None):
+    def _publish_layer(self, layer=None, typed=None):
         """Open the publish form: pick workspace, datastore and table.
 
         :param layer: a project layer to preselect as the source, which is how
             the layer tree's *Publish to GeoServer* entry opens this form.
+        :param typed: the form's values GeoServer refused after it closed: the
+            form opens again with them, its combos refilled.
         """
         workspace_names = self._publish_workspaces()
         if workspace_names is None:
@@ -416,6 +418,7 @@ class LayerPublishMixin:
                 "datastore) or as a GeoTIFF (a raster becomes a coverage store).",
             ),
             fields=self._publish_fields(workspace_names),
+            values=typed,
             parent=self,
             ok_label=translate("LayerPublishMixin", "Publish"),
             validate=self._form_check(self._check_publish_form),
@@ -432,7 +435,16 @@ class LayerPublishMixin:
         dlg.get_widget("qgis_layer").layerChanged.connect(
             lambda layer: self._on_publish_layer_picked(dlg, layer)
         )
-        if layer is not None:
+        if typed is not None:
+            if typed["source"] == _SOURCE_QGIS:
+                dlg.get_widget("qgis_layer").setLayer(typed["qgis_layer"])
+            self._on_publish_source_changed(dlg, typed["source"])
+            if typed["source"] != _SOURCE_QGIS:
+                # The source's refill picked the first store: the typed one.
+                dlg.set_values({"datastore": typed["datastore"]})
+                if typed["source"] == _SOURCE_TABLE:
+                    dlg.set_values({"table": typed["table"]})
+        elif layer is not None:
             # The layer first: switching the source prefills the name from
             # whichever layer the combo shows at that moment. The table
             # source's combos are not filled: that source is not shown.
@@ -447,27 +459,34 @@ class LayerPublishMixin:
         if values.get("source") == _SOURCE_QGIS:
             # The checks and the export raise here, under the wait cursor; the
             # upload then streams in a task and reports itself.
-            self._run_action(
+            started = self._run_action(
                 lambda: self._publish_qgis_layer(values),
                 translate("LayerPublishMixin", "Failed to publish '{}'").format(
                     geoserver_name(values["name"])
                 ),
             )
+            if started is False:
+                self._publish_layer(typed=values)
             return
         if values.get("source") == _SOURCE_SQL:
             published, publish = values["view_name"], self._publish_sql_view
         else:
             published, publish = values["table"], self._publish_table
-        if self._run_action(
+        done = self._run_action(
             lambda: self._wait_for_save(lambda: publish(values)),
             translate("LayerPublishMixin", "Failed to publish '{}'").format(published),
-        ):
+        )
+        if done:
             self.show_success_message(
                 translate("LayerPublishMixin", "Layer '{}' published.").format(
                     published
                 )
             )
             self._load_layers()
+        elif done is False:
+            # Refused after the form closed (a query GeoServer cannot run): back
+            # in the form, as typed.
+            self._publish_layer(typed=values)
 
     def _publish_layers(self, layers):
         """Publish several project layers into one workspace, one after another.

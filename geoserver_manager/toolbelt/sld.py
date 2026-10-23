@@ -17,6 +17,9 @@ import html
 import io
 import re
 import tempfile
+
+# The document is the user's own, and expat refuses entity expansion.
+import xml.etree.ElementTree as ElementTree  # nosec B405
 import zipfile
 from pathlib import Path
 from urllib.parse import quote, urlparse
@@ -56,6 +59,16 @@ _ZIP_IMAGES = (".svg", ".png", ".jpg", ".bmp", ".gif")
 _LITERAL_SIZE = re.compile(
     r"<((?:\w+:)?Size)>\s*<((?:\w+:)?Literal)>\s*([^<]*?)\s*</\2>\s*</\1>"
 )
+
+
+def xml_problem(text):
+    """Why `text` is not well-formed XML ("mismatched tag: line 8, column 5"),
+    or "" when it is. For a style form's check, before GeoServer sees it."""
+    try:
+        ElementTree.fromstring(text.encode("utf-8"))  # nosec B314
+    except ElementTree.ParseError as error:
+        return str(error)
+    return ""
 
 
 def sld_version(sld):

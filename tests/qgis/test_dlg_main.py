@@ -38,7 +38,12 @@ from qgis.testing import start_app, unittest
 from geoserver_manager.gui.dlg_main import GeoServerMainDialog
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
 from geoserver_manager.gui.layer_tree import LayerTreeMenu
-from geoserver_manager.toolbelt.rest import PartlySaved, UploadCancelled, summarise_body
+from geoserver_manager.toolbelt.rest import (
+    Abandoned,
+    PartlySaved,
+    UploadCancelled,
+    summarise_body,
+)
 from tests.qgis.sync_dialog import FakePrefs, SyncDialog, answer_next_box, ended
 
 start_app()
@@ -1295,6 +1300,19 @@ class TestPartlySaved(unittest.TestCase):
         self.assertFalse(self.dlg._run_action(action, "Failed to create 'w'"))
         self.assertEqual(self.messages[0][0], "warning")
         self.assertEqual(self.reloaded, [1])
+
+    def test_a_stopped_wait_is_none_and_a_refusal_is_false(self):
+        """A form reopens with the typed values on a refusal only: after a
+        stopped wait the save may still land."""
+
+        def abandoned():
+            raise Abandoned(write=True)
+
+        def refused():
+            raise RuntimeError("HTTP 400: no")
+
+        self.assertIsNone(self.dlg._run_action(abandoned, "Failed"))
+        self.assertIs(self.dlg._run_action(refused, "Failed"), False)
 
 
 class TestDeleteMany(unittest.TestCase):

@@ -31,6 +31,7 @@ from geoserver_manager.toolbelt.sld import (
     style_text,
     unresolved_icons,
     utf8_sld,
+    xml_problem,
 )
 
 # What QgsMapLayer.saveSldStyle() writes on QGIS 3.40: version 1.1.0, with
@@ -313,6 +314,16 @@ class TestIconsForQgis(unittest.TestCase):
                 ],
             )
         self.assertEqual(unresolved_icons(None), [])
+
+
+class TestXmlProblem(unittest.TestCase):
+    def test_a_well_formed_document_has_none(self):
+        self.assertEqual(xml_problem("<a><b/></a>"), "")
+
+    def test_a_mismatched_tag_names_its_line_and_column(self):
+        problem = xml_problem("<a>\n  <b>\n</a>")
+        self.assertIn("line 3", problem)
+        self.assertIn("mismatched tag", problem)
 
 
 if __name__ == "__main__":
