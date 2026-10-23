@@ -5692,22 +5692,22 @@ The settings page opens next. Enter the URL, user name and password of your GeoS
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="831" />
-        <source>Workspace '{}' saved, but its namespace or service settings were not: {}</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
-        <location filename="../../gui/tab_workspaces.py" line="841" />
+        <location filename="../../gui/tab_workspaces.py" line="818" />
         <source>On GeoServer Cloud, WFS serves this workspace's layers again only after a catalog reload: on the Server tab, open Catalog and choose Reload.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="863" />
+        <location filename="../../gui/tab_workspaces.py" line="843" />
+        <source>Workspace '{}' saved, but its namespace or service settings were not: {}</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <location filename="../../gui/tab_workspaces.py" line="871" />
         <source>Are you sure you want to delete workspace '{}'?</source>
         <translation type="unfinished" />
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_workspaces.py" line="867" />
+        <location filename="../../gui/tab_workspaces.py" line="875" />
         <source>Are you sure you want to delete %n workspace(s)?</source>
         <translation>
             <numerusform>Are you sure you want to delete %n workspace?</numerusform>
@@ -5715,12 +5715,12 @@ The settings page opens next. Enter the URL, user name and password of your GeoS
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="875" />
+        <location filename="../../gui/tab_workspaces.py" line="883" />
         <source>Workspace '{}' deleted.</source>
         <translation type="unfinished" />
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_workspaces.py" line="876" />
+        <location filename="../../gui/tab_workspaces.py" line="884" />
         <source>%n workspace(s) deleted.</source>
         <translation>
             <numerusform>%n workspace deleted.</numerusform>
@@ -5728,7 +5728,7 @@ The settings page opens next. Enter the URL, user name and password of your GeoS
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="881" />
+        <location filename="../../gui/tab_workspaces.py" line="889" />
         <source>This also deletes everything in it: datastores, coverage stores, cascaded stores, layers, layer groups and styles.</source>
         <translation type="unfinished" />
     </message>

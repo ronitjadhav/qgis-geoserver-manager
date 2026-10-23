@@ -5698,22 +5698,22 @@ Als Nächstes öffnet sich die Einstellungsseite. Geben Sie dort URL, Benutzerna
         <translation>Arbeitsbereich '{}' gespeichert.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="831" />
-        <source>Workspace '{}' saved, but its namespace or service settings were not: {}</source>
-        <translation>Arbeitsbereich '{}' gespeichert, aber nicht sein Namensraum oder seine Diensteinstellungen: {}</translation>
-    </message>
-    <message>
-        <location filename="../../gui/tab_workspaces.py" line="841" />
+        <location filename="../../gui/tab_workspaces.py" line="818" />
         <source>On GeoServer Cloud, WFS serves this workspace's layers again only after a catalog reload: on the Server tab, open Catalog and choose Reload.</source>
         <translation>In GeoServer Cloud liefert der WFS die Layer dieses Arbeitsbereichs erst nach einem Neuladen des Katalogs wieder aus: Öffnen Sie auf dem Reiter Server den Eintrag Katalog und wählen Sie Neu laden.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="863" />
+        <location filename="../../gui/tab_workspaces.py" line="843" />
+        <source>Workspace '{}' saved, but its namespace or service settings were not: {}</source>
+        <translation>Arbeitsbereich '{}' gespeichert, aber nicht sein Namensraum oder seine Diensteinstellungen: {}</translation>
+    </message>
+    <message>
+        <location filename="../../gui/tab_workspaces.py" line="871" />
         <source>Are you sure you want to delete workspace '{}'?</source>
         <translation>Möchten Sie den Arbeitsbereich '{}' wirklich löschen?</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_workspaces.py" line="867" />
+        <location filename="../../gui/tab_workspaces.py" line="875" />
         <source>Are you sure you want to delete %n workspace(s)?</source>
         <translation>
             <numerusform>Möchten Sie %n Arbeitsbereich wirklich löschen?</numerusform>
@@ -5721,12 +5721,12 @@ Als Nächstes öffnet sich die Einstellungsseite. Geben Sie dort URL, Benutzerna
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="875" />
+        <location filename="../../gui/tab_workspaces.py" line="883" />
         <source>Workspace '{}' deleted.</source>
         <translation>Arbeitsbereich '{}' gelöscht.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_workspaces.py" line="876" />
+        <location filename="../../gui/tab_workspaces.py" line="884" />
         <source>%n workspace(s) deleted.</source>
         <translation>
             <numerusform>%n Arbeitsbereich gelöscht.</numerusform>
@@ -5734,7 +5734,7 @@ Als Nächstes öffnet sich die Einstellungsseite. Geben Sie dort URL, Benutzerna
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_workspaces.py" line="881" />
+        <location filename="../../gui/tab_workspaces.py" line="889" />
         <source>This also deletes everything in it: datastores, coverage stores, cascaded stores, layers, layer groups and styles.</source>
         <translation>Dies löscht auch alles darin: Datenspeicher, Rasterdatenspeicher, kaskadierte Datenspeicher, Layer, Gruppenlayer und Stile.</translation>
     </message>
