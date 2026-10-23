@@ -10,11 +10,15 @@ from geoserver_manager.toolbelt.payload import (
     as_list,
     bbox_text,
     crs_text,
+    dimension_attributes,
+    dimension_form_values,
     name_of,
+    time_resolution,
     unwrap,
     view_form_values,
     view_of,
     virtual_table,
+    with_dimensions,
     with_view,
 )
 
@@ -191,3 +195,91 @@ class TestSqlViews(unittest.TestCase):
                 {"@key": VIRTUAL_TABLE, "virtualTable": {"name": "new"}},
             ],
         )
+
+
+# A feature type with both dimensions, as GeoServer 2.28.5 stored them.
+DIMENSIONED = {
+    "attributes": {
+        "attribute": [
+            {"name": "t", "binding": "java.sql.Timestamp"},
+            {"name": "t_end", "binding": "java.sql.Timestamp"},
+            {"name": "z", "binding": "java.math.BigDecimal"},
+            {"name": "label", "binding": "java.lang.String"},
+        ]
+    },
+    "metadata": {
+        "entry": [
+            {"@key": VIRTUAL_TABLE, "virtualTable": {"name": "d"}},
+            {
+                "@key": "time",
+                "dimensionInfo": {
+                    "enabled": True,
+                    "attribute": "t",
+                    "endAttribute": "t_end",
+                    "presentation": "DISCRETE_INTERVAL",
+                    "resolution": 86400000,
+                    "units": "ISO8601",
+                    "defaultValue": {"strategy": "MAXIMUM"},
+                    "nearestMatchEnabled": True,
+                },
+            },
+        ]
+    },
+}
+
+
+class TestDimensions(unittest.TestCase):
+    def test_each_dimension_is_offered_the_attributes_it_can_use(self):
+        # Another attribute is stored, and the layer then breaks.
+        self.assertEqual(dimension_attributes(DIMENSIONED, "time"), ["t", "t_end"])
+        self.assertEqual(dimension_attributes(DIMENSIONED, "elevation"), ["z"])
+
+    def test_the_form_values_of_stored_dimensions(self):
+        values = dimension_form_values(DIMENSIONED)
+        self.assertTrue(values["time_enabled"])
+        self.assertEqual(values["time_attribute"], "t")
+        self.assertEqual(values["time_end_attribute"], "t_end")
+        self.assertEqual(
+            (values["time_resolution"], values["time_resolution_unit"]), (1, "days")
+        )
+        self.assertEqual(values["time_default"], "MAXIMUM")
+        self.assertFalse(values["elevation_enabled"])
+        self.assertEqual(values["elevation_units"], "EPSG:5030")
+
+    def test_a_time_resolution_takes_the_largest_unit_it_fills(self):
+        self.assertEqual(time_resolution(2 * 604_800_000), (2, "weeks"))
+        self.assertEqual(time_resolution(36 * 3_600_000), (36, "hours"))
+        self.assertEqual(time_resolution(1500), (1, "seconds"))
+        self.assertEqual(time_resolution(None), (1, "days"))
+
+    def test_untouched_values_give_the_stored_dimension_back(self):
+        entries = DIMENSIONED["metadata"]["entry"]
+        written = with_dimensions(entries, dimension_form_values(DIMENSIONED))
+        self.assertEqual(written[0], entries[0])  # the SQL view is kept
+        self.assertEqual(written[1], entries[1])  # what the form hides too
+        self.assertEqual(len(written), 2)  # no elevation written
+
+    def test_elevation_on_and_time_off_keeping_its_settings(self):
+        values = dict(
+            dimension_form_values(DIMENSIONED),
+            time_enabled=False,
+            elevation_enabled=True,
+            elevation_attribute="z",
+            elevation_presentation="DISCRETE_INTERVAL",
+            elevation_resolution="100",
+            elevation_default="FIXED",
+            elevation_reference="200",
+        )
+        written = {
+            e["@key"]: e
+            for e in with_dimensions(DIMENSIONED["metadata"]["entry"], values)
+        }
+        self.assertFalse(written["time"]["dimensionInfo"]["enabled"])
+        self.assertEqual(written["time"]["dimensionInfo"]["attribute"], "t")
+        elevation = written["elevation"]["dimensionInfo"]
+        self.assertEqual(elevation["resolution"], 100.0)
+        self.assertEqual(elevation["units"], "EPSG:5030")
+        self.assertEqual(
+            elevation["defaultValue"], {"strategy": "FIXED", "referenceValue": "200"}
+        )
+        self.assertNotIn("endAttribute", elevation)

@@ -2832,7 +2832,7 @@ class TestSqlView(unittest.TestCase):
         values = self.dlg._layer_form_values(["pts", "topp", "VECTOR", "pg"], STORED)
         form = ResourceFormDialog(
             title="t",
-            fields=self.dlg._layer_fields(tab_layers.VECTOR, view=True),
+            fields=self.dlg._layer_fields(tab_layers.VECTOR, values=values),
             values=values,
         )
         self.assertEqual(values["sql"], "SELECT id, geom FROM t")
@@ -2894,6 +2894,104 @@ class TestSqlView(unittest.TestCase):
         self.dlg._save_view("topp", "pg", after)
         (entry,) = self.sent[1][2]["featureType"]["metadata"]["entry"]
         self.assertEqual(entry["virtualTable"]["geometry"]["srid"], 2056)
+
+
+DIMENSIONED = {
+    "name": "d",
+    "attributes": {
+        "attribute": [
+            {"name": "t", "binding": "java.sql.Timestamp"},
+            {"name": "z", "binding": "java.math.BigDecimal"},
+            {"name": "label", "binding": "java.lang.String"},
+        ]
+    },
+    "metadata": {
+        "entry": [
+            {"@key": "cachingEnabled", "$": "true"},
+            {
+                "@key": "time",
+                "dimensionInfo": {
+                    "enabled": True,
+                    "attribute": "label",  # stored by another client
+                    "presentation": "LIST",
+                    "units": "ISO8601",
+                    "defaultValue": {"strategy": "MAXIMUM"},
+                },
+            },
+        ]
+    },
+}
+ROW = ["d", "topp", "VECTOR", "pg"]
+
+
+class TestDimensions(unittest.TestCase):
+    def setUp(self):
+        self.dlg = SyncDialog()
+        self.dlg.gs = SqlViewGS()
+        self.values = self.dlg._layer_form_values(ROW, DIMENSIONED)
+
+    def form(self):
+        return ResourceFormDialog(
+            title="t",
+            fields=self.dlg._layer_fields(tab_layers.VECTOR, values=self.values),
+            values=self.values,
+        )
+
+    def test_an_untouched_form_sends_nothing_even_for_an_attribute_not_offered(self):
+        """A combo shows its first option for a value it lacks, and an
+        untouched Save then sent that one."""
+        after = self.form().get_values()
+        self.assertEqual(after["time_attribute"], "label")
+        self.assertFalse(self.dlg._dimensions_changed(self.values, after))
+        switched_on = dict(after, elevation_enabled=True)
+        self.assertTrue(self.dlg._dimensions_changed(self.values, switched_on))
+
+    def test_each_dimension_offers_only_the_attributes_it_can_use(self):
+        fields = {
+            f["key"]: f
+            for f in self.dlg._layer_fields(tab_layers.VECTOR, values=self.values)
+        }
+        self.assertEqual(fields["elevation_attribute"]["options"], ["z"])
+        self.assertEqual(fields["time_attribute"]["options"], ["t", "label"])
+        self.assertEqual(fields["time_enabled"]["group"], "Time")
+
+    def test_a_dimension_without_what_it_needs_is_refused(self):
+        for values, said in (
+            (
+                dict(self.values, elevation_enabled=True, elevation_attribute=""),
+                "attribute",
+            ),
+            (dict(self.values, time_default="FIXED", time_reference=""), "reference"),
+            (
+                dict(
+                    self.values,
+                    elevation_enabled=True,
+                    elevation_attribute="z",
+                    elevation_presentation="DISCRETE_INTERVAL",
+                    elevation_resolution="0",
+                ),
+                "resolution",
+            ),
+        ):
+            with self.assertRaises(ValueError, msg=said) as ctx:
+                self.dlg._check_dimensions(values)
+            self.assertIn(said, str(ctx.exception))
+
+    def test_a_dimension_saved_keeps_the_other_metadata(self):
+        sent = []
+
+        def raw_rest(method, path, **kwargs):
+            sent.append((method, kwargs.get("json")))
+            return Answer({"featureType": DIMENSIONED})
+
+        self.dlg._raw_rest = raw_rest
+        after = dict(
+            self.values, name="d", elevation_enabled=True, elevation_attribute="z"
+        )
+        self.dlg._save_dimensions("topp", "pg", after)
+        (_get, (method, body)) = sent
+        keys = [e["@key"] for e in body["featureType"]["metadata"]["entry"]]
+        self.assertEqual(keys, ["cachingEnabled", "time", "elevation"])
 
 
 # ############################################################################

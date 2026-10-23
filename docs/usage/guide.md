@@ -303,6 +303,22 @@ change:
 as it is. The **Data** tab shows the native name, the store, the bounds and
 the attributes (or the size and bands of a raster).
 
+The **Time** and **Elevation** tabs of a vector layer serve its features by
+date or by height, as WMS and WFS dimensions:
+
+- **Attribute** and **End attribute**: the column that holds the value, and
+  for a feature that covers a range, the column where the range ends. Time
+  offers the date and time attributes, elevation the numeric ones. GeoServer
+  stores any name, and a wrong one breaks the layer, so the list holds only
+  what fits.
+- **Capabilities show**: a list of every value, a continuous interval, or an
+  interval with a resolution, such as one day or 100 m.
+- **Default value**: what a request that names no value gets. The smallest
+  value, the largest, the one nearest to a reference, or the reference itself.
+
+A dimension turned off keeps its settings, so it comes back the same when
+you turn it on again.
+
 ```{figure} ../static/screenshots/layer-details.png
 :alt: The edit form of the states layer, with its name, title, abstract, keywords, SRS, projection policy and the enabled and advertised flags
 :width: 420px

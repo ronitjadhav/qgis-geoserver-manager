@@ -189,3 +189,142 @@ def with_view(entries, view):
         if not (isinstance(e, dict) and e.get("@key") == VIRTUAL_TABLE)
     ]
     return kept + [{"@key": VIRTUAL_TABLE, "virtualTable": view}]
+
+
+# -- Dimensions ---------------------------------------------------------------
+# A layer's time and elevation, as metadata entries holding a dimensionInfo.
+DIMENSIONS = ("time", "elevation")
+# A time resolution is stored in milliseconds; the units the form offers.
+TIME_UNITS = (
+    ("weeks", 604_800_000),
+    ("days", 86_400_000),
+    ("hours", 3_600_000),
+    ("minutes", 60_000),
+    ("seconds", 1000),
+)
+# The attribute bindings each dimension can use. Another one is stored and
+# then breaks the layer (measured on 2.28.5), so the form offers only these.
+_TIME_BINDINGS = ("Date", "Timestamp", "Time")
+_ELEVATION_BINDINGS = ("Short", "Integer", "Long", "Float", "Double", "BigDecimal")
+
+
+def attribute_bindings(resource):
+    """A feature type's attributes as (name, binding's short name) pairs."""
+    attributes = (resource or {}).get("attributes") or []
+    if isinstance(attributes, dict):
+        attributes = attributes.get("attribute") or []
+    if isinstance(attributes, dict):
+        attributes = [attributes]
+    return [
+        (str(a.get("name")), str(a.get("binding") or "").rsplit(".", 1)[-1])
+        for a in attributes
+        if isinstance(a, dict) and a.get("name")
+    ]
+
+
+def dimension_attributes(resource, dimension):
+    """The attributes a dimension can use: dates for time, numbers for elevation."""
+    kinds = _TIME_BINDINGS if dimension == "time" else _ELEVATION_BINDINGS
+    return [name for name, binding in attribute_bindings(resource) if binding in kinds]
+
+
+def dimension_form_values(resource):
+    """Each dimension's settings as the form shows them, prefixed time_ or
+    elevation_. A resolution is split into a number and, for time, a unit."""
+    stored = {
+        entry.get("@key"): entry.get("dimensionInfo") or {}
+        for entry in metadata_entries(resource)
+        if isinstance(entry, dict) and entry.get("@key") in DIMENSIONS
+    }
+    values = {}
+    for dimension in DIMENSIONS:
+        info = stored.get(dimension, {})
+        default = info.get("defaultValue") or {}
+        reference = default.get("referenceValue")
+        values.update(
+            {
+                f"{dimension}_enabled": bool(info.get("enabled")),
+                f"{dimension}_attribute": str(info.get("attribute") or ""),
+                f"{dimension}_end_attribute": str(info.get("endAttribute") or ""),
+                f"{dimension}_presentation": info.get("presentation") or "LIST",
+                f"{dimension}_default": default.get("strategy") or "MINIMUM",
+                f"{dimension}_reference": "" if reference is None else str(reference),
+            }
+        )
+        resolution = info.get("resolution")
+        if dimension == "time":
+            count, unit = time_resolution(resolution)
+            values.update(time_resolution=count, time_resolution_unit=unit)
+        else:
+            values.update(
+                elevation_resolution="" if resolution is None else str(resolution),
+                elevation_units=str(info.get("units") or "EPSG:5030"),
+                elevation_unit_symbol=str(info.get("unitSymbol") or "m"),
+            )
+    return values
+
+
+def time_resolution(milliseconds):
+    """(count, unit) for a stored time resolution: the largest unit it fills
+    exactly; (1, "days") when there is none."""
+    try:
+        milliseconds = int(milliseconds)
+    except (TypeError, ValueError):
+        return 1, "days"
+    for unit, size in TIME_UNITS:
+        if milliseconds > 0 and milliseconds % size == 0:
+            return milliseconds // size, unit
+    return max(1, milliseconds // 1000), "seconds"
+
+
+def dimension_info(dimension, values, stored=None):
+    """The dimensionInfo GeoServer stores, from the form's values, over what
+    was stored (a field the form does not show is kept)."""
+    info = dict(stored or {})
+    info.update(
+        enabled=True,
+        attribute=values[f"{dimension}_attribute"],
+        presentation=values[f"{dimension}_presentation"],
+    )
+    end = values.get(f"{dimension}_end_attribute") or ""
+    if end:
+        info["endAttribute"] = end
+    else:
+        info.pop("endAttribute", None)
+    info.pop("resolution", None)
+    if values[f"{dimension}_presentation"] == "DISCRETE_INTERVAL":
+        if dimension == "time":
+            size = dict(TIME_UNITS)[values["time_resolution_unit"]]
+            info["resolution"] = int(values["time_resolution"]) * size
+        else:
+            info["resolution"] = float(values["elevation_resolution"])
+    if dimension == "time":
+        info.setdefault("units", "ISO8601")
+    else:
+        info["units"] = values["elevation_units"]
+        info["unitSymbol"] = values["elevation_unit_symbol"]
+    default = {"strategy": values[f"{dimension}_default"]}
+    if default["strategy"] in ("NEAREST", "FIXED"):
+        default["referenceValue"] = values[f"{dimension}_reference"]
+    info["defaultValue"] = default
+    return info
+
+
+def with_dimensions(entries, values):
+    """The metadata entries with each dimension as the form left it, the
+    others kept: a metadata PUT replaces the whole map. A dimension turned
+    off keeps its settings, with enabled false."""
+    by_key = {e.get("@key"): e for e in entries if isinstance(e, dict)}
+    kept = [
+        e for e in entries if not (isinstance(e, dict) and e.get("@key") in DIMENSIONS)
+    ]
+    for dimension in DIMENSIONS:
+        stored = (by_key.get(dimension) or {}).get("dimensionInfo")
+        if values.get(f"{dimension}_enabled"):
+            info = dimension_info(dimension, values, stored)
+        elif stored is not None:
+            info = dict(stored, enabled=False)
+        else:
+            continue
+        kept.append({"@key": dimension, "dimensionInfo": info})
+    return kept
