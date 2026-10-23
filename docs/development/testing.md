@@ -62,6 +62,18 @@ GeoServer. A release that changes an answer shows within a week. Run the
 workflow by hand before a minor release, from the *Actions* tab. Its
 *versions* field takes other image tags, such as `2.27.6`.
 
+The same workflow runs the suite against the latest 2.x and 3.x releases of
+GeoServer Cloud. Each runs twice: with its catalog in a data directory, and
+in PostgreSQL. `.github/cloud/run_live.sh` does it all, from Cloud's own compose
+files, and runs the same way by hand (Docker, and about 6 GB of memory):
+
+```bash
+GATEWAY_PORT=9193 .github/cloud/run_live.sh 3.0.2 pgconfig
+```
+
+For a catalog without the demo data, `GSM_LIVE_SHAPES` and `GSM_LIVE_DEM`
+name where GeoServer finds the sf shapefiles and DEM.
+
 When a new GeoServer series comes out, the first step fails: the dialog warns
 that the series is not tested. Run the suite against it and fix what fails.
 Then add the series to `_TESTED_SERIES` in `gui/dlg_main.py`, and to the table

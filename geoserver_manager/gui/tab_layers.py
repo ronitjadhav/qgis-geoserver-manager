@@ -1513,17 +1513,35 @@ class LayerTabMixin:
             self._refuse_foreign_wfs(
                 qualified_name.rpartition(":")[0], settings.geoserver_url
             )
-        uri, provider = self._layer_uri(
-            protocol,
-            settings.geoserver_url,
-            qualified_name,
-            settings.geoserver_auth_cfg_id,
-            # The plain fields, never get_credentials(): this runs in a
-            # worker, and the auth database is the GUI thread's.
-            (settings.geoserver_username, settings.geoserver_password),
-        )
-        layer_class = QgsVectorLayer if provider == "WFS" else QgsRasterLayer
-        return layer_class(uri, title, provider)
+
+        def build(qualified_tiles=False):
+            uri, provider = self._layer_uri(
+                protocol,
+                settings.geoserver_url,
+                qualified_name,
+                settings.geoserver_auth_cfg_id,
+                # The plain fields, never get_credentials(): this runs in a
+                # worker, and the auth database is the GUI thread's.
+                (settings.geoserver_username, settings.geoserver_password),
+                qualified_tiles=qualified_tiles,
+            )
+            layer_class = QgsVectorLayer if provider == "WFS" else QgsRasterLayer
+            return layer_class(uri, title, provider)
+
+        layer = build()
+        if (
+            protocol == "WMTS"
+            and self.gs_cloud
+            and ":" in qualified_name
+            and not layer.isValid()
+        ):
+            # GeoServer Cloud 3.0 names it qualified on the workspace's
+            # endpoint too, where GeoServer and Cloud 2.28 name it bare. On
+            # GeoServer an invalid layer is invalid for another reason, and
+            # a second try would cost another capabilities download and
+            # replace its error with "ws:layer not found".
+            layer = build(qualified_tiles=True)
+        return layer
 
     def _refuse_foreign_wfs(self, workspace_name, base_url):
         """Refuse a WFS whose capabilities send QGIS to another address.
@@ -1560,7 +1578,12 @@ class LayerTabMixin:
 
     @staticmethod
     def _layer_uri(
-        protocol, base_url, qualified_name, authcfg="", credentials=("", "")
+        protocol,
+        base_url,
+        qualified_name,
+        authcfg="",
+        credentials=("", ""),
+        qualified_tiles=False,
     ):
         """Provider URI for one GeoServer layer. Returns (uri, provider_key).
 
@@ -1581,6 +1604,10 @@ class LayerTabMixin:
         themselves, so a saved project holds no password. Otherwise the
         plain-text `credentials` go in the source, as QGIS's own Basic
         connections keep them, and a saved project holds them too.
+
+        `qualified_tiles` asks a workspace's WMTS endpoint for the qualified
+        name: GeoServer Cloud 3.0.2 lists every layer there qualified, where
+        GeoServer and Cloud 2.28.6 list that workspace's layers bare.
         """
         base = base_url.rstrip("/")
         workspace, _, name = qualified_name.rpartition(":")
@@ -1607,7 +1634,7 @@ class LayerTabMixin:
             # crs=EPSG:4326 alongside made QGIS accept the layer and reproject
             # every tile on the fly (measured on 2.28.5 / QGIS 3.44).
             return (
-                f"format=image/png&layers={name}&styles="
+                f"format=image/png&layers={qualified_name if qualified_tiles else name}&styles="
                 f"&tileMatrixSet={_WMTS_TILE_MATRIX_SET}"
                 f"&url={base}/gwc/service/wmts?REQUEST=GetCapabilities"
                 f"&IgnoreGetMapUrl=1&IgnoreGetFeatureInfoUrl=1{auth}",

@@ -15,6 +15,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   and **Elevation** tabs of its edit form.
 - **Added.** Gridsets of your own in the Tile Cache tab: view them, add one
   for any CRS, and delete one no layer uses.
+- **Fixed.** On GeoServer Cloud, **Seed or truncate…** opens: it read a
+  gridset through a path Cloud's gateway refuses.
+- **Fixed.** On GeoServer Cloud, **Add to QGIS** as WMTS finds the layer.
+- **Added.** On GeoServer Cloud, a changed namespace URI says that WFS needs
+  a catalog reload.
+- **Changed.** GeoServer Cloud 2.28.6 and 3.0.2 are tested every week, with
+  both catalogs.
 - **Added.** The whole interface in French and in German. The plugin follows
   the language of QGIS.
 

@@ -158,39 +158,43 @@ carries a `TODO(#1)` comment at the call site.
   model without `epsg_code`.
 - **SQL views** (row 82 of #1; measured on 2.28.5, the live suite runs them on
   3.0.2 too). A view is a feature type whose metadata holds a
-  `JDBC_VIRTUAL_TABLE` entry: `virtualTable` with `name`, `sql`, `escapeSql`,
-  `keyColumn` (a list for two), `geometry` (`name`, `type`, `srid`) and
-  `parameter` (`name`, `defaultValue`, `regexpValidator`). The library writes
-  no metadata, so the plugin POSTs and PUTs it raw. GeoServer computes the
-  bounds and the attributes from the query, and stores the attributes; the
-  key columns are not among them. It adds a newline to the SQL and writes a
-  numeric default as a number. Without a geometry, the column is typed
-  `Geometry`; without an `srs`, the layer gets EPSG:404000. A parameter saved
-  without a validator is not checked at all, so the plugin fills in the
-  web interface's default, `^[\w\d\s]+$`. A create with a query GeoServer
-  cannot run is a 500 "Error occurred building feature type" that leaves
-  nothing. A view on a store of files is a 500 "Not available". **A metadata
-  PUT replaces the whole map**: a PUT of the view alone dropped a
-  `cachingEnabled` entry. **An edit to a query GeoServer cannot run answers
-  200**, and every read of the feature type is then a 500 "Could not get
-  native attributes". A PUT of the old view repairs it. So the edit reads
-  the entries again, swaps the view's, reads the feature type back, and puts
-  the old entries back on a failure. A new column appears at once, without a
-  reset.
+  `JDBC_VIRTUAL_TABLE` entry. Its `virtualTable` has `name`, `sql`,
+  `escapeSql`, `keyColumn` (a list for two), `geometry` (`name`, `type`,
+  `srid`) and `parameter` (`name`, `defaultValue`, `regexpValidator`). The
+  library writes no metadata, so the plugin POSTs and PUTs it raw. GeoServer
+  computes the bounds and the attributes from the query, and stores the
+  attributes; the key columns are not among them. It adds a newline to the
+  SQL and writes a numeric default as a number. Without a geometry, the
+  column is typed `Geometry`; without an `srs`, the layer gets EPSG:404000.
+  A parameter saved without a validator is not checked at all, so the plugin
+  fills in the web interface's default, `^[\w\d\s]+$`. A create with a
+  query GeoServer cannot run is a 500 "Error occurred building feature type"
+  that leaves nothing. A view on a store of files is a 500 "Not available".
+  **A metadata PUT replaces the whole map**: a PUT of the view alone dropped
+  a `cachingEnabled` entry. **An edit to a query GeoServer cannot run answers
+  200.** Every read of the feature type is then a 500 "Could not get native
+  attributes", and a PUT of the old view repairs it. So the edit reads the
+  entries again, swaps the view's, reads the feature type back, and puts the
+  old entries back on that 500. A read that failed on the way keeps the save.
+  A view another client broke cannot be opened in the plugin either: its GET
+  is that same 500. The `geometry.srid` is the data's own CRS, apart from the
+  layer's declared SRS, and an edit keeps it. A new column appears at once,
+  without a reset.
 - **Dimensions** (row 83 of #1; measured on 2.28.5, the live suite runs them on
-  3.0.2 too): a `time` and an `elevation` metadata entry on the feature type,
-  each a `dimensionInfo` with `enabled`, `attribute`, `endAttribute`,
-  `presentation` (`LIST`, `CONTINUOUS_INTERVAL`, `DISCRETE_INTERVAL`),
-  `resolution`, `units`, `unitSymbol` and `defaultValue` (`strategy` among
-  `MINIMUM`, `MAXIMUM`, `NEAREST`, `FIXED`, with a `referenceValue`). A time
-  resolution is in milliseconds: 86400000 shows as `P1D`. Off, the entry
-  stays with `enabled` false and the capabilities leave it out. A PUT of the
-  feature type without `metadata` keeps them. The same replace rule as for a
-  SQL view applies to a metadata PUT. **A wrong attribute is answered 200**:
-  the layer's dimensions then vanish from the capabilities, and a GetMap is
-  an exception. So the form offers only date and time attributes for time,
-  and numeric ones for elevation. The library's `FeatureType` models the
-  time dimension only, and sends it as the whole map.
+  3.0.2 too). They are a `time` and an `elevation` metadata entry on the
+  feature type. Each is a `dimensionInfo` with `enabled`, `attribute`,
+  `endAttribute`, `presentation`, `resolution`, `units`, `unitSymbol` and
+  `defaultValue`. The presentation is `LIST`, `CONTINUOUS_INTERVAL` or
+  `DISCRETE_INTERVAL`. The default's `strategy` is `MINIMUM`, `MAXIMUM`,
+  `NEAREST` or `FIXED`, with a `referenceValue`. A time resolution is in
+  milliseconds: 86400000 shows as `P1D`. Off, the entry stays with `enabled`
+  false and the capabilities leave it out. A PUT of the feature type without
+  `metadata` keeps them. The same replace rule as for a SQL view applies to
+  a metadata PUT. **A wrong attribute is answered 200**: the layer's
+  dimensions then vanish from the capabilities, and a GetMap is an
+  exception. So the form offers only date and time attributes for time, and
+  numeric ones for elevation. The library's `FeatureType` models the time
+  dimension only, and sends it as the whole map.
 - **An emptied datastore description has to be sent as `""`.** The library leaves a
   `None` field out of the payload. A PUT without `description` keeps the old one.
   Measured on 2.28.5: "old text" survived a PUT with `description=None`, and `""`
@@ -413,6 +417,24 @@ carries a `TODO(#1)` comment at the call site.
   reads `format=json`, not the `Accept` header it sends. `POST /rest/reload` and
   `/rest/reset` answer 200 at once on the sandbox. The pages of GeoServer's web
   interface are `/web/wicket/bookmarkable/{class}` (a wrong class is a 404).
+- **GeoServer Cloud** (the live suite runs on 2.28.6 and 3.0.2, both with a
+  `datadir` and a `pgconfig` catalog). Its gateway answers a path with an
+  encoded colon (`EPSG%3A4326`) with a 400, where GeoServer accepts it. So a
+  gridset or a qualified layer keeps its colon in a path. On 3.0.2 the tile
+  service names every layer qualified on a workspace's endpoint too, and
+  lists every workspace's layers there. Cloud 2.28.6 names them bare there,
+  as GeoServer does. So *Add to QGIS* asks for the bare name, then for
+  `ws:layer` when QGIS cannot find it. A namespace URI change reaches the
+  REST service only (measured on 3.0.2 and 2.28.6). WFS then answers
+  "Feature type … unknown" for every layer of the workspace. A new
+  workspace with the old URI is a 500 "Namespace with URI … already
+  exists". `POST /rest/reload` repairs both, and the plugin says so after
+  such a save. A new layer is cached within half a second. SQL views,
+  dimensions and gridsets work as on GeoServer, and the `pgconfig` resource
+  store serves `gwc/geowebcache.xml` too. Its demo catalog caches no layer.
+  Cloud 2.28.6's own compose files ship RabbitMQ 4, on which its services
+  cannot declare their event queues: they never learn a catalog change.
+  RabbitMQ 3.13 works, and the live run uses it for 2.x.
 - **Non-administrator accounts** (measured on 2.28.5 with restricted accounts). REST
   lists and GETs only what the account administers. A resource it cannot see is a
   404 ("No such workspace"), not a 403. `workspaces/default.json` is a 404 when the
@@ -573,20 +595,21 @@ carries a `TODO(#1)` comment at the call site.
   list is a JSON array of names. A JSON PUT fails the same way ("Duplicate field
   coords"). An XML PUT creates one (201), and DELETE removes it. Deleting a gridset
   in use answers 500 with an empty body.
-- **Gridsets of one's own** (row 84 of #1; measured on 2.28.5 and 3.0.2): 141
-  are built in, and a DELETE of one is a bare 500. The ones a user makes are
-  kept in the data directory's `gwc/geowebcache.xml`, readable at
-  `GET /rest/resource/gwc/geowebcache.xml`. GeoWebCache rewrites that file on
-  its first write, from what it loaded: the demo's file names EPSG:2163, which
-  is not listed and is gone after a write. So a gridset of one's own is one in
-  the file and in the list. An XML `PUT /gwc/rest/gridsets/{name}.xml` of the
-  name, the SRS number, the extent, `resolutions` and the tile size creates
-  one (201; again, 200 replaces it). GeoWebCache adds the scale names, and
-  `pixelSize` 0.00028. It stores **`metersPerUnit` 1.0 when it is missing**,
-  also for a geographic CRS: the WMTS scale of level 0 was then 781 instead of
-  86 million. The built-in EPSG:4326 has 111319.49079327358, which is also
+- **Gridsets of one's own** (row 84 of #1; measured on 2.28.5 and 3.0.2).
+  GeoWebCache has 141 built in, and a DELETE of one is a bare 500. The ones a user
+  makes are kept in the data directory's `gwc/geowebcache.xml`, readable at
+  `GET /rest/resource/gwc/geowebcache.xml`. GeoWebCache rewrites that file
+  on its first write, from what it loaded. The demo's file names EPSG:2163,
+  which is not listed and is gone after a write. So a gridset of one's own
+  is one in the file and in the list. An XML
+  `PUT /gwc/rest/gridsets/{name}.xml` of the name, the SRS number, the
+  extent, `resolutions` and the tile size creates one (201; again, 200
+  replaces it). GeoWebCache adds the scale names, and `pixelSize` 0.00028.
+  **It stores `metersPerUnit` 1.0 when it is missing**, also for a
+  geographic CRS. The WMTS scale of level 0 was then 781 instead of 86
+  million. The built-in EPSG:4326 has 111319.49079327358, which is also
   QGIS's factor for degrees. **A DELETE of a gridset a layer uses answers
-  200**: the layer keeps naming it, and the WMTS capabilities of the whole
+  200.** The layer keeps naming it, and the WMTS capabilities of the whole
   server are a 400 until the layer is fixed. Issue #6 had recorded a 500. A
   tile outside a gridset's extent is a 400 `TileOutOfRange`.
 - **Layer-group modes** are shown as GeoServer's web interface names them: Single,

@@ -724,6 +724,18 @@ class TestBackgroundLoading(unittest.TestCase):
         self.assertGreater(ticks, 1)
         self.assertIn("Connected", self.dlg.lbl_status.text())
         self.assertIn("2.28.5", self.dlg.lbl_status.text())
+        self.assertFalse(self.dlg.gs_cloud)
+
+    def test_a_cloud_server_is_remembered_once_connected(self):
+        """A few answers differ on GeoServer Cloud; the tabs read gs_cloud."""
+        self.dlg.plg_settings = FakePrefs()
+        self.dlg._build_client = lambda settings: SlowGS(latency=0)
+        self.dlg._probe = lambda gs, url: None
+        self.dlg._fetch_version_label = lambda gs: "GeoServer Cloud 3.0.2"
+        self.dlg.refresh_ui()
+        spin_until(lambda: self.dlg.gs is not None)
+        self.assertTrue(self.dlg.gs_cloud)
+        self.assertIn("GeoServer Cloud 3.0.2", self.dlg.lbl_status.text())
 
 
 class TestUploadTask(unittest.TestCase):

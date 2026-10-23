@@ -45,11 +45,16 @@ from tests.qgis.sync_dialog import FakePrefs, SyncDialog
 start_app()
 
 URL = os.environ.get("GSM_LIVE_URL", "").rstrip("/")
+# Where GeoServer finds the demo data's sf shapefiles and DEM: a catalog in
+# a database (GeoServer Cloud's pgconfig) has them elsewhere.
+SHAPES = os.environ.get("GSM_LIVE_SHAPES", "file:data/sf")
+DEM = os.environ.get("GSM_LIVE_DEM", "file:data/sf/sfdem.tif")
 AUTH = ("admin", "geoserver")
 WS = "gsm_live"
 LAYER = f"{WS}:archsites"
 VIEW = f"{WS}:live_view"
 GRIDSET = "gsm_live_26713"
+RUN = int(time.time())
 VIEW_SQL = (
     "SELECT g AS id, 'p' || g AS label,"
     " TIMESTAMP '2026-01-01' + g * INTERVAL '1 day' AS t, g * 100.0 AS z,"
@@ -239,27 +244,47 @@ class TestLiveGeoServer(unittest.TestCase):
         # _TESTED_SERIES.
         self.assertEqual(self.connecting, [])
 
-    def test_02_every_tab_lists_the_demo_data(self):
+    def test_02_every_tab_loads(self):
+        # Every GeoServer has styles and settings; the other tabs depend on
+        # the catalog (GeoServer Cloud's demo caches no layer, a database
+        # catalog starts empty). Later steps list what they create.
+        filled = ("Styles", "Server")
         for label, _, _ in self.dlg.TABS:
             with self.subTest(tab=label):
                 self.banners.clear()
                 rows = self.show_tab(label)
-                if label != "Cascaded Stores":  # the demo data has none
+                if label in filled:
                     self.assertGreater(len(rows), 0)
 
     # -- Workspace -----------------------------------------------------------
 
     def test_10_add_a_workspace(self):
-        with answering({"name": WS}):
+        # A URI of its own per run: GeoServer Cloud keeps an old URI in its
+        # index after a change and a delete, and refuses it for a new one.
+        with answering({"name": WS, "uri": f"http://example.org/gsm_live/{RUN}"}):
             self.dlg._add_workspace()
         self.assertEqual(self.said(), [f"Workspace '{WS}' created."])
         self.assertEqual(self.get(f"workspaces/{WS}.json")["workspace"]["name"], WS)
 
     def test_11_edit_the_workspace(self):
-        uri = "http://example.org/gsm_live"
+        uri = f"http://example.org/gsm_live/{RUN}/edited"
         with answering({"uri": uri, "wms_own": True, "wms_title": "Live WMS"}):
             self.dlg._show_workspace_info(self.row("Workspaces", WS, workspace=None))
-        self.assertEqual(self.said(), [f"Workspace '{WS}' saved."])
+        saved = [text for level, text in self.banners if level == "ok"]
+        self.assertEqual(saved, [f"Workspace '{WS}' saved."])
+        if self.dlg.gs_cloud:
+            # Cloud's WFS loses the workspace's layers until a catalog reload
+            # (measured on Cloud 3.0.2), and the plugin says so.
+            (warning,) = [text for level, text in self.banners if level == "warning"]
+            self.assertIn("catalog reload", warning)
+            self.banners.clear()
+            with answering({"action": "reload"}):
+                self.dlg._show_server_section(
+                    self.row("Server", "Catalog", workspace=None)
+                )
+            self.assertEqual(len(self.said()), 1)
+        else:
+            self.said()
         self.assertEqual(self.get(f"namespaces/{WS}.json")["namespace"]["uri"], uri)
         wms = self.get(f"services/wms/workspaces/{WS}/settings.json")["wms"]
         self.assertEqual(wms["title"], "Live WMS")
@@ -272,7 +297,7 @@ class TestLiveGeoServer(unittest.TestCase):
                 "type": "Directory of spatial files (shapefiles)",
                 "workspace": WS,
                 "name": "shapes",
-                "file_url": "file:data/sf",
+                "file_url": SHAPES,
             }
         ):
             self.dlg._add_datastore()
@@ -691,9 +716,7 @@ class TestLiveGeoServer(unittest.TestCase):
     # -- Coverage stores -----------------------------------------------------
 
     def test_60_add_a_geotiff_store(self):
-        with answering(
-            {"name": "dem", "workspace": WS, "url": "file:data/sf/sfdem.tif"}
-        ):
+        with answering({"name": "dem", "workspace": WS, "url": DEM}):
             self.dlg._add_coverage_store()
         self.assertEqual(len(self.said()), 1)
         store = self.get(f"workspaces/{WS}/coveragestores/dem.json")["coverageStore"]
@@ -721,7 +744,7 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertEqual(len(self.said()), 1)
         store = self.get(f"workspaces/{WS}/coveragestores/dem.json")["coverageStore"]
         self.assertEqual(store["description"], "edited live")
-        self.assertEqual(store["url"], "file:data/sf/sfdem.tif")
+        self.assertEqual(store["url"], DEM)
 
     def test_64_reset_the_coverage_store(self):
         self.dlg._reset_coverage_store(self.row("Coverage Stores", "dem"))
