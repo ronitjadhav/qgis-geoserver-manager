@@ -19,15 +19,23 @@ from geoserver_manager.gui.dlg_preview import LayerPreviewDialog, load_error
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
 from geoserver_manager.gui.scope import PENDING
 from geoserver_manager.toolbelt.payload import (
+    GEOMETRY_TYPES,
+    VIEW_FIELDS,
     bbox_text,
     keyword_list,
+    metadata_entries,
     text_of,
     unwrap,
+    view_form_values,
+    view_of,
+    virtual_table,
+    with_view,
     words,
 )
 from geoserver_manager.toolbelt.qgis_export import (
     geoserver_name,
 )
+from geoserver_manager.toolbelt.rest import PartlySaved
 from geoserver_manager.toolbelt.sld import (
     layer_to_sld,
     styleable_project_layers,
@@ -277,6 +285,7 @@ class LayerTabMixin:
         # attributes to a list; raw REST wraps them ({"string": […]},
         # {"attribute": […]}). Accept both: a live server showed the difference.
         keywords = keyword_list(detail.get("keywords"))
+        view = virtual_table(detail)
 
         bounds = bbox_text(detail.get("nativeBoundingBox")) or "-"
 
@@ -311,11 +320,13 @@ class LayerTabMixin:
             "cql_filter": detail.get("cqlFilter") or "",
             "bbox": bounds,
             "attributes": attribute_text,
+            **({} if view is None else view_form_values(view)),
         }
 
-    def _layer_fields(self, kind=VECTOR):
+    def _layer_fields(self, kind=VECTOR, view=False):
         """The layer edit form: what GeoServer lets a partial PUT change on the
-        resource first, read-only details on the Data tab.
+        resource first, read-only details on the Data tab, and a SQL view's
+        own fields on a tab of their own.
 
         Every field on the first tab was measured to merge on 2.28.5 (feature
         types and coverages alike); the CQL filter exists for vectors only.
@@ -445,7 +456,75 @@ class LayerTabMixin:
                     "group": data,
                 }
             )
+        if view:
+            group = translate("LayerTabMixin", "SQL view")
+            fields += [dict(field, group=group) for field in self._view_fields()]
         return fields
+
+    def _view_fields(self, visible=True):
+        """A SQL view's fields: the publish form's, and a view's edit form's."""
+        shown = {} if visible else {"visible": False}
+        return [
+            {
+                "key": "sql",
+                "label": translate("LayerTabMixin", "SQL"),
+                "type": "textarea",
+                "code": "sql",
+                "required": True,
+                **shown,
+                "help": translate(
+                    "LayerTabMixin",
+                    "One SELECT. Write a parameter as %name%: a request can then "
+                    "give it a value through viewparams.",
+                ),
+            },
+            {
+                "key": "geometry_column",
+                "label": translate("LayerTabMixin", "Geometry column"),
+                "type": "text",
+                "placeholder": "geom",
+                **shown,
+                "help": translate(
+                    "LayerTabMixin",
+                    "Without one, GeoServer gives the geometry the type Geometry.",
+                ),
+            },
+            {
+                "key": "geometry_type",
+                "label": translate("LayerTabMixin", "Geometry type"),
+                "type": "combo",
+                "options": list(GEOMETRY_TYPES),
+                **shown,
+            },
+            {
+                "key": "key_columns",
+                "label": translate("LayerTabMixin", "Key columns"),
+                "type": "list",
+                **shown,
+                "help": translate(
+                    "LayerTabMixin",
+                    "The columns that identify a feature. Without them, a feature "
+                    "gets a new id at every request.",
+                ),
+            },
+            {
+                "key": "parameters",
+                "label": translate("LayerTabMixin", "Parameters"),
+                "type": "table",
+                "columns": [
+                    {"label": translate("LayerTabMixin", "Parameter")},
+                    {"label": translate("LayerTabMixin", "Default value")},
+                    {"label": translate("LayerTabMixin", "Validator")},
+                ],
+                **shown,
+                "help": translate(
+                    "LayerTabMixin",
+                    "An empty validator gets GeoServer's default, ^[\\w\\d\\s]+$: "
+                    "letters, digits and spaces only. Without a validator, a "
+                    "request could put any SQL into the view.",
+                ),
+            },
+        ]
 
     @staticmethod
     def _unreadable(name):
@@ -535,7 +614,7 @@ class LayerTabMixin:
             description=translate(
                 "LayerTabMixin", "Published from {ws}/{store}."
             ).format(ws=ws_name, store=store),
-            fields=self._layer_fields(kind),
+            fields=self._layer_fields(kind, view="sql" in values),
             values=values,
             parent=self,
             validate=self._form_check(
@@ -547,7 +626,9 @@ class LayerTabMixin:
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
         after = dlg.get_values()
-        if self._layer_changes(before, after, kind)[0] is None:
+        if self._layer_changes(before, after, kind)[0] is None and not (
+            self._view_changed(before, after)
+        ):
             return  # nothing changed: no request
         if self._run_action(
             # In the worker, behind the waiting box: a slow server must not
@@ -636,16 +717,93 @@ class LayerTabMixin:
         """
         ws_name, kind, store = row_data[1], row_data[2], row_data[3]
         body, recalculate = self._layer_changes(before, after, kind)
-        if body is None:
-            return
-        self._check_layer_edit(ws_name, body)
-        wrapper = "coverage" if kind == RASTER else "featureType"
+        if body is not None:
+            self._check_layer_edit(ws_name, body)
+            wrapper = "coverage" if kind == RASTER else "featureType"
+            self._raw_rest(
+                "put",
+                self._resource_path(ws_name, kind, store, before["name"]),
+                json={wrapper: body},
+                params=(
+                    {"recalculate": "nativebbox,latlonbbox"} if recalculate else None
+                ),
+            )
+        if self._view_changed(before, after):
+            try:
+                self._save_view(ws_name, store, after)
+            except Exception as error:
+                if body is None:
+                    raise
+                raise PartlySaved(
+                    translate(
+                        "LayerTabMixin", "Layer '{}' saved, but not its SQL view: {}"
+                    ).format(after["name"], self._error_text(error))
+                ) from error
+
+    @staticmethod
+    def _view_changed(before, after):
+        """Whether the form changed a SQL view's own fields. Pure."""
+        return "sql" in before and any(
+            before.get(key) != after.get(key) for key in VIEW_FIELDS
+        )
+
+    def _save_view(self, ws_name, store, values):
+        """PUT a view's new SQL, and put the old one back if GeoServer cannot
+        run it.
+
+        TODO(#1): nothing in the library writes a feature type's metadata (row
+        82). Measured on 2.28.5: a metadata PUT replaces the whole map, so the
+        other entries go with it, and a SQL GeoServer cannot run is answered
+        200, after which every read of the layer fails with "Could not get
+        native attributes". Putting the old view back repairs it.
+        """
+        path = self._resource_path(ws_name, VECTOR, store, values["name"])
+        current = self._raw_rest("get", path).json().get("featureType") or {}
+        entries = metadata_entries(current)
+        old = virtual_table(current) or {}
+        # The geometry's srid is the data's own CRS, not the layer's declared
+        # SRS (projectionPolicy reconciles the two): a view made elsewhere
+        # with srid 2056 and declared 3857 keeps 2056. Only a view without a
+        # geometry yet takes the declared one.
+        srid = (old.get("geometry") or {}).get("srid")
+        if srid is None:
+            code = str(values.get("srs") or "").upper().removeprefix("EPSG:")
+            srid = int(code) if code.isdigit() else None
+        view = view_of(
+            old.get("name") or current.get("nativeName") or values["name"],
+            values,
+            srid,
+            escape_sql=bool(old.get("escapeSql")),
+        )
         self._raw_rest(
             "put",
-            self._resource_path(ws_name, kind, store, before["name"]),
-            json={wrapper: body},
-            params={"recalculate": "nativebbox,latlonbbox"} if recalculate else None,
+            path,
+            json={"featureType": {"metadata": {"entry": with_view(entries, view)}}},
         )
+        try:
+            self._raw_rest("get", path)
+        except Exception as error:
+            # GeoServer's own refusal is a 500 "Could not get native
+            # attributes". A read that failed on the way (a proxy, a timeout)
+            # says nothing about the SQL, and the save landed: keep it.
+            status = getattr(getattr(error, "response", None), "status_code", None)
+            if status != 500:
+                raise RuntimeError(
+                    translate(
+                        "LayerTabMixin",
+                        "The SQL view was saved, but reading it back failed: {}",
+                    ).format(self._error_text(error))
+                ) from error
+            self._raw_rest(
+                "put", path, json={"featureType": {"metadata": {"entry": entries}}}
+            )
+            raise RuntimeError(
+                translate(
+                    "LayerTabMixin",
+                    "GeoServer cannot run the new SQL, so the view keeps its "
+                    "previous one. {}",
+                ).format(self._error_text(error))
+            ) from error
 
     def _update_layer_from_source(self, row_data):
         """Re-read the data behind a layer, then recompute its bounds.

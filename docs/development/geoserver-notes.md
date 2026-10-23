@@ -156,6 +156,27 @@ carries a `TODO(#1)` comment at the call site.
   without either box makes GeoServer compute both from the data (measured on 2.28.5
   with an EPSG:25832 PostGIS table). So the plugin posts the library's `FeatureType`
   model without `epsg_code`.
+- **SQL views** (row 82 of #1; measured on 2.28.5, the live suite runs them on
+  3.0.2 too). A view is a feature type whose metadata holds a
+  `JDBC_VIRTUAL_TABLE` entry: `virtualTable` with `name`, `sql`, `escapeSql`,
+  `keyColumn` (a list for two), `geometry` (`name`, `type`, `srid`) and
+  `parameter` (`name`, `defaultValue`, `regexpValidator`). The library writes
+  no metadata, so the plugin POSTs and PUTs it raw. GeoServer computes the
+  bounds and the attributes from the query, and stores the attributes; the
+  key columns are not among them. It adds a newline to the SQL and writes a
+  numeric default as a number. Without a geometry, the column is typed
+  `Geometry`; without an `srs`, the layer gets EPSG:404000. A parameter saved
+  without a validator is not checked at all, so the plugin fills in the
+  web interface's default, `^[\w\d\s]+$`. A create with a query GeoServer
+  cannot run is a 500 "Error occurred building feature type" that leaves
+  nothing. A view on a store of files is a 500 "Not available". **A metadata
+  PUT replaces the whole map**: a PUT of the view alone dropped a
+  `cachingEnabled` entry. **An edit to a query GeoServer cannot run answers
+  200**, and every read of the feature type is then a 500 "Could not get
+  native attributes". A PUT of the old view repairs it. So the edit reads
+  the entries again, swaps the view's, reads the feature type back, and puts
+  the old entries back on a failure. A new column appears at once, without a
+  reset.
 - **An emptied datastore description has to be sent as `""`.** The library leaves a
   `None` field out of the payload. A PUT without `description` keeps the old one.
   Measured on 2.28.5: "old text" survived a PUT with `description=None`, and `""`

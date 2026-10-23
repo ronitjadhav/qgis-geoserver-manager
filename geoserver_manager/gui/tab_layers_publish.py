@@ -18,9 +18,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QDialog
 
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
-from geoserver_manager.toolbelt.payload import (
-    words,
-)
+from geoserver_manager.toolbelt.payload import VIRTUAL_TABLE, view_of, words
 from geoserver_manager.toolbelt.qgis_export import (
     export_to_geopackage,
     geoserver_name,
@@ -35,11 +33,22 @@ from geoserver_manager.toolbelt.sld import (
 # Where the new layer's data comes from, in the publish form.
 _SOURCE_TABLE = "A table in a datastore"
 _SOURCE_QGIS = "A layer from this QGIS project"
+_SOURCE_SQL = "A SQL view of a database store"
 
 # Fields that belong to one source only.
 _SOURCE_FIELDS = {
     _SOURCE_TABLE: ("datastore", "table", "epsg"),
     _SOURCE_QGIS: ("qgis_layer", "name", "replace", "with_style"),
+    _SOURCE_SQL: (
+        "datastore",
+        "view_name",
+        "epsg",
+        "sql",
+        "geometry_column",
+        "geometry_type",
+        "key_columns",
+        "parameters",
+    ),
 }
 
 # The same reason as in tab_layers.py: translate() with this file's own class.
@@ -151,6 +160,12 @@ class LayerPublishMixin:
                         ),
                         _SOURCE_QGIS,
                     ),
+                    (
+                        translate(
+                            "LayerPublishMixin", "A SQL view of a database store"
+                        ),
+                        _SOURCE_SQL,
+                    ),
                 ],
             },
             {
@@ -183,6 +198,16 @@ class LayerPublishMixin:
                 ),
             },
             {
+                "key": "view_name",
+                "label": translate("LayerPublishMixin", "Layer name"),
+                "type": "text",
+                "required": True,
+                "visible": False,
+                "help": translate(
+                    "LayerPublishMixin", "The name of the view, and of its layer."
+                ),
+            },
+            {
                 "key": "epsg",
                 # Short: the longest label sets the width of the label column
                 # for the whole form, and this one squeezed every combo.
@@ -201,6 +226,7 @@ class LayerPublishMixin:
                     "compute it.",
                 ),
             },
+            *self._view_fields(visible=False),
             {
                 "key": "title",
                 "label": translate("LayerPublishMixin", "Title"),
@@ -274,15 +300,7 @@ class LayerPublishMixin:
     def _on_publish_source_changed(self, dlg, source):
         """Show the fields of the chosen source only."""
         wanted = _SOURCE_FIELDS.get(source, ())
-        for key in (
-            "datastore",
-            "table",
-            "epsg",
-            "qgis_layer",
-            "name",
-            "replace",
-            "with_style",
-        ):
+        for key in {key for keys in _SOURCE_FIELDS.values() for key in keys}:
             dlg.set_field_visible(key, key in wanted)
         if source == _SOURCE_QGIS:
             self._on_publish_layer_picked(
@@ -315,7 +333,8 @@ class LayerPublishMixin:
         source never reads these combos, so a workspace change there costs
         nothing; switching back to the table source fills them.
         """
-        if dlg.get_values().get("source") == _SOURCE_QGIS:
+        source = dlg.get_values().get("source")
+        if source == _SOURCE_QGIS:
             return
         ws_combo = dlg.get_widget("workspace")
         ds_combo = dlg.get_widget("datastore")
@@ -335,7 +354,7 @@ class LayerPublishMixin:
             datastore = ds_combo.currentText()
 
         table_combo.clear()
-        if workspace and datastore:
+        if workspace and datastore and source == _SOURCE_TABLE:
             try:
                 table_combo.addItems(
                     self._wait_for(lambda: self._available_tables(workspace, datastore))
@@ -368,6 +387,9 @@ class LayerPublishMixin:
         worker; the publish checks again, before its export."""
         if values.get("source") == _SOURCE_TABLE:
             self._check_publish_table(values)
+            return
+        if values.get("source") == _SOURCE_SQL:
+            self._check_publish_sql(values)
             return
         ws_name, name = values["workspace"], geoserver_name(values["name"])
         if isinstance(values["qgis_layer"], QgsRasterLayer):
@@ -432,9 +454,12 @@ class LayerPublishMixin:
                 ),
             )
             return
-        published = values["table"]
+        if values.get("source") == _SOURCE_SQL:
+            published, publish = values["view_name"], self._publish_sql_view
+        else:
+            published, publish = values["table"], self._publish_table
         if self._run_action(
-            lambda: self._wait_for_save(lambda: self._publish_table(values)),
+            lambda: self._wait_for_save(lambda: publish(values)),
             translate("LayerPublishMixin", "Failed to publish '{}'").format(published),
         ):
             self.show_success_message(
@@ -846,6 +871,11 @@ class LayerPublishMixin:
                     "that layer first.",
                 ).format(qualified, store)
             )
+        return self._epsg_of(values)
+
+    @staticmethod
+    def _epsg_of(values):
+        """The form's EPSG code as a number; raises on anything else."""
         epsg = str(values.get("epsg") or "").strip().upper().removeprefix("EPSG:")
         if not epsg.isdigit():
             raise ValueError(
@@ -855,6 +885,69 @@ class LayerPublishMixin:
                 )
             )
         return int(epsg)
+
+    def _check_publish_sql(self, values):
+        """Refuse a SQL view GeoServer would take badly; returns the EPSG code.
+        Reads only: the form runs it before it closes, the publish again."""
+        ws_name, ds_name, name = (
+            values["workspace"],
+            values["datastore"],
+            values["view_name"],
+        )
+        self._require_safe_name(name)
+        if self.gs.rest_service.resource_exists(self._layers_url(f"{ws_name}:{name}")):
+            raise ValueError(
+                translate(
+                    "LayerPublishMixin", "Layer '{}' already exists in '{}'."
+                ).format(name, ws_name)
+            )
+        # On a store of files GeoServer answers a bare 500 "Not available"
+        # (measured on 2.28.5). A database store has a dbtype parameter.
+        store = self._check(self._get_datastore(ws_name, ds_name))
+        if "dbtype" not in self._connection_params(store):
+            raise ValueError(
+                translate(
+                    "LayerPublishMixin",
+                    "A SQL view needs a database store, such as PostGIS. '{}' is a "
+                    "store of files.",
+                ).format(ds_name)
+            )
+        return self._epsg_of(values)
+
+    def _publish_sql_view(self, values):
+        """Publish a SQL view as a feature type.
+
+        TODO(#1): nothing in the library creates a SQL view (row 82). Raw POST
+        of a feature type whose metadata holds a JDBC_VIRTUAL_TABLE entry.
+        Measured on 2.28.5: GeoServer computes the bounds and the attributes
+        from the query; a query it cannot run is a 500 that leaves nothing.
+        """
+        ws_name, ds_name, name = (
+            values["workspace"],
+            values["datastore"],
+            values["view_name"],
+        )
+        epsg = self._check_publish_sql(values)
+        body = {
+            "name": name,
+            "nativeName": name,
+            "srs": f"EPSG:{epsg}",
+            "projectionPolicy": "FORCE_DECLARED",
+            "metadata": {
+                "entry": [
+                    {"@key": VIRTUAL_TABLE, "virtualTable": view_of(name, values, epsg)}
+                ]
+            },
+        }
+        for key in ("title", "abstract"):
+            if values.get(key):
+                body[key] = values[key]
+        if words(values.get("keywords")):
+            body["keywords"] = {"string": words(values.get("keywords"))}
+        path = self.gs.rest_service.rest_endpoints.featuretypes(
+            quote(ws_name, safe=""), quote(ds_name, safe="")
+        )
+        self._raw_rest("post", path, json={"featureType": body})
 
     def _publish_table(self, values):
         """Publish one table as a feature type through the library."""

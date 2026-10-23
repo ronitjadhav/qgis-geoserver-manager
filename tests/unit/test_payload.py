@@ -5,11 +5,17 @@
 import unittest
 
 from geoserver_manager.toolbelt.payload import (
+    DEFAULT_VALIDATOR,
+    VIRTUAL_TABLE,
     as_list,
     bbox_text,
     crs_text,
     name_of,
     unwrap,
+    view_form_values,
+    view_of,
+    virtual_table,
+    with_view,
 )
 
 
@@ -107,3 +113,81 @@ class TestChanged(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# A SQL view as GeoServer 2.28.5 answered it: the SQL with an added newline,
+# a single key and parameter written bare, a numeric default as a number.
+STORED_VIEW = {
+    "name": "pts",
+    "sql": "SELECT g AS id, geom FROM t WHERE g < %n%\n",
+    "escapeSql": False,
+    "keyColumn": "id",
+    "geometry": {"name": "geom", "type": "Point", "srid": 4326},
+    "parameter": {"name": "n", "defaultValue": 5, "regexpValidator": "^[\\d]+$"},
+}
+
+
+class TestSqlViews(unittest.TestCase):
+    def test_a_view_is_found_among_other_metadata_and_a_table_has_none(self):
+        resource = {
+            "metadata": {
+                "entry": [
+                    {"@key": "cachingEnabled", "$": "true"},
+                    {"@key": VIRTUAL_TABLE, "virtualTable": STORED_VIEW},
+                ]
+            }
+        }
+        self.assertEqual(virtual_table(resource), STORED_VIEW)
+        self.assertIsNone(virtual_table({"metadata": {"entry": {"@key": "x"}}}))
+        self.assertIsNone(virtual_table({}))
+
+    def test_the_form_values_of_a_stored_view(self):
+        self.assertEqual(
+            view_form_values(STORED_VIEW),
+            {
+                "sql": "SELECT g AS id, geom FROM t WHERE g < %n%",
+                "geometry_column": "geom",
+                "geometry_type": "Point",
+                "key_columns": ["id"],
+                "parameters": [["n", "5", "^[\\d]+$"]],
+            },
+        )
+
+    def test_the_form_values_give_the_view_back(self):
+        values = view_form_values(STORED_VIEW)
+        view = view_of("pts", values, 4326)
+        self.assertEqual(view["sql"], "SELECT g AS id, geom FROM t WHERE g < %n%")
+        self.assertEqual(view["keyColumn"], "id")
+        self.assertEqual(view["geometry"], STORED_VIEW["geometry"])
+        self.assertEqual(
+            view["parameter"],
+            [{"name": "n", "defaultValue": "5", "regexpValidator": "^[\\d]+$"}],
+        )
+
+    def test_a_parameter_without_a_validator_gets_the_default_one(self):
+        # Without one, GeoServer passes any viewparams value into the SQL.
+        view = view_of(
+            "v", {"sql": "x", "parameters": [["n", "1", ""], ["", "", ""]]}, 4326
+        )
+        self.assertEqual(
+            view["parameter"],
+            [{"name": "n", "defaultValue": "1", "regexpValidator": DEFAULT_VALIDATOR}],
+        )
+
+    def test_no_geometry_column_sends_no_geometry_and_two_keys_a_list(self):
+        view = view_of("v", {"sql": "x", "key_columns": ["a", " b "]}, 4326)
+        self.assertNotIn("geometry", view)
+        self.assertEqual(view["keyColumn"], ["a", "b"])
+
+    def test_the_view_entry_is_replaced_and_the_others_kept(self):
+        entries = [
+            {"@key": "cachingEnabled", "$": "true"},
+            {"@key": VIRTUAL_TABLE, "virtualTable": STORED_VIEW},
+        ]
+        self.assertEqual(
+            with_view(entries, {"name": "new"}),
+            [
+                {"@key": "cachingEnabled", "$": "true"},
+                {"@key": VIRTUAL_TABLE, "virtualTable": {"name": "new"}},
+            ],
+        )

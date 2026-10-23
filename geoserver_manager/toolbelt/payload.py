@@ -94,3 +94,98 @@ def changed(before, after, mapping):
         for key, rest_key in mapping
         if after.get(key) != before.get(key)
     }
+
+
+# -- SQL views ----------------------------------------------------------------
+# A SQL view is a feature type whose metadata holds this entry.
+VIRTUAL_TABLE = "JDBC_VIRTUAL_TABLE"
+# What GeoServer's web interface fills in for a new parameter. A parameter
+# saved without a validator is not checked at all, which lets a client inject
+# SQL through `viewparams`.
+DEFAULT_VALIDATOR = r"^[\w\d\s]+$"
+# The form fields of a SQL view, beside the layer's own.
+VIEW_FIELDS = ("sql", "geometry_column", "geometry_type", "key_columns", "parameters")
+GEOMETRY_TYPES = (
+    "Geometry",
+    "Point",
+    "LineString",
+    "Polygon",
+    "MultiPoint",
+    "MultiLineString",
+    "MultiPolygon",
+    "GeometryCollection",
+)
+
+
+def metadata_entries(resource):
+    """A resource's metadata entries, always as a list."""
+    entries = ((resource or {}).get("metadata") or {}).get("entry") or []
+    return [entries] if isinstance(entries, dict) else list(entries)
+
+
+def virtual_table(resource):
+    """The SQL view of a feature type, or None for a table."""
+    for entry in metadata_entries(resource):
+        if isinstance(entry, dict) and entry.get("@key") == VIRTUAL_TABLE:
+            return entry.get("virtualTable") or {}
+    return None
+
+
+def view_form_values(view):
+    """A SQL view as the form shows it. GeoServer adds a newline to the SQL
+    and writes a numeric default as a number."""
+    geometry = view.get("geometry") or {}
+    return {
+        "sql": str(view.get("sql") or "").strip(),
+        "geometry_column": str(geometry.get("name") or ""),
+        "geometry_type": str(geometry.get("type") or "Geometry"),
+        "key_columns": [str(key) for key in as_list(view.get("keyColumn"))],
+        "parameters": [
+            [
+                str(p.get("name") or ""),
+                "" if p.get("defaultValue") is None else str(p["defaultValue"]),
+                str(p.get("regexpValidator") or ""),
+            ]
+            for p in as_list(view.get("parameter"))
+            if isinstance(p, dict)
+        ],
+    }
+
+
+def view_of(name, values, srid, escape_sql=False):
+    """The virtualTable GeoServer stores, from the form's values. A parameter
+    without a validator gets DEFAULT_VALIDATOR."""
+    view = {"name": name, "sql": values["sql"].strip(), "escapeSql": escape_sql}
+    keys = [key.strip() for key in values.get("key_columns") or [] if key.strip()]
+    if keys:
+        view["keyColumn"] = keys if len(keys) > 1 else keys[0]
+    column = (values.get("geometry_column") or "").strip()
+    if column:
+        view["geometry"] = {
+            "name": column,
+            "type": values.get("geometry_type") or "Geometry",
+            "srid": srid,
+        }
+    parameters = [
+        {
+            "name": name.strip(),
+            "defaultValue": default or "",
+            "regexpValidator": validator or DEFAULT_VALIDATOR,
+        }
+        for name, default, validator in values.get("parameters") or []
+        if name.strip()
+    ]
+    if parameters:
+        view["parameter"] = parameters
+    return view
+
+
+def with_view(entries, view):
+    """The metadata entries with the SQL view's replaced, the others kept: a
+    metadata PUT replaces the whole map."""
+    kept = [
+        e
+        for e in entries
+        if not (isinstance(e, dict) and e.get("@key") == VIRTUAL_TABLE)
+    ]
+    return kept + [{"@key": VIRTUAL_TABLE, "virtualTable": view}]

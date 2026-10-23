@@ -123,7 +123,7 @@ everywhere, and run the whole suite, not only the tab's own tests.
 
 | Mixin | Uses |
 |---|---|
-| `LayerPublishMixin` | the Layers tab (`_push_qgis_style`, `_layer_summary`, the reload), Datastores (`_get_datastore`, `_datastore_names`), Coverage Stores (`_publish_qgis_raster`, `_check_raster_target`: a raster is published as a coverage store) |
+| `LayerPublishMixin` | the Layers tab (`_push_qgis_style`, `_layer_summary`, `_view_fields`, the reload), Datastores (`_get_datastore`, `_datastore_names`, `_connection_params`), Coverage Stores (`_publish_qgis_raster`, `_check_raster_target`: a raster is published as a coverage store) |
 | `LayerTabMixin` | publishing (its *Publish* button), Coverage Stores and Cascaded Stores (the detail and the delete of a raster or cascaded layer), Styles (`_create_style`, `_put_sld_body`: a style pushed from QGIS) |
 | `CoverageStoreTabMixin` | publishing (`_refuse_layer_clash`, `_prefill_publish_name`) |
 | `DatastoreTabMixin` | publishing (`_available_tables`, the check after a save), Workspaces (`_namespace_uri`) |
