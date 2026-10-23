@@ -1079,7 +1079,7 @@ class TestPublishQgisRaster(RasterFixture):
     def test_a_cancel_during_a_raster_s_checks_stops_the_batch(self):
         """Cancel on the waiting box while a raster of a batch was checked
         counted it as failed and checked the next one; a vector stopped."""
-        from geoserver_manager.gui import tab_layers
+        from geoserver_manager.gui import tab_layers_publish
         from geoserver_manager.toolbelt.rest import Abandoned
 
         layers = [self.add_layer("dem"), self.add_layer("dem2", "dem2.tif")]
@@ -1095,7 +1095,7 @@ class TestPublishQgisRaster(RasterFixture):
             def exec(inner):
                 return QDialog.DialogCode.Accepted
 
-        with patch.object(tab_layers, "ResourceFormDialog", Accepting):
+        with patch.object(tab_layers_publish, "ResourceFormDialog", Accepting):
             self.dlg._publish_layers(layers)
         self.assertEqual(checked, ["dem"])
         self.assertEqual(self.puts(), [])

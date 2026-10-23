@@ -20,7 +20,7 @@ from qgis.PyQt.QtWidgets import QDialog
 from qgis.testing import start_app, unittest
 
 # project
-from geoserver_manager.gui import tab_layers
+from geoserver_manager.gui import tab_layers, tab_layers_publish
 from geoserver_manager.gui.dlg_main import GeoServerMainDialog
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
 from tests.qgis.sync_dialog import FakePrefs, SyncDialog
@@ -991,10 +991,10 @@ class TestPublish(unittest.TestCase):
         the feature type check always passed; the POST then failed on the
         workspace-wide layer name, after the form had closed and the title,
         abstract and keywords typed were lost."""
-        with patch.object(tab_layers, "ResourceFormDialog", Rejecting):
+        with patch.object(tab_layers_publish, "ResourceFormDialog", Rejecting):
             self.dlg._publish_layer()
         values = {
-            "source": tab_layers._SOURCE_TABLE,
+            "source": tab_layers_publish._SOURCE_TABLE,
             "workspace": "topp",
             "datastore": "pg",
             "table": "tasmania_roads",  # published from taz_shapes
@@ -1020,10 +1020,10 @@ class TestPublish(unittest.TestCase):
         QgsProject.instance().addMapLayers([layer])
         self.addCleanup(QgsProject.instance().removeAllMapLayers)
         self.dlg.gs = GpkgPublishFakeGS(datastore_exists=True)
-        with patch.object(tab_layers, "ResourceFormDialog", Rejecting):
+        with patch.object(tab_layers_publish, "ResourceFormDialog", Rejecting):
             self.dlg._publish_layer(layer=layer)
         values = {
-            "source": tab_layers._SOURCE_QGIS,
+            "source": tab_layers_publish._SOURCE_QGIS,
             "workspace": "topp",
             "qgis_layer": layer,
             "name": "Roads (2024)",
@@ -1044,7 +1044,7 @@ class TestPublish(unittest.TestCase):
                 opened.append(self)
                 return QDialog.DialogCode.Rejected
 
-        with patch.object(tab_layers, "ResourceFormDialog", Recording):
+        with patch.object(tab_layers_publish, "ResourceFormDialog", Recording):
             self.dlg._publish_layer()
 
         form = opened[0]
@@ -1076,7 +1076,7 @@ class TestPublish(unittest.TestCase):
                 opened.append(self)
                 return QDialog.DialogCode.Rejected
 
-        with patch.object(tab_layers, "ResourceFormDialog", Recording):
+        with patch.object(tab_layers_publish, "ResourceFormDialog", Recording):
             self.dlg._publish_layer(layer=vector)
         form = opened[0]
         self.assertNotIn("with_style", form._hidden_keys)
@@ -1101,12 +1101,12 @@ class TestPublish(unittest.TestCase):
                 opened.append(self)
                 return QDialog.DialogCode.Rejected
 
-        with patch.object(tab_layers, "ResourceFormDialog", Recording):
+        with patch.object(tab_layers_publish, "ResourceFormDialog", Recording):
             self.dlg._publish_layer(layer=clicked)
 
         form = opened[0]
         self.assertEqual(
-            form.get_widget("source").currentText(), tab_layers._SOURCE_QGIS
+            form.get_widget("source").currentText(), tab_layers_publish._SOURCE_QGIS
         )
         self.assertIs(form.get_widget("qgis_layer").currentLayer(), clicked)
         self.assertEqual(form.get_widget("name").text(), "Rivieres")
@@ -1133,14 +1133,14 @@ class TestPublish(unittest.TestCase):
                 opened.append(self)
                 return QDialog.DialogCode.Rejected
 
-        with patch.object(tab_layers, "ResourceFormDialog", Recording):
+        with patch.object(tab_layers_publish, "ResourceFormDialog", Recording):
             self.dlg._publish_layer(layer=layer)
         form = opened[0]
         self.assertEqual(asked, [])
         form.get_widget("workspace").setCurrentText("empty")
         self.assertEqual(asked, [])
         # back to the table source: its combos are filled then
-        form.set_values({"source": tab_layers._SOURCE_TABLE})
+        form.set_values({"source": tab_layers_publish._SOURCE_TABLE})
         self.assertEqual(asked, [("stores", "empty")])
 
 
@@ -1179,7 +1179,7 @@ class TestBatchPublish(unittest.TestCase):
             def exec(inner):
                 return QDialog.DialogCode.Accepted
 
-        patcher = patch.object(tab_layers, "ResourceFormDialog", Accepting)
+        patcher = patch.object(tab_layers_publish, "ResourceFormDialog", Accepting)
         patcher.start()
         self.addCleanup(patcher.stop)
 
