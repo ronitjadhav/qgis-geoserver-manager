@@ -10,8 +10,9 @@ Usage from the repo root folder:
     QT_QPA_PLATFORM=offscreen python -m unittest tests.qgis.test_ux
 """
 
+import sys
 import time
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from unittest.mock import patch
 
 from qgis.PyQt.QtCore import QCoreApplication, Qt, QTranslator
@@ -29,6 +30,12 @@ from geoserver_manager.gui.theme import (
     status_colour,
 )
 from tests.qgis.sync_dialog import FakePrefs, SyncDialog
+
+TAB_MODULES = [
+    module
+    for name, module in sorted(sys.modules.items())
+    if name.startswith("geoserver_manager.gui.tab_")
+]
 
 start_app()
 
@@ -343,8 +350,6 @@ class TestPrimaryButtons(unittest.TestCase):
 
     def test_every_add_dialog_names_its_action_and_no_add_button_says_new(self):
         """Driven by TABS itself, so a new tab is checked without touching this."""
-        import inspect
-
         from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox
 
         from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
@@ -420,9 +425,13 @@ class TestPrimaryButtons(unittest.TestCase):
                 "New", label, label
             )  # "Add a Workspace", not "Add a New …"
             self.assertRegex(label, r"^(Add|Publish|Create|Upload) ", label)
-            module = inspect.getmodule(getattr(type(dlg), loader))
             before = len(opened)
-            with patch.object(module, "ResourceFormDialog", Recording):
+            # The form may live in another module than the loader (publishing).
+            with ExitStack() as stack:
+                for module in TAB_MODULES:
+                    stack.enter_context(
+                        patch.object(module, "ResourceFormDialog", Recording)
+                    )
                 dlg.btn_add.click()
             self.assertEqual(len(opened), before + 1, f"{loader}: no dialog opened")
             form = opened[-1]

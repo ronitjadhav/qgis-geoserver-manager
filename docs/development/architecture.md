@@ -11,7 +11,8 @@ PyQt5 **and** PyQt6 through `qgis.PyQt`.
 |---|---|
 | `geoserver_manager/plugin_main.py` | QGIS entry point: `initGui` / `unload` / `run`. Shows the dialog, then connects. |
 | `geoserver_manager/gui/dlg_main.py` | `GeoServerMainDialog(QDialog, <one mixin per tab>)`: nav list, results table, search, pagination, and every helper the tabs share |
-| `geoserver_manager/gui/tab_workspaces.py`, `tab_datastores.py`, `tab_coveragestores.py`, `tab_cascaded.py`, `tab_layers.py`, `tab_layergroups.py`, `tab_styles.py`, `tab_gwc.py`, `tab_server.py` | One mixin per resource type (the Server tab: one row per server-wide setting, no Add or Delete): load / add / edit / delete (layers also: publish, add to QGIS, preview, set styles, push a style from QGIS, update from the data; layer groups also: add to QGIS, preview; datastores and coverage stores also: reset; coverage stores also: publish a coverage; cascaded stores also: publish / view a remote layer; styles also: apply to a QGIS layer, save to disk, copy, used by; tile cache: configure, seed and follow the tasks, truncate, stop caching) |
+| `geoserver_manager/gui/tab_workspaces.py`, `tab_datastores.py`, `tab_coveragestores.py`, `tab_cascaded.py`, `tab_layers.py`, `tab_layergroups.py`, `tab_styles.py`, `tab_gwc.py`, `tab_server.py` | One mixin per resource type (the Server tab: one row per server-wide setting, no Add or Delete): load / add / edit / delete (layers also: publish, in `tab_layers_publish.py`; add to QGIS, preview, set styles, push a style from QGIS, update from the data; layer groups also: add to QGIS, preview; datastores and coverage stores also: reset; coverage stores also: publish a coverage; cascaded stores also: publish / view a remote layer; styles also: apply to a QGIS layer, save to disk, copy, used by; tile cache: configure, seed and follow the tasks, truncate, stop caching) |
+| `geoserver_manager/gui/tab_layers_publish.py` | `LayerPublishMixin`, the Layers tab's *Publish a Layer*: a table of a datastore, or one or a batch of QGIS layers, also from the layer tree's menu. A raster goes on to the Coverage Stores tab's upload |
 | `geoserver_manager/gui/dlg_resource_form.py` | `ResourceFormDialog`, a modal form built from a list of field dicts (see its module docstring for the field spec). A field uses QGIS's own widget wherever QGIS has one: `QgsFileWidget`, `QgsPasswordLineEdit`, `QgsCodeEditor*`, `QgsMapLayerComboBox`, `QgsExtentWidget`. Each page scrolls instead of squeezing |
 | `geoserver_manager/gui/list_table.py` | `ListTable`, the form's `"table"` field: rows picked from the server's names, reordered, with typed columns (a style combo, a zoom spinbox). A list is never a text box to type into: plain strings are a `"list"` field (QGIS's `QgsListWidget`), pairs a `"keyvalue"` one (`QgsKeyValueWidget`); `ListTable` is only for what those two cannot do (order, picking, columns) |
 | `geoserver_manager/gui/dlg_preview.py` | `LayerPreviewDialog`, a `QgsMapCanvas` showing one WMS layer of the server, with GetFeatureInfo on click; non-modal, nothing reaches the project |
@@ -113,6 +114,23 @@ PyQt5 **and** PyQt6 through `qgis.PyQt`.
   goes in the source as `username` and `password`, which a saved project then holds. The
   plugin's TLS setting does not reach QGIS's providers; they use QGIS's own certificate
   handling.
+
+## Calls between mixins
+
+A mixin reaches another one's methods through the shared dialog class, with
+no import. Such a method is part of that mixin's interface: rename it
+everywhere, and run the whole suite, not only the tab's own tests.
+
+| Mixin | Uses |
+|---|---|
+| `LayerPublishMixin` | the Layers tab (`_push_qgis_style`, `_layer_summary`, the reload), Datastores (`_get_datastore`, `_datastore_names`), Coverage Stores (`_publish_qgis_raster`, `_check_raster_target`: a raster is published as a coverage store) |
+| `LayerTabMixin` | publishing (its *Publish* button), Coverage Stores and Cascaded Stores (the detail and the delete of a raster or cascaded layer), Styles (`_create_style`, `_put_sld_body`: a style pushed from QGIS) |
+| `CoverageStoreTabMixin` | publishing (`_refuse_layer_clash`, `_prefill_publish_name`) |
+| `DatastoreTabMixin` | publishing (`_available_tables`, the check after a save), Workspaces (`_namespace_uri`) |
+| `LayerGroupTabMixin` | the Layers tab (layer names and boxes, the preview and *Add to QGIS* helpers, the style choices) |
+| `StyleTabMixin` | the Layers and Layer Groups tabs (*Used by*) |
+| `ServerTabMixin` | the Layers tab (`_open_in_browser`) |
+| `LayerTreeMenu` | publishing, the Layers tab and Styles |
 
 ## The server and the library
 

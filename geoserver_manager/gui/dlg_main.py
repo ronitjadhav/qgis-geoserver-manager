@@ -55,6 +55,7 @@ from geoserver_manager.gui.tab_datastores import DatastoreTabMixin
 from geoserver_manager.gui.tab_gwc import GwcTabMixin
 from geoserver_manager.gui.tab_layergroups import LayerGroupTabMixin
 from geoserver_manager.gui.tab_layers import LayerTabMixin
+from geoserver_manager.gui.tab_layers_publish import LayerPublishMixin
 from geoserver_manager.gui.tab_server import ServerTabMixin
 from geoserver_manager.gui.tab_styles import StyleTabMixin
 from geoserver_manager.gui.tab_workspaces import WorkspaceTabMixin
@@ -254,6 +255,7 @@ class GeoServerMainDialog(
     CoverageStoreTabMixin,
     CascadedStoreTabMixin,
     LayerTabMixin,
+    LayerPublishMixin,
     LayerGroupTabMixin,
     StyleTabMixin,
     GwcTabMixin,
