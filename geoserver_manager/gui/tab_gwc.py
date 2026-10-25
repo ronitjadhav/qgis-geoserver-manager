@@ -257,8 +257,8 @@ class GwcTabMixin:
         TODO(#1): nothing in the library reads a gridset's definition
         (row 47). Workaround: GET its XML.
         """
-        base = self.gs.rest_service.gwc_endpoints.base_url
-        text = self._raw_rest("get", f"{base}/gridsets/{quote(name, safe='')}.xml").text
+        # The colon stays: GeoServer Cloud's gateway answers %3A with a 400.
+        text = self._raw_rest("get", self._gridset_path(name)).text
         number = ElementTree.fromstring(text).findtext("srs/number")  # nosec B314
         return f"EPSG:{number}" if number else None
 

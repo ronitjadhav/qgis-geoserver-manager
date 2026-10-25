@@ -946,10 +946,8 @@ class TestSeed(unittest.TestCase):
         self.assertEqual(fanned.call_args.args[1], ["EPSG:4326", "EPSG:900913"])
         self.assertEqual(
             [c[1] for c in dlg.gs.calls if "/gridsets/" in c[1]],
-            [
-                "/gwc/rest/gridsets/EPSG%3A4326.xml",
-                "/gwc/rest/gridsets/EPSG%3A900913.xml",
-            ],
+            # The colon unquoted: GeoServer Cloud's gateway refuses %3A.
+            ["/gwc/rest/gridsets/EPSG:4326.xml", "/gwc/rest/gridsets/EPSG:900913.xml"],
         )
 
     def test_a_failed_read_is_shown_in_the_monitor_not_raised(self):
@@ -1102,6 +1100,22 @@ class TestGridsets(unittest.TestCase):
         self.assertEqual(extent.outputCrs().authid(), "EPSG:2056")  # untouched
         form.get_widget("epsg").editingFinished.emit()
         self.assertEqual(extent.outputCrs().authid(), "EPSG:2178")
+
+    def test_a_gridset_path_keeps_its_colon(self):
+        """GeoServer Cloud's gateway answers EPSG%3A4326 with a 400, which
+        kept the seed form from opening there."""
+        dlg = SyncDialog()
+        dlg.gs = type("GS", (), {})()
+        dlg.gs.rest_service = type("R", (), {})()
+        dlg.gs.rest_service.gwc_endpoints = type("E", (), {"base_url": "/gwc/rest"})()
+        asked = []
+
+        class Answer:
+            text = "<gridSet><srs><number>4326</number></srs></gridSet>"
+
+        dlg._raw_rest = lambda method, path, **kwargs: asked.append(path) or Answer()
+        self.assertEqual(dlg._gridset_crs("EPSG:4326"), "EPSG:4326")
+        self.assertEqual(asked, ["/gwc/rest/gridsets/EPSG:4326.xml"])
 
     def test_the_gridsets_button_shows_on_the_tile_cache_tab_only(self):
         dlg = SyncDialog()

@@ -270,6 +270,7 @@ class GeoServerMainDialog(
         self.gs = None
         self.gs_connection = None  # what self.gs is built from, see _build_client
         self.gs_restricted = False  # the account administers only part of it
+        self.gs_cloud = False  # GeoServer Cloud: a few answers differ
         self._untested_warned = set()  # (url, version) said to be untested
         self._status_kind = "neutral"  # re-applied when the theme changes
 
@@ -781,6 +782,7 @@ class GeoServerMainDialog(
                 return
             self.gs = gs
             self.gs_restricted = restricted
+            self.gs_cloud = version.startswith("GeoServer Cloud")
             self.setWindowTitle(f"{__title__}: {urlparse(url).netloc or url}")
             if restricted:
                 status = self.tr("Connected as a non-administrator: {}").format(url)

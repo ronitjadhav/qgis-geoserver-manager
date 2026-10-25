@@ -604,8 +604,8 @@ tab.
 
 GeoServer Manager is developed against **GeoServer 2.28**: every server
 behaviour it relies on was measured on 2.28.5. Every week, an automatic test
-uses every tab against the latest 2.x and 3.x releases of GeoServer. In
-October 2026 that was 2.28.6 and 3.0.2. The status line names
+uses every tab against the latest 2.x and 3.x releases of GeoServer and of
+GeoServer Cloud. In October 2026 that was 2.28.6 and 3.0.2 of both. The status line names
 the version of the server it is connected to. On another version the dialog
 works as usual, and says once that the version is not the tested one.
 
@@ -614,9 +614,9 @@ works as usual, and says once that the version is not the tested one.
 | GeoServer 2.28 | tested every week |
 | GeoServer 3.0 | tested every week. Known differences: it has no log file setting, so the logging form shows none, and its GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404 |
 | GeoServer 2.27 | not tested as a whole. Known differences: its GeoWebCache answers a layer it does not cache with HTTP 500 rather than 404, and most datastores of its demo data have no type |
-| GeoServer Cloud | recognised, and named in the status line with its own version (**GeoServer Cloud 2.28.5.1**). Not tested as a whole; the known differences are below |
+| GeoServer Cloud | tested every week, with its catalog in a data directory (`datadir`) and in PostgreSQL (`pgconfig`). Named in the status line with its own version (**GeoServer Cloud 3.0.2**). The known differences are below |
 
-On GeoServer Cloud (measured on 2.28.5.1):
+On GeoServer Cloud (measured on 2.28.5.1, 2.28.6 and 3.0.2):
 
 - There is no GeoServer log file: each service logs to its standard output,
   which the deployment collects. The log on the Server tab is missing or
@@ -627,6 +627,10 @@ On GeoServer Cloud (measured on 2.28.5.1):
   all services reach, such as PostGIS, instead.
 - An error answer carries no reason: a refused style says HTTP 400, without
   the line and column GeoServer found wrong.
+- After you change a workspace's namespace URI, the WFS service no longer
+  finds that workspace's layers. A new workspace also cannot take the old
+  URI. A catalog reload repairs both: on the **Server** tab, open
+  **Catalog** and choose **Reload**. The plugin says so after the save.
 
 ## Good to know
 
