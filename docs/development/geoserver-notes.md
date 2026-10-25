@@ -155,6 +155,9 @@ carries a `TODO(#1)` comment at the call site.
   asks a WFS GetFeature with the filter and `count=1` first (row 85 of #1).
   GeoServer refuses that request with a 400. GeoServer Cloud 3.0.2 answers
   the same exception report with a 200. So the body decides, not the status.
+  The request also fails when WFS is turned off (a 200 with a report) or the
+  layer is disabled (a 400 "Feature type … unknown"). So a failure blames the
+  filter only when the same request works without it.
 - **Publishing a table: send no bounding box** (row 52 of #1). The facade's
   `create_feature_type(epsg=…)` fills both boxes from a table of 3 EPSG codes. So it
   raises `KeyError` for any other code, and gives those three a world extent. A POST

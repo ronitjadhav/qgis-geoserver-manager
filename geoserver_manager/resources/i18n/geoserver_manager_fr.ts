@@ -3572,7 +3572,7 @@ La page des paramètres s'ouvre ensuite. Saisissez-y l'URL, le nom d'utilisateur
         <translation>Entrepôt</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1275" />
+        <location filename="../../gui/tab_layers.py" line="1279" />
         <location filename="../../gui/tab_layers.py" line="188" />
         <source>Default style</source>
         <translation>Style par défaut</translation>
@@ -3970,13 +3970,13 @@ La page des paramètres s'ouvre ensuite. Saisissez-y l'URL, le nom d'utilisateur
         <translation>Les détails de '{}' n'ont pas pu être lus. Rafraîchissez la liste, puis réessayez.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1927" />
+        <location filename="../../gui/tab_layers.py" line="1931" />
         <location filename="../../gui/tab_layers.py" line="809" />
         <source>Unsupported layer type '{}'</source>
         <translation>Type de couche non pris en charge '{}'</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1791" />
+        <location filename="../../gui/tab_layers.py" line="1795" />
         <location filename="../../gui/tab_layers.py" line="839" />
         <source>Failed to load layer details</source>
         <translation>Impossible de charger les détails de la couche</translation>
@@ -4018,237 +4018,237 @@ La page des paramètres s'ouvre ensuite. Saisissez-y l'URL, le nom d'utilisateur
         <translation>Le SRS doit être un numéro de code EPSG, par exemple 3857 ou 4326.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1022" />
+        <location filename="../../gui/tab_layers.py" line="1000" />
         <source>GeoServer cannot read the CQL filter: {}</source>
         <translation>GeoServer ne peut pas lire le filtre CQL : {}</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1056" />
+        <location filename="../../gui/tab_layers.py" line="1060" />
         <source>Layer '{}' saved, but not its SQL view: {}</source>
         <translation>Couche '{}' enregistrée, mais pas sa vue SQL : {}</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1069" />
+        <location filename="../../gui/tab_layers.py" line="1073" />
         <source>Layer '{}' saved, but not its dimensions: {}</source>
         <translation>Couche '{}' enregistrée, mais pas ses dimensions : {}</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1138" />
+        <location filename="../../gui/tab_layers.py" line="1142" />
         <source>The SQL view was saved, but reading it back failed: {}</source>
         <translation>La vue SQL a été enregistrée, mais sa relecture a échoué : {}</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1147" />
+        <location filename="../../gui/tab_layers.py" line="1151" />
         <source>GeoServer cannot run the new SQL, so the view keeps its previous one. {}</source>
         <translation>GeoServer ne peut pas exécuter le nouveau SQL : la vue conserve donc le précédent. {}</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1168" />
+        <location filename="../../gui/tab_layers.py" line="1172" />
         <source>'{}' is a cascaded layer: GeoServer's REST API cannot update it. Use GeoServer's web interface.</source>
         <translation>'{}' est une couche en cascade : l'API REST de GeoServer ne peut pas la mettre à jour. Utilisez l'interface web de GeoServer.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1189" />
+        <location filename="../../gui/tab_layers.py" line="1193" />
         <source>Failed to update '{}' from its data</source>
         <translation>Impossible de mettre à jour '{}' depuis ses données</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1194" />
+        <location filename="../../gui/tab_layers.py" line="1198" />
         <source>'{}' re-read from its data, bounds recomputed.</source>
         <translation>'{}' relue depuis ses données, emprise recalculée.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1253" />
+        <location filename="../../gui/tab_layers.py" line="1257" />
         <source>Failed to load styles for '{}'</source>
         <translation>Impossible de charger les styles de '{}'</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1260" />
+        <location filename="../../gui/tab_layers.py" line="1264" />
         <source>Global styles and the styles of workspace '{}'.</source>
         <translation>Styles globaux et styles de l'espace de travail '{}'.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1266" />
+        <location filename="../../gui/tab_layers.py" line="1270" />
         <source>A cascaded WMS layer keeps the remote server's default style: you can set only its other styles.</source>
         <translation>Une couche WMS en cascade conserve le style par défaut du serveur distant : vous ne pouvez définir que ses autres styles.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1284" />
+        <location filename="../../gui/tab_layers.py" line="1288" />
         <source>Styles of '{}'</source>
         <translation>Styles de '{}'</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1290" />
+        <location filename="../../gui/tab_layers.py" line="1294" />
         <source>Other styles</source>
         <translation>Autres styles</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1295" />
+        <location filename="../../gui/tab_layers.py" line="1299" />
         <source>Style</source>
         <translation>Style</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1296" />
+        <location filename="../../gui/tab_layers.py" line="1300" />
         <source>The styles a client can also ask for. Empty for none.</source>
         <translation>Les styles qu'un client peut aussi demander. Vide pour aucun.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1303" />
+        <location filename="../../gui/tab_layers.py" line="1307" />
         <source>Set styles</source>
         <translation>Définir les styles</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1334" />
+        <location filename="../../gui/tab_layers.py" line="1338" />
         <source>Failed to set the styles of '{}'</source>
         <translation>Impossible de définir les styles de '{}'</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1337" />
+        <location filename="../../gui/tab_layers.py" line="1341" />
         <source>Styles of '{}' saved.</source>
         <translation>Styles de '{}' enregistrés.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1351" />
+        <location filename="../../gui/tab_layers.py" line="1355" />
         <source>No style named {} on the server.</source>
         <translation>Aucun style nommé {} sur le serveur.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1383" />
+        <location filename="../../gui/tab_layers.py" line="1387" />
         <source>This QGIS project has no vector or raster layer to take a style from.</source>
         <translation>Ce projet QGIS n'a aucune couche vecteur ou raster dont reprendre un style.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1390" />
+        <location filename="../../gui/tab_layers.py" line="1394" />
         <source>The plugin exports the layer's symbology as SLD and uploads it to workspace '{}'. A style of that name there is replaced: that is how you push a change made in QGIS.</source>
         <translation>L'extension exporte la symbologie de la couche en SLD et la téléverse dans l'espace de travail '{}'. Un style de ce nom y est remplacé : c'est ainsi que vous envoyez une modification faite dans QGIS.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1398" />
+        <location filename="../../gui/tab_layers.py" line="1402" />
         <source>A cascaded WMS layer keeps the remote server's default style: the style is uploaded, not assigned.</source>
         <translation>Une couche WMS en cascade conserve le style par défaut du serveur distant : le style est téléversé, mais pas attribué.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1407" />
+        <location filename="../../gui/tab_layers.py" line="1411" />
         <source>Make it the layer's default style</source>
         <translation>En faire le style par défaut de la couche</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1416" />
+        <location filename="../../gui/tab_layers.py" line="1420" />
         <source>Style '{}' from QGIS</source>
         <translation>Style '{}' depuis QGIS</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1421" />
+        <location filename="../../gui/tab_layers.py" line="1425" />
         <source>QGIS layer</source>
         <translation>Couche QGIS</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1431" />
+        <location filename="../../gui/tab_layers.py" line="1435" />
         <source>No project layer matches '{}' by name.</source>
         <translation>Aucune couche du projet ne correspond à '{}' par son nom.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1438" />
+        <location filename="../../gui/tab_layers.py" line="1442" />
         <source>Style name</source>
         <translation>Nom du style</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1446" />
+        <location filename="../../gui/tab_layers.py" line="1450" />
         <source>Upload</source>
         <translation>Téléverser</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1457" />
+        <location filename="../../gui/tab_layers.py" line="1461" />
         <source>Could not export the symbology of '{}'</source>
         <translation>Impossible d'exporter la symbologie de '{}'</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1473" />
+        <location filename="../../gui/tab_layers.py" line="1477" />
         <source>Failed to upload the style of '{}'</source>
         <translation>Impossible de téléverser le style de '{}'</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1480" />
+        <location filename="../../gui/tab_layers.py" line="1484" />
         <source>Style '{}' left as it is.</source>
         <translation>Style '{}' laissé tel quel.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1486" />
+        <location filename="../../gui/tab_layers.py" line="1490" />
         <source>'{}' styled from '{}'.</source>
         <translation>Style de '{}' repris de '{}'.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1490" />
+        <location filename="../../gui/tab_layers.py" line="1494" />
         <source>Style '{}' uploaded to '{}'.</source>
         <translation>Style '{}' téléversé dans '{}'.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1547" />
+        <location filename="../../gui/tab_layers.py" line="1551" />
         <source>Replace the style?</source>
         <translation>Remplacer le style ?</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1548" />
+        <location filename="../../gui/tab_layers.py" line="1552" />
         <source>Style '{style}' already exists in '{workspace}'. Replacing it changes how every layer that uses it renders.</source>
         <translation>Le style '{style}' existe déjà dans '{workspace}'. Le remplacer modifie le rendu de toutes les couches qui l'utilisent.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1621" />
+        <location filename="../../gui/tab_layers.py" line="1625" />
         <source>GeoServer advertises its WFS at {}, not at {} where the plugin connects, and QGIS would send the user name and password there. Check the Proxy base URL in the Global settings of the Server tab, or add the layer as WMS.</source>
         <translation>GeoServer annonce son WFS à {}, et non à {} où l'extension se connecte, et QGIS y enverrait le nom d'utilisateur et le mot de passe. Vérifiez l'URL du proxy dans les Paramètres globaux de l'onglet Serveur, ou ajoutez la couche en WMS.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1781" />
+        <location filename="../../gui/tab_layers.py" line="1785" />
         <source>Could not open a browser for {}</source>
         <translation>Impossible d'ouvrir un navigateur pour {}</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1823" />
+        <location filename="../../gui/tab_layers.py" line="1827" />
         <source>Could not build the preview of '{}'</source>
         <translation>Impossible de construire l'aperçu de '{}'</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1850" />
+        <location filename="../../gui/tab_layers.py" line="1854" />
         <source>WFS loads the features themselves (editable, styled in QGIS). WMS and WMTS load rendered images. The user name and password come from the plugin's connection, not from the layer.</source>
         <translation>WFS charge les objets eux-mêmes (modifiables, stylés dans QGIS). WMS et WMTS chargent des images rendues. Le nom d'utilisateur et le mot de passe viennent de la connexion de l'extension, pas de la couche.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1859" />
+        <location filename="../../gui/tab_layers.py" line="1863" />
         <source>WMS and WMTS load rendered images; this layer has no features to serve over WFS. The user name and password come from the plugin's connection, not from the layer.</source>
         <translation>WMS et WMTS chargent des images rendues ; cette couche n'a pas d'objets à servir en WFS. Le nom d'utilisateur et le mot de passe viennent de la connexion de l'extension, pas de la couche.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1866" />
+        <location filename="../../gui/tab_layers.py" line="1870" />
         <source>Add '{}' to QGIS</source>
         <translation>Ajouter '{}' à QGIS</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1871" />
+        <location filename="../../gui/tab_layers.py" line="1875" />
         <source>Load as</source>
         <translation>Charger en</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1880" />
+        <location filename="../../gui/tab_layers.py" line="1884" />
         <source>Add</source>
         <translation>Ajouter</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1895" />
+        <location filename="../../gui/tab_layers.py" line="1899" />
         <source>Could not add '{}' to QGIS</source>
         <translation>Impossible d'ajouter '{}' à QGIS</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1900" />
+        <location filename="../../gui/tab_layers.py" line="1904" />
         <source>'{}' added to the project as {}.</source>
         <translation>'{}' ajoutée au projet en {}.</translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1944" />
+        <location filename="../../gui/tab_layers.py" line="1948" />
         <source>Are you sure you want to delete layer '{}'?</source>
         <translation>Voulez-vous vraiment supprimer la couche '{}' ?</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_layers.py" line="1947" />
+        <location filename="../../gui/tab_layers.py" line="1951" />
         <source>Are you sure you want to delete %n layer(s)?</source>
         <translation>
             <numerusform>Voulez-vous vraiment supprimer %n couche ?</numerusform>
@@ -4256,12 +4256,12 @@ La page des paramètres s'ouvre ensuite. Saisissez-y l'URL, le nom d'utilisateur
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1955" />
+        <location filename="../../gui/tab_layers.py" line="1959" />
         <source>Layer '{}' deleted.</source>
         <translation>Couche '{}' supprimée.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../gui/tab_layers.py" line="1956" />
+        <location filename="../../gui/tab_layers.py" line="1960" />
         <source>%n layer(s) deleted.</source>
         <translation>
             <numerusform>%n couche supprimée.</numerusform>
@@ -4269,7 +4269,7 @@ La page des paramètres s'ouvre ensuite. Saisissez-y l'URL, le nom d'utilisateur
         </translation>
     </message>
     <message>
-        <location filename="../../gui/tab_layers.py" line="1961" />
+        <location filename="../../gui/tab_layers.py" line="1965" />
         <source>The published layer goes too; the table, file or remote layer behind it is not touched. GeoServer refuses while a layer group still uses the layer: remove it from the group first.</source>
         <translation>La couche publiée disparaît aussi ; la table, le fichier ou la couche distante derrière elle n'est pas modifié. GeoServer refuse tant qu'un groupe de couches utilise encore la couche : retirez-la d'abord du groupe.</translation>
     </message>

@@ -130,6 +130,14 @@ class TestOwsException(unittest.TestCase):
         self.assertEqual(ows_exception(features), "")
         self.assertEqual(ows_exception(""), "")
 
+    def test_quotes_geoserver_escaped_twice_read_as_quotes(self):
+        # As GeoServer 2.28.5 sends a CQL parse error.
+        report = (
+            "<ows:ExceptionText>Encountered &amp;quot; &amp;quot;is&amp;quot;"
+            "</ows:ExceptionText>"
+        )
+        self.assertEqual(ows_exception(report), 'Encountered " "is"')
+
 
 if __name__ == "__main__":
     unittest.main()

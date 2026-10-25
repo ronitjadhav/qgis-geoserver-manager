@@ -1297,7 +1297,8 @@ class TestPartlySaved(unittest.TestCase):
         def action():
             raise PartlySaved("Workspace 'w' created, but its namespace URI was not.")
 
-        self.assertFalse(self.dlg._run_action(action, "Failed to create 'w'"))
+        # None, not False: a form must not reopen on what partly landed.
+        self.assertIsNone(self.dlg._run_action(action, "Failed to create 'w'"))
         self.assertEqual(self.messages[0][0], "warning")
         self.assertEqual(self.reloaded, [1])
 

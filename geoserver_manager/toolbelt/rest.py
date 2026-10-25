@@ -24,7 +24,10 @@ def ows_exception(text):
     hide in a GML body: its text escapes every "<".
     """
     found = _EXCEPTION_TEXT.search(text or "")
-    return " ".join(html.unescape(found.group(1)).split()) if found else ""
+    if not found:
+        return ""
+    # GeoServer escapes the CQL parser's quotes twice: &amp;quot;
+    return " ".join(html.unescape(html.unescape(found.group(1))).split())
 
 
 def summarise_body(text, limit=300):

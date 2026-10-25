@@ -2104,8 +2104,8 @@ class GeoServerMainDialog(
         upload, a small edit. On an exception the message bar gets
         "<failure_message>: <error>", the QGIS log gets the same, and False
         comes back so the caller can stop. None comes back when the user
-        stopped waiting: the save may still land, so a form must not reopen
-        on it as it does on a refusal.
+        stopped waiting (the save may still land) or when part of the save
+        landed (the tab reloads): a form reopens on a refusal only.
         """
         self.setCursor(Qt.CursorShape.WaitCursor)
         try:
@@ -2115,7 +2115,7 @@ class GeoServerMainDialog(
             self.show_warning_message(str(e))
             self.log(str(e), log_level=Qgis.MessageLevel.Warning)
             self._reload_current_tab()
-            return False
+            return None
         except Abandoned as abandoned:
             # The user pressed Cancel: they know. A save goes on regardless.
             if abandoned.write:

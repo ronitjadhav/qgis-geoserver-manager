@@ -991,38 +991,42 @@ class LayerTabMixin:
         request on the layer is then a 400 (measured on 2.28.5). TODO(#1):
         the library has no validation call (row 85). Workaround: a WFS
         GetFeature with the filter and count=1 on the workspace's service.
-        GeoServer refuses it with a 400, GeoServer Cloud 3.0.2 with a 200
-        that carries the exception report, so the body decides.
+        The filter is to blame only when the same request works without it:
+        WFS turned off or a disabled layer fail both (measured on 2.28.5).
         """
+        reason = self._wfs_probe(ws_name, name, text)
+        if reason and not self._wfs_probe(ws_name, name):
+            raise ValueError(
+                translate(
+                    "LayerTabMixin", "GeoServer cannot read the CQL filter: {}"
+                ).format(reason)
+            )
+
+    def _wfs_probe(self, ws_name, name, cql_filter=None):
+        """GeoServer's reason when a one-feature GetFeature fails, else "".
+
+        A refusal comes as a 400, or as a 200 that carries the exception
+        report: WFS turned off, or any refusal on GeoServer Cloud 3.0.2.
+        """
+        params = {
+            "service": "WFS",
+            "version": "2.0.0",
+            "request": "GetFeature",
+            "typeNames": f"{ws_name}:{name}",
+            "count": 1,
+        }
+        if cql_filter is not None:
+            params["cql_filter"] = cql_filter
         try:
             answer = self._raw_rest(
-                "get",
-                f"/{quote(ws_name, safe='')}/ows",
-                params={
-                    "service": "WFS",
-                    "version": "2.0.0",
-                    "request": "GetFeature",
-                    "typeNames": f"{ws_name}:{name}",
-                    "count": 1,
-                    "cql_filter": text,
-                },
+                "get", f"/{quote(ws_name, safe='')}/ows", params=params
             )
         except Exception as error:
             response = getattr(error, "response", None)
-            if getattr(response, "status_code", None) != 400:
-                raise  # the server, not the filter
-            reason = summarise_body(getattr(response, "text", "")) or self._error_text(
+            return summarise_body(getattr(response, "text", "")) or self._error_text(
                 error
             )
-        else:
-            reason = ows_exception(getattr(answer, "text", ""))
-            if not reason:
-                return
-        raise ValueError(
-            translate(
-                "LayerTabMixin", "GeoServer cannot read the CQL filter: {}"
-            ).format(reason)
-        )
+        return ows_exception(getattr(answer, "text", ""))
 
     def _save_layer(self, row_data, before, after):
         """Validate, then PUT what changed on the layer's resource.

@@ -78,7 +78,7 @@ PyQt5 **and** PyQt6 through `qgis.PyQt`.
 
   | Helper | Use it for |
   |---|---|
-  | `_run_action(fn, failure_message) -> bool \| None` | any mutation: wait cursor, banner + QGIS log on failure. False on a refusal, None when the user stopped waiting (the save may still land): a form opens again with its typed values on False only |
+  | `_run_action(fn, failure_message) -> bool \| None` | any mutation: wait cursor, banner + QGIS log on failure. False on a refusal, None when the user stopped waiting (the save may still land) or part of the save landed (the tab reloads): a form opens again with its typed values on False only |
   | `_setup_add_button`, `_setup_delete_selected_button`, `_setup_extra_button` | the header's buttons, armed by each loader and hidden again by `_reset_table_state`. The third one is for what a tab holds beside its rows: the Tile Cache tab's gridsets |
   | `_fetch(fn, failure_message) -> value \| None` | any read the UI needs before continuing: runs `fn` in a worker thread and waits behind an application-modal *Waiting for GeoServer* box (after 0.3 s) with Cancel, so a dead server cannot freeze QGIS. `in_worker=False` for work on a live QGIS layer. A map layer `fn` builds comes back moved to the GUI thread |
   | `_fetch_cancellable(work, failure_message) -> value \| None` | `_fetch` for a fan-out: `work(task)` gets a stand-in task whose `isCanceled()` turns true on Cancel, so no more GETs start once the user stopped waiting (a sort's detail fill, a gridset's users) |
