@@ -48,13 +48,19 @@ parses the Python itself. Qt's own `lupdate` cannot read Python at all.
     fails when the code has a string that `geoserver_manager_en.ts` lacks. To
     add a locale, copy `geoserver_manager_en.ts` to
     `geoserver_manager_<locale>.ts`, set its `language` attribute, and run the
-    script.
+    script. Then mark the plural messages unfinished again: the copy holds
+    English's plural forms, and the tests count them as translated.
 
 1. Translate, in Qt Linguist or directly in the `.ts` file:
 
     ```bash
     linguist geoserver_manager/resources/i18n/*.ts
     ```
+
+    Use the words of GeoServer's own web interface in that language, and of
+    QGIS's. Keep every `{}`, `{name}` and `%n` as it is. Then look at the
+    dialogs in the language: a label longer than the English one can be cut
+    off in a list box. Shorten it rather than widen the form.
 
 1. Compile. CI does this when it packages, and the `.qm` files are ignored by
    git:
@@ -75,7 +81,7 @@ self.tr("%n item(s) could not be listed: {names}.", None, n)
 ```
 
 `pylupdate6` marks such a message `numerus="yes"`, and each locale fills in
-its own forms (English and French have two). Never build the plural from a
+its own forms (English, French and German have two). Never build the plural from a
 noun and "(s)" or `+ "s"`: that is right in no language. For the deletes, a
 tab hands `_delete_many` its own sentences through `_one_or_many`, with the
 plural one counted this way.
