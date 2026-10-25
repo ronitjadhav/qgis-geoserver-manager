@@ -538,16 +538,25 @@ class StyleTabMixin:
                     # the new body was already live on every layer using it.
                     self._require_safe_name(new_name)
                     self._refuse_taken_style(new_name, workspace_name)
+                body_changed = new_body != body.strip()
                 try:
-                    if new_body != body.strip():
+                    if body_changed:
                         self._save_style_body(
                             name, workspace_name, style_format, new_body
                         )
-                    if new_name != name:
+                    elif new_name != name:
                         self._rename_style(name, workspace_name, new_name)
                 except Exception:
                     self._refuse_gone_style(name, workspace_name)
                     raise
+                if body_changed and new_name != name:
+                    # The new body is live: a failed rename is no refusal.
+                    self._partly_saved(
+                        lambda: self._rename_style(name, workspace_name, new_name),
+                        translate(
+                            "StyleTabMixin", "Style '{}' saved, but not renamed"
+                        ).format(name),
+                    )
 
             saved = self._run_action(
                 lambda: self._wait_for_save(save),
@@ -562,7 +571,7 @@ class StyleTabMixin:
                 self._load_styles()
                 return
             if saved is None:
-                return  # the user stopped waiting: the save may still land
+                return  # stopped waiting or partly saved: the tab reloads
             typed = values  # refused after the form closed: back in, as typed
 
     def _rename_style(self, name, workspace_name, new_name):

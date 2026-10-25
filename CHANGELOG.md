@@ -27,8 +27,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   the filter on screen when it is refused.
 - **Fixed.** A save GeoServer refused after the form closed took the typed
   text with it. That was a style's document, a pasted style, a SQL view's
-  query or a layer's edits. The form opens again with what was typed. A style document
-  that is not well-formed is refused before the form closes.
+  query or a layer's edits. The form opens again with what was typed. When
+  only part of a save landed, such as a style's document but not its new
+  name, the tab reloads and says which part. A style document that is not
+  well-formed is refused before the form closes.
 - **Fixed.** A new coverage store or cascaded store GeoServer cannot open
   says so when it is created, as an edited one did.
 - **Fixed.** Publishing a coverage or a cascaded layer under a layer name the

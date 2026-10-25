@@ -1638,6 +1638,37 @@ class TestRefusedStyleSaveReopens(unittest.TestCase):
         self.assertEqual(opened[1]["body"], "<sld version='1.1.0'><x/></sld>")
         self.assertEqual(opened[1]["name"], "population")
 
+    def test_a_rename_failing_after_the_body_saved_does_not_reopen(self):
+        # The new body is live on every layer: no refusal to type again.
+        saved = []
+        self.dlg._save_style_body = lambda *args: saved.append(args)
+        self.dlg._refuse_taken_style = lambda *args: None
+
+        def refuse(*args):
+            raise RuntimeError("HTTP 500: rename failed")
+
+        self.dlg._rename_style = refuse
+        warnings = []
+        self.dlg.show_warning_message = warnings.append
+        self.dlg._reload_current_tab = lambda: None
+        opened = []
+
+        class Editing(ResourceFormDialog):
+            def exec(inner):
+                opened.append(inner)
+                if len(opened) > 1:
+                    return QDialog.DialogCode.Rejected
+                inner.get_widget("name").setText("renamed")
+                inner.get_widget("body").setText("<sld version='1.1.0'><x/></sld>")
+                return QDialog.DialogCode.Accepted
+
+        with patch.object(tab_styles, "ResourceFormDialog", Editing):
+            self.dlg._show_style_info(["population", GLOBAL])
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(len(opened), 1)
+        self.assertEqual(self.errors, [])
+        self.assertIn("HTTP 500: rename failed", warnings[0])
+
     def test_an_upload_geoserver_refuses_comes_back_in_the_form(self):
         def refuse(values):
             raise RuntimeError("HTTP 400: Invalid style")
