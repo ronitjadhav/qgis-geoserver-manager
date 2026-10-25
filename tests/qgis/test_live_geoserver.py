@@ -212,6 +212,25 @@ class TestLiveGeoServer(unittest.TestCase):
     def gone(self, path):
         return self.rest("get", path, accept=404).status_code == 404
 
+    # Two lists no form shows, which a partial PUT emptied (2.28.5).
+    INSPIRE = {
+        "authorityURLs": {
+            "AuthorityURL": [{"name": "live", "href": "https://example.org/live"}]
+        },
+        "identifiers": {"Identifier": [{"authority": "live", "identifier": "live-1"}]},
+    }
+
+    def inspire(self, path, root, name):
+        """Give a layer or a layer group both lists; return them as stored."""
+        self.rest("put", path, json={root: {"name": name, **self.INSPIRE}})
+        stored = self.lists(path, root)
+        self.assertTrue(all(stored.values()), stored)
+        return stored
+
+    def lists(self, path, root):
+        document = self.get(path)[root]
+        return {key: document.get(key) for key in self.INSPIRE}
+
     def setUp(self):
         self.banners.clear()
 
@@ -449,6 +468,7 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_refused.json"))
 
     def test_33_set_the_layer_styles(self):
+        kept = self.inspire(f"layers/{LAYER}.json", "layer", "archsites")
         with answering({"style": f"{WS}:live_point", "others": ["point"]}):
             self.dlg._set_layer_style(self.row("Layers", "archsites"))
         self.assertEqual(len(self.said()), 1)
@@ -457,6 +477,7 @@ class TestLiveGeoServer(unittest.TestCase):
         others = layer["styles"]["style"]
         others = others if isinstance(others, list) else [others]
         self.assertEqual([style["name"] for style in others], ["point"])
+        self.assertEqual(self.lists(f"layers/{LAYER}.json", "layer"), kept)
 
     def test_34_what_uses_the_style(self):
         with answering(None) as forms:
@@ -481,6 +502,16 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertEqual(len(self.said()), 1)
         body = self.rest("get", f"workspaces/{WS}/styles/live_copy.sld").text
         self.assertIn("#0000FF", body)
+
+    def test_36a_push_a_style_as_the_layers_default(self):
+        kept = self.inspire(f"layers/{LAYER}.json", "layer", "archsites")
+        sld = SLD.format(colour="#00FF00")
+        self.assertTrue(
+            self.dlg._push_qgis_style("live_pushed", WS, sld, "archsites", True)
+        )
+        layer = self.get(f"layers/{LAYER}.json")["layer"]
+        self.assertEqual(layer["defaultStyle"]["name"], f"{WS}:live_pushed")
+        self.assertEqual(self.lists(f"layers/{LAYER}.json", "layer"), kept)
 
     def test_37_add_the_layer_to_qgis(self):
         for protocol in ("WFS", "WMS", "WMTS"):
@@ -632,11 +663,14 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(589000 < box["minx"] < box["maxx"] < 609000, box)
 
     def test_41_edit_the_layer_group(self):
+        path = f"workspaces/{WS}/layergroups/live_group.json"
+        kept = self.inspire(path, "layerGroup", "live_group")
         with answering({"title": "Live group, edited"}):
             self.dlg._show_layer_group_info(self.row("Layer Groups", "live_group"))
         self.assertEqual(len(self.said()), 1)
-        group = self.get(f"workspaces/{WS}/layergroups/live_group.json")["layerGroup"]
+        group = self.get(path)["layerGroup"]
         self.assertEqual(group["title"], "Live group, edited")
+        self.assertEqual(self.lists(path, "layerGroup"), kept)
 
     # -- Tile cache ----------------------------------------------------------
 

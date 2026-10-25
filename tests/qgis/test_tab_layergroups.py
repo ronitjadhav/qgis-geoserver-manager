@@ -1210,7 +1210,8 @@ class TestAGroupDeletedMeanwhile(unittest.TestCase):
                 "tasmania", None, before, after, [], [], QgsCoordinateTransformContext()
             )
         self.assertIn("deleted on the server", str(raised.exception))
-        self.assertEqual(self.reread_paths, ["/rest/layergroups/tasmania.json"])
+        # The read of its lists for the PUT (_replaced_lists), then the re-read.
+        self.assertEqual(self.reread_paths, ["/rest/layergroups/tasmania.json"] * 2)
 
     def test_a_delete_says_so_in_both_scopes(self):
         def refused(*args):

@@ -1353,7 +1353,7 @@ class LayerTabMixin:
                     else None
                 ),
             )
-            self._check(self.gs.rest_service.update_layer(layer, ws_name))
+            self._put_layer(ws_name, layer)
 
         if self._run_action(
             lambda: self._wait_for_save(save),
@@ -1553,14 +1553,26 @@ class LayerTabMixin:
                     style_name, workspace_name, "sld", sld, local_icons=True
                 )
             if set_default:
-                self._check(
-                    self.gs.set_default_layer_style(
-                        layer_name, workspace_name, f"{workspace_name}:{style_name}"
-                    )
+                from geoservercloud.models.layer import Layer
+
+                default = f"{workspace_name}:{style_name}"
+                self._put_layer(
+                    workspace_name, Layer(layer_name, default_style_name=default)
                 )
 
         self._wait_for_save(write)
         return True
+
+    def _put_layer(self, ws_name, layer):
+        """The library's update_layer(), with the lists a partial PUT empties
+        (_replaced_lists). Runs in a worker.
+
+        TODO(#1): update_layer() sends a partial layer document (row 87).
+        """
+        path = self._layers_url(f"{ws_name}:{layer.name}")
+        payload = layer.put_payload()
+        payload["layer"].update(self._replaced_lists(path, "layer"))
+        self._raw_rest("put", path, json=payload)
 
     def _confirm_replace_style(self, style_name, workspace_name):
         """Ask before a push overwrites a style other layers may share."""

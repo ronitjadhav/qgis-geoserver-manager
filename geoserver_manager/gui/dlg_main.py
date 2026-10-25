@@ -90,6 +90,8 @@ _WAIT_BEFORE_BOX = 0.3
 _TESTED_SERIES = ((2, 28), (3, 0))
 # The jar every GeoServer Cloud service is built on, then Cloud's own version.
 _CLOUD_JAR = "gs-cloud-base-spring-boot-"
+# The lists a layer or layer group PUT replaces whole (_replaced_lists).
+_REPLACED_LISTS = ("authorityURLs", "identifiers")
 # GeoServer's 500 for a style naming a function it lacks.
 _UNKNOWN_FUNCTION = re.compile(r"Unable to find function (\w+)")
 
@@ -2285,6 +2287,16 @@ class GeoServerMainDialog(
         handed instead: `self.gs` is not its to read.
         """
         return raw_rest(self.gs.rest_service.rest_client, method, path, **kwargs)
+
+    def _replaced_lists(self, path, root):
+        """A layer's or layer group's authorityURLs and identifiers as stored,
+        for a partial PUT of it to carry. Runs in a worker.
+
+        GeoServer replaces both lists with what the PUT holds, so a PUT of a
+        title or a default style emptied them (measured on 2.28.5).
+        """
+        stored = self._raw_rest("get", path).json().get(root) or {}
+        return {key: stored[key] for key in _REPLACED_LISTS if stored.get(key)}
 
     def _resource_exists(self, getter, *args):
         """True when a GET for the resource returns 200, False on 404.

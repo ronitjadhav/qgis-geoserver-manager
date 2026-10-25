@@ -518,6 +518,12 @@ carries a `TODO(#1)` comment at the call site.
   meanwhile fails where a GET says 404. A body is a 400 "Invalid style: … info is
   null", a rename a 500 NullPointerException, a zip a 500 "Error processing the
   style". So a failed save reads the style again before it reports.
+- **A layer or layer group PUT replaces two lists** (row 87 of #1, measured on
+  2.28.5). `authorityURLs` and `identifiers` become what the PUT holds, while
+  the other fields of a partial PUT merge. A group's title edit, or a default
+  style set through the library's `update_layer()`, emptied both lists, which
+  no form shows. `_replaced_lists` reads them and sends them back with every
+  partial PUT of a layer or a layer group.
 - **Workspace WMS settings** (rows 25–26 of #1): `WmsSettings` models none of the
   service metadata (`title`, `abstrct`, `keywords`, `srs`, …), and there is no delete.
   So `tab_workspaces.py` GETs, PUTs and DELETEs the settings path itself. The

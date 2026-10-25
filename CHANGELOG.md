@@ -53,6 +53,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 - **Fixed.** Text from the server shows as plain text. A link in the log
   location or in an error was a live link in the Server tab's boxes. *Save
   to disk* suggests the style's file name without the server's folders.
+- **Fixed.** Editing a layer group, setting a layer's styles, or pushing a
+  style as a layer's default emptied its authority URLs and identifiers,
+  which INSPIRE services publish. They are kept.
 
 ## 1.0.0 - 2026-10-08
 

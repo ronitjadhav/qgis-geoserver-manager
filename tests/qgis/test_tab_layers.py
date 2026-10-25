@@ -1586,7 +1586,8 @@ class _EditFakeGS:
 
 
 class TestSetLayerStyle(unittest.TestCase):
-    """The default style is read from the layer and written through the library."""
+    """The default style is read from the layer and written as the library's
+    model of it, in one PUT of the layer."""
 
     def setUp(self):
         self.dlg = SyncDialog()
@@ -1607,16 +1608,17 @@ class TestSetLayerStyle(unittest.TestCase):
             def get_layer(inner, ws, name):
                 return (LayerModel(), 200)
 
-            def update_layer(inner, layer, ws):
-                outer.update_calls.append((ws, layer.put_payload()["layer"]))
-                return ("", 200)
+        def put(path, json=None, **kwargs):
+            ws = path.rsplit("/layers/", 1)[1].partition(":")[0]
+            outer.update_calls.append((ws, json["layer"]))
+            return Response("", 200)
 
         class GS(FakeGS):
             def __init__(inner):
                 super().__init__()
                 # keep the base's client and endpoints; add the layer getter
                 inner.rest_service.get_layer = Rest().get_layer
-                inner.rest_service.update_layer = Rest().update_layer
+                inner.rest_service.rest_client.put = put
 
             def get_styles(inner, workspace_name=None):
                 if workspace_name is None:
@@ -1894,6 +1896,13 @@ class TestLayerStylesAsGeoServerWritesThem(unittest.TestCase):
             dlg._layer_styles("sf", "missing")
 
 
+def default_style_put(path, kwargs):
+    """A PUT of a layer's default style, recorded as the call it makes."""
+    ws, _, layer = path.rsplit("/", 1)[1][: -len(".json")].partition(":")
+    style = kwargs["json"]["layer"]["defaultStyle"]["name"]
+    return ("set_default", layer, ws, style)
+
+
 class StyleFakeGS(FakeGS):
     """Records the style calls the push makes."""
 
@@ -1903,8 +1912,14 @@ class StyleFakeGS(FakeGS):
         outer = self
 
         class Client:
+            def get(inner, path, **kwargs):
+                return Response({"layer": {}})  # without the two INSPIRE lists
+
             def put(inner, path, **kwargs):
-                outer.style_calls.append(("PUT", path, kwargs))
+                if "/layers/" in path:
+                    outer.style_calls.append(default_style_put(path, kwargs))
+                else:
+                    outer.style_calls.append(("PUT", path, kwargs))
                 return Response()
 
             def post(inner, path, **kwargs):
@@ -1938,10 +1953,6 @@ class StyleFakeGS(FakeGS):
     def create_style_definition(self, name, filename, workspace_name=None):
         self.style_calls.append(("definition", name, filename, workspace_name))
         return ("", 201)
-
-    def set_default_layer_style(self, layer_name, workspace_name, style):
-        self.style_calls.append(("set_default", layer_name, workspace_name, style))
-        return ("", 200)
 
 
 class TestStyleFromQgis(unittest.TestCase):
@@ -2153,6 +2164,9 @@ class GpkgPublishFakeGS(StyleFakeGS):
                 return response
 
             def put(inner, path, **kwargs):
+                if "/layers/" in path:
+                    outer.style_calls.append(default_style_put(path, kwargs))
+                    return Response()
                 body = kwargs.get("data")
                 if hasattr(body, "read"):  # a streaming upload: record its bytes
                     kwargs = {**kwargs, "data": body.read()}
