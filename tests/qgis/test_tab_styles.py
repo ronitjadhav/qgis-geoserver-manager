@@ -970,6 +970,19 @@ class TestRenameCopyAndUsage(unittest.TestCase):
         self.assertEqual(kwargs["json"], {"style": {"name": "new_population"}})
         self.assertEqual(reads, [])
 
+    def test_a_rename_keeps_the_styles_metadata(self):
+        # A PUT of the name alone dropped it (2.28.5).
+        metadata = {"entry": {"@key": "kept", "$": "yes"}}
+        client = self.dlg.gs.rest_service.rest_client
+        answer = type("Answer", (), {"status_code": 200, "history": ()})()
+        answer.json = lambda: {"style": {"name": "population", "metadata": metadata}}
+        client.get = lambda path, **kwargs: answer
+        self.dlg._rename_style("population", None, "new_population")
+        ((_verb, _path, kwargs),) = self.calls("PUT")
+        self.assertEqual(
+            kwargs["json"], {"style": {"name": "new_population", "metadata": metadata}}
+        )
+
     def test_a_rename_onto_a_taken_name_stays_in_the_form_and_sends_nothing(self):
         seen = {}
 

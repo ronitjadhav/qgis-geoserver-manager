@@ -576,13 +576,16 @@ class StyleTabMixin:
         Measured on 2.28.5: a PUT of the new name on the definition renames the
         style and its references follow, since GeoServer links them by id.
         The caller has refused an unsafe or taken name before the body PUT.
+        A PUT of the name alone dropped the style's metadata, so it goes along
+        as stored (the library's model of a style has none).
         TODO(#1): no rename in the library (row 58).
         """
-        self._raw_rest(
-            "put",
-            self._style_path(name, workspace_name, "json"),
-            json={"style": {"name": new_name}},
-        )
+        path = self._style_path(name, workspace_name, "json")
+        style = {"name": new_name}
+        stored = self._raw_rest("get", path).json().get("style") or {}
+        if stored.get("metadata"):
+            style["metadata"] = stored["metadata"]
+        self._raw_rest("put", path, json={"style": style})
 
     def _refuse_taken_style(self, name, workspace_name):
         """Raise when the scope already has a style of that name."""

@@ -3268,6 +3268,32 @@ class TestRefusedLayerEditReopens(unittest.TestCase):
         self.assertEqual(opened[1]["title"], "Roads, typed")  # as typed
         self.assertEqual(opened[1]["srs"], "EPSG:999999")
 
+    def test_text_as_the_web_interface_stores_it_is_no_change(self):
+        # GeoServer keeps "…\r\n…  " as typed there; the form gives "…\n…",
+        # and an untouched Save rewrote the abstract (the demo sfdem).
+        dlg = SyncDialog()
+        dlg.gs = SqlViewGS()
+        dlg._layer_resource = lambda row: {
+            "name": "roads",
+            "nativeName": "roads",
+            "srs": "EPSG:4326",
+            "projectionPolicy": "FORCE_DECLARED",
+            "title": "Roads ",
+            "abstract": "line one\r\nline two  ",
+            "enabled": True,
+            "advertised": True,
+        }
+        saved = []
+        dlg._save_layer = lambda row, before, after: saved.append(after)
+
+        class Untouched(ResourceFormDialog):
+            def exec(inner):
+                return QDialog.DialogCode.Accepted
+
+        with patch.object(tab_layers, "ResourceFormDialog", Untouched):
+            dlg._show_layer_info(["roads", "topp", "VECTOR", "pg"])
+        self.assertEqual(saved, [])
+
     def test_a_partial_save_does_not_reopen_the_form(self):
         # A rename landed, then the dimensions failed: a reopen would read
         # the layer under its old name, which is gone.

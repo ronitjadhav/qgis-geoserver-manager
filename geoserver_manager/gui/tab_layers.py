@@ -18,7 +18,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox
 
 from geoserver_manager.gui.dlg_preview import LayerPreviewDialog, load_error
-from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
+from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog, as_typed
 from geoserver_manager.gui.scope import PENDING
 from geoserver_manager.toolbelt.payload import (
     DIMENSIONS,
@@ -900,7 +900,7 @@ class LayerTabMixin:
                 size=coverage.get("size", ""),
                 bands=coverage.get("bands", ""),
             )
-        before = dict(values)
+        before = as_typed(values)
         if typed is not None:
             values = dict(values, **typed)
 

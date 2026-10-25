@@ -491,17 +491,24 @@ class TestLiveGeoServer(unittest.TestCase):
         body = SLD.format(colour="#0000FF").replace(
             "<NamedLayer>", "<!-- kept --><NamedLayer>"
         )
+        # Metadata no form shows, which a PUT of the new name alone dropped.
+        definition = f"workspaces/{WS}/styles/live_point.json"
+        metadata = {"entry": [{"@key": "live", "$": "kept"}]}
+        self.rest("put", definition, json={"style": {"metadata": metadata}})
+        metadata = self.get(definition)["style"]["metadata"]
+        self.assertTrue(metadata)
         with answering({"body": body, "name": "live_blue"}):
             self.dlg._show_style_info(self.row("Styles", "live_point"))
         self.assertEqual(len(self.said()), 1)
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_point.json"))
         body = self.rest("get", f"workspaces/{WS}/styles/live_blue.sld").text
         self.assertIn("#0000FF", body)
-        filename = self.get(f"workspaces/{WS}/styles/live_blue.json")["style"][
-            "filename"
-        ]
-        stored = self.rest("get", f"resource/workspaces/{WS}/styles/{filename}").text
-        self.assertIn("<!-- kept -->", stored)
+        style = self.get(f"workspaces/{WS}/styles/live_blue.json")["style"]
+        stored = self.rest(
+            "get", f"resource/workspaces/{WS}/styles/{style['filename']}"
+        )
+        self.assertIn("<!-- kept -->", stored.text)
+        self.assertEqual(style.get("metadata"), metadata)
         # The layer follows the rename.
         layer = self.get(f"layers/{LAYER}.json")["layer"]
         self.assertEqual(layer["defaultStyle"]["name"], f"{WS}:live_blue")
