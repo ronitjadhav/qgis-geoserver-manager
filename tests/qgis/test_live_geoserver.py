@@ -486,12 +486,22 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertIn(f"{LAYER} (default style)", forms.shown[0]["users"])
 
     def test_35_edit_and_rename_the_style(self):
-        with answering({"body": SLD.format(colour="#0000FF"), "name": "live_blue"}):
+        # The author's comment stays, as GeoServer's own editor keeps it: a
+        # parsed PUT stored GeoServer's re-encoding instead.
+        body = SLD.format(colour="#0000FF").replace(
+            "<NamedLayer>", "<!-- kept --><NamedLayer>"
+        )
+        with answering({"body": body, "name": "live_blue"}):
             self.dlg._show_style_info(self.row("Styles", "live_point"))
         self.assertEqual(len(self.said()), 1)
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_point.json"))
         body = self.rest("get", f"workspaces/{WS}/styles/live_blue.sld").text
         self.assertIn("#0000FF", body)
+        filename = self.get(f"workspaces/{WS}/styles/live_blue.json")["style"][
+            "filename"
+        ]
+        stored = self.rest("get", f"resource/workspaces/{WS}/styles/{filename}").text
+        self.assertIn("<!-- kept -->", stored)
         # The layer follows the rename.
         layer = self.get(f"layers/{LAYER}.json")["layer"]
         self.assertEqual(layer["defaultStyle"]["name"], f"{WS}:live_blue")

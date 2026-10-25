@@ -206,7 +206,7 @@ class TestOtherEncodings(unittest.TestCase):
 
     def test_an_edited_latin1_body_is_put_as_utf8(self):
         self.dlg._put_sld_body("population", None, LATIN1_SLD)
-        body = self.dlg.gs.calls[-1][-1]
+        body = self.dlg.gs.calls[-1][-1]["data"]
         self.assertIn(b'encoding="UTF-8"', body)
         self.assertIn("Caf\xe9".encode("utf-8"), body)
 
@@ -296,7 +296,9 @@ class TestStylesTab(unittest.TestCase):
         with patch.object(tab_styles, "ResourceFormDialog", Editing):
             self.dlg._show_style_info(["population", GLOBAL])
         self.assertEqual(reloads, [1])
-        self.assertEqual(self.dlg.gs.calls[-1][:2], ("PUT-body", "population"))
+        self.assertEqual(
+            self.dlg.gs.calls[-1][:2], ("PUT", "/rest/styles/population.sld")
+        )
 
     def test_upload_from_a_string_sends_the_body_with_its_own_content_type(self):
         self.dlg._create_style_from_values(
@@ -494,12 +496,23 @@ class TestContentTypeByVersion(unittest.TestCase):
         self.dlg = SyncDialog()
         self.dlg.gs = FakeGS()
 
-    def test_a_1_0_body_goes_through_the_library(self):
+    def test_a_1_0_body_goes_raw_with_its_own_content_type(self):
+        # Parsed, GeoServer stored its re-encoding of the first UserStyle
+        # only: the comments and any other style went (2.28.5).
         self.dlg._put_sld_body("population", None, SLD)
         self.assertEqual(
-            self.dlg.gs.calls[-1], ("PUT-body", "population", None, "sld", SLD.encode())
+            self.dlg.gs.calls[-1],
+            (
+                "PUT",
+                "/rest/styles/population.sld",
+                {
+                    "params": {"raw": "true"},
+                    "data": SLD.encode(),
+                    "headers": {"Content-Type": SLD_1_0},
+                },
+            ),
         )
-        self.assertFalse([c for c in self.dlg.gs.calls if c[0] == "PUT"])
+        self.assertFalse([c for c in self.dlg.gs.calls if c[0] == "PUT-body"])
 
     def test_a_1_1_body_is_sent_with_the_symbology_encoding_content_type(self):
         # rest_service.create_style() can only send application/vnd.ogc.sld+xml,
@@ -509,6 +522,7 @@ class TestContentTypeByVersion(unittest.TestCase):
         self.assertEqual(verb, "PUT")
         self.assertEqual(path, "/rest/workspaces/topp/styles/from_qgis.sld")
         self.assertEqual(kwargs["headers"]["Content-Type"], SLD_1_1)
+        self.assertEqual(kwargs["params"], {"raw": "true"})
         self.assertEqual(kwargs["data"], SLD_11.encode())
         self.assertFalse([c for c in self.dlg.gs.calls if c[0] == "PUT-body"])
 
@@ -1270,6 +1284,7 @@ class TestIconsGoWithTheStyle(unittest.TestCase):
                 "PUT",
                 "/rest/workspaces/topp/styles/from_qgis.sld",
                 {
+                    "params": {"raw": "true"},
                     "data": package.read("style.sld"),
                     "headers": {"Content-Type": SLD_1_1},
                 },
@@ -1282,7 +1297,18 @@ class TestIconsGoWithTheStyle(unittest.TestCase):
         zip_put, sld_put = self.dlg.gs.calls
         self.assertEqual(zip_put[:4], ("PUT-body", "population", None, "zip"))
         document = zipfile.ZipFile(io.BytesIO(zip_put[4])).read("style.sld")
-        self.assertEqual(sld_put, ("PUT-body", "population", None, "sld", document))
+        self.assertEqual(
+            sld_put,
+            (
+                "PUT",
+                "/rest/styles/population.sld",
+                {
+                    "params": {"raw": "true"},
+                    "data": document,
+                    "headers": {"Content-Type": SLD_1_0},
+                },
+            ),
+        )
 
     def test_a_body_from_the_server_never_takes_a_file_of_this_machine(self):
         """A stored SLD naming a file here made Copy and the edit form's Save
@@ -1311,8 +1337,8 @@ class TestIconsGoWithTheStyle(unittest.TestCase):
         self.dlg.gs.calls.clear()
         sld = sld_with_icon(self.svg).replace('version="1.1.0"', 'version="1.0.0"')
         self.dlg._put_sld_body("a#b", None, sld)
-        ((_put, name, workspace, style_format, _body),) = self.dlg.gs.calls
-        self.assertEqual((name, workspace, style_format), ("a%23b", None, "sld"))
+        ((verb, path, _kwargs),) = self.dlg.gs.calls
+        self.assertEqual((verb, path), ("PUT", "/rest/styles/a%23b.sld"))
 
     def test_an_icon_geoserver_would_not_unpack_is_refused_before_a_request(self):
         """GeoServer unpacks svg, png, jpg, bmp and gif files from a style zip
@@ -1530,7 +1556,7 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
         state = {"gone": False, "failed": False}
         definition = dlg.gs.get_style_definition
 
-        def put_body(name, body, workspace_name=None, format="sld"):
+        def put_body(path, **kwargs):
             state["gone"] = deleted
             state["failed"] = True
             raise RuntimeError(failure)
@@ -1542,7 +1568,7 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
                 return reread
             return definition(*args)
 
-        dlg.gs.rest_service.create_style = put_body
+        dlg.gs.rest_service.rest_client.put = put_body
         dlg.gs.get_style_definition = get_definition
 
         shown = []

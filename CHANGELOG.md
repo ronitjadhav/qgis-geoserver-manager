@@ -59,6 +59,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 - **Fixed.** A layer with no projection policy, saved without a change, got
   FORCE_DECLARED and recomputed bounding boxes. 4 of the 5 demo coverages
   have no policy. The form shows "Not set" for them and keeps it.
+- **Fixed.** A saved SLD kept only GeoServer's re-encoding of it: its
+  comments, any second style and its layout were lost. The SLD is stored as
+  written, as GeoServer's own editor stores it.
 
 ## 1.0.0 - 2026-10-08
 

@@ -306,10 +306,14 @@ class StyleTabMixin:
         1.0.0: accepted, rendered, and mislabelled. Sending
         application/vnd.ogc.se+xml records it as 1.1.0. The body goes as
         UTF-8 (`utf8_sld`): GeoServer reads it so, whatever its declaration
-        says. An SLD that draws icons from files on this machine first goes
-        as a zip with them (`icon_package`). That PUT unpacks the icons but
-        keeps the style's recorded format and version (2.28.5: a CSS style
-        then held SLD and drew nothing), so the zip's SLD follows as below.
+        says, and raw, kept as written, as GeoServer's own editor keeps it:
+        parsed, it stored its re-encoding of the first UserStyle only, the
+        comments and any other style gone (2.28.5). A parsed PUT checked no
+        more: it took an SLD whose NamedLayer was misspelt too. An SLD that
+        draws icons from files on this machine first goes as a zip with them
+        (`icon_package`). That PUT unpacks the icons but keeps the style's
+        recorded format and version (2.28.5: a CSS style then held SLD and
+        drew nothing), so the zip's SLD follows as below.
 
         :param local_icons: package the icons only when the SLD was made on
             this machine (a QGIS export, a file or text the user gave). A body
@@ -326,16 +330,10 @@ class StyleTabMixin:
                     *_quoted(name, workspace_name, zipped), format="zip"
                 )
             )
-        if content_type == SLD_1_0:
-            self._check(
-                self.gs.rest_service.create_style(
-                    *_quoted(name, workspace_name, data), format="sld"
-                )
-            )
-            return
         self._raw_rest(
             "put",
             self._style_path(name, workspace_name, "sld"),
+            params={"raw": "true"},
             data=data,
             headers={"Content-Type": content_type},
         )
