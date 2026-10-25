@@ -306,8 +306,10 @@ class TestLayersTab(unittest.TestCase):
         # Stores are read in order until the layer is found: a broken store
         # after the right one is never reached.
         answer = self.dlg.gs.answer
+        seen = []
 
         def with_a_broken_store(path):
+            seen.append(path)
             if path == f"{BASE}/workspaces/sf/wmtsstores.json":
                 stores = [{"name": "remote_wmts"}, {"name": "broken"}]
                 return ({"wmtsStores": {"wmtsStore": stores}}, 200)
@@ -320,8 +322,13 @@ class TestLayersTab(unittest.TestCase):
         self.assertEqual(
             self.dlg._layer_summary("sf:tiles", known)[:2], ("WMTS", "remote_wmts")
         )
-        with self.assertRaises(Exception):
+        broken = f"{BASE}/workspaces/sf/wmtsstores/broken/layers.json"
+        self.assertNotIn(broken, seen)
+        # A layer in no earlier store reaches it, and its failure is reported.
+        with self.assertRaises(RuntimeError) as caught:
             self.dlg._wmts_store_of("sf", "elsewhere", known)
+        self.assertIn("remote down", str(caught.exception))
+        self.assertIn(broken, seen)
 
     def test_lists_every_layer_of_every_type(self):
         self.dlg._load_layers()
