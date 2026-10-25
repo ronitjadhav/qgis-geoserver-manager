@@ -936,6 +936,8 @@ class TestRenameCopyAndUsage(unittest.TestCase):
 
         class Renaming(ResourceFormDialog):
             def exec(inner):
+                if seen:  # back in the editor after the refusal: give up
+                    return QDialog.DialogCode.Rejected
                 inner.get_widget("name").setText("generic")
                 inner._on_accept()
                 seen["open"] = not inner.result()
@@ -1136,8 +1138,14 @@ class TestRenameCopyAndUsage(unittest.TestCase):
         dlg._load_legend = lambda *args: None
         dlg.show_error_message = lambda text: None
 
+        shown = []
+
         class Accepting(ResourceFormDialog):
             def exec(inner):
+                shown.append(inner)
+                # Once: the refusal brings the editor back, and the user gives up.
+                if len(shown) > 1:
+                    return QDialog.DialogCode.Rejected
                 return QDialog.DialogCode.Accepted
 
             def get_values(inner):
@@ -1146,6 +1154,7 @@ class TestRenameCopyAndUsage(unittest.TestCase):
         with patch.object(tab_styles, "ResourceFormDialog", Accepting):
             dlg._show_style_info(["population", "(global)"])
         self.assertEqual(saved, [])
+        self.assertEqual(len(shown), 2)  # back in the editor with the typed name
 
     def test_used_by_hands_the_waiting_box_a_stop_event(self):
         import threading
@@ -1528,8 +1537,13 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
         dlg.gs.rest_service.create_style = put_body
         dlg.gs.get_style_definition = get_definition
 
+        shown = []
+
         class Editing(ResourceFormDialog):
             def exec(self):
+                shown.append(self)
+                if len(shown) > 1:  # back in the editor after the refusal: give up
+                    return QDialog.DialogCode.Rejected
                 self.get_widget("body").setText("<StyledLayerDescriptor/>")
                 return QDialog.DialogCode.Accepted
 
@@ -1560,6 +1574,126 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
 
 # ############################################################################
 # ####### Stand-alone run ########
+
+
+class TestStyleBodyCheck(unittest.TestCase):
+    def test_an_sld_that_is_not_well_formed_is_refused_with_the_place(self):
+        with self.assertRaises(ValueError) as ctx:
+            StyleTabMixin._check_style_body("sld", "<a>\n  <Rule>\n</a>")
+        self.assertIn("not well-formed XML", str(ctx.exception))
+        self.assertIn("line 3", str(ctx.exception))
+
+    def test_an_mbstyle_that_is_not_json_is_refused(self):
+        with self.assertRaises(ValueError) as ctx:
+            StyleTabMixin._check_style_body("mbstyle", "{not json")
+        self.assertIn("not valid JSON", str(ctx.exception))
+
+    def test_css_and_ysld_are_not_checked_here(self):
+        StyleTabMixin._check_style_body("css", "* { ::: }")
+        StyleTabMixin._check_style_body("ysld", ":::")
+
+    def test_the_upload_form_checks_a_pasted_sld_before_it_closes(self):
+        dlg = SyncDialog()
+        dlg.gs = FakeGS()
+        with self.assertRaises(ValueError):
+            dlg._check_new_style(
+                {
+                    "name": "new",
+                    "workspace": GLOBAL,
+                    "source": "Paste",
+                    "format": "sld",
+                    "sld": "<a>",
+                }
+            )
+
+
+class TestRefusedStyleSaveReopens(unittest.TestCase):
+    def setUp(self):
+        self.dlg = SyncDialog()
+        self.dlg.gs = FakeGS()
+        self.dlg._load_styles = lambda: None
+        self.dlg._load_legend = lambda *args, **kwargs: None
+        self.errors = []
+        self.dlg.show_error_message = self.errors.append
+
+    def test_an_edit_geoserver_refuses_comes_back_in_the_editor(self):
+        def refuse(*args):
+            raise RuntimeError("HTTP 400: Invalid style: no symbolizer")
+
+        self.dlg._save_style_body = refuse
+        opened = []
+
+        class Editing(ResourceFormDialog):
+            def exec(inner):
+                opened.append(inner.get_values())
+                if len(opened) == 1:
+                    inner.get_widget("body").setText("<sld version='1.1.0'><x/></sld>")
+                    return QDialog.DialogCode.Accepted
+                return QDialog.DialogCode.Rejected
+
+        with patch.object(tab_styles, "ResourceFormDialog", Editing):
+            self.dlg._show_style_info(["population", GLOBAL])
+        self.assertEqual(len(self.errors), 1)
+        self.assertEqual(len(opened), 2)
+        self.assertEqual(opened[1]["body"], "<sld version='1.1.0'><x/></sld>")
+        self.assertEqual(opened[1]["name"], "population")
+
+    def test_a_rename_failing_after_the_body_saved_does_not_reopen(self):
+        # The new body is live on every layer: no refusal to type again.
+        saved = []
+        self.dlg._save_style_body = lambda *args: saved.append(args)
+        self.dlg._refuse_taken_style = lambda *args: None
+
+        def refuse(*args):
+            raise RuntimeError("HTTP 500: rename failed")
+
+        self.dlg._rename_style = refuse
+        warnings = []
+        self.dlg.show_warning_message = warnings.append
+        self.dlg._reload_current_tab = lambda: None
+        opened = []
+
+        class Editing(ResourceFormDialog):
+            def exec(inner):
+                opened.append(inner)
+                if len(opened) > 1:
+                    return QDialog.DialogCode.Rejected
+                inner.get_widget("name").setText("renamed")
+                inner.get_widget("body").setText("<sld version='1.1.0'><x/></sld>")
+                return QDialog.DialogCode.Accepted
+
+        with patch.object(tab_styles, "ResourceFormDialog", Editing):
+            self.dlg._show_style_info(["population", GLOBAL])
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(len(opened), 1)
+        self.assertEqual(self.errors, [])
+        self.assertIn("HTTP 500: rename failed", warnings[0])
+
+    def test_an_upload_geoserver_refuses_comes_back_in_the_form(self):
+        def refuse(values):
+            raise RuntimeError("HTTP 400: Invalid style")
+
+        self.dlg._create_style_from_values = refuse
+        self.dlg._get_workspace_names = lambda: ["topp"]
+        opened = []
+
+        class Filling(ResourceFormDialog):
+            def exec(inner):
+                opened.append(inner.get_values())
+                if len(opened) == 1:
+                    inner.get_widget("name").setText("brand_new")
+                    inner.get_widget("sld").setText("<sld/>")
+                    return QDialog.DialogCode.Accepted
+                return QDialog.DialogCode.Rejected
+
+        with patch.object(tab_styles, "ResourceFormDialog", Filling):
+            self.dlg._add_style()
+        self.assertEqual(len(self.errors), 1)
+        self.assertEqual(len(opened), 2)
+        self.assertEqual(opened[1]["name"], "brand_new")
+        self.assertEqual(opened[1]["sld"], "<sld/>")
+
+
 # ################################
 if __name__ == "__main__":
     unittest.main()

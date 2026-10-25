@@ -22,6 +22,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   a catalog reload.
 - **Changed.** GeoServer Cloud 2.28.6 and 3.0.2 are tested every week, with
   both catalogs.
+- **Fixed.** A CQL filter GeoServer cannot read was saved, and the layer then
+  answered no request at all. The form now asks GeoServer first, and keeps
+  the filter on screen when it is refused.
+- **Fixed.** A save GeoServer refused after the form closed took the typed
+  text with it. That was a style's document, a pasted style, a SQL view's
+  query or a layer's edits. The form opens again with what was typed. When
+  only part of a save landed, such as a style's document but not its new
+  name, the tab reloads and says which part. A style document that is not
+  well-formed is refused before the form closes.
+- **Fixed.** A new coverage store or cascaded store GeoServer cannot open
+  says so when it is created, as an edited one did.
+- **Fixed.** Publishing a coverage or a cascaded layer under a layer name the
+  workspace holds is refused in the form, not after it closed.
 - **Added.** The whole interface in French and in German. The plugin follows
   the language of QGIS.
 

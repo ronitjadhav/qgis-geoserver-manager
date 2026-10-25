@@ -120,11 +120,12 @@ class Forms:
 
 
 @contextmanager
-def answering(*answers):
+def answering(*answers, refused=None):
     """Fill the forms a handler opens, one answer each, and press Save.
 
     An answer is a dict of values, a function of the form that returns one, or
-    None to close the form without saving (a viewer).
+    None to close the form without saving (a viewer). `refused` is the text
+    the form must refuse its Save with; any refusal is a failure otherwise.
     """
     queue = list(answers)
     forms = Forms()
@@ -149,7 +150,10 @@ def answering(*answers):
         yield forms
     if queue:
         raise AssertionError(f"{len(queue)} form(s) never opened")
-    if forms.refused:
+    if refused is not None:
+        if not any(refused in text for text in forms.refused):
+            raise AssertionError(f"no refusal said {refused!r}: {forms.refused}")
+    elif forms.refused:
         raise AssertionError(f"a form refused its Save: {forms.refused}")
 
 
@@ -395,6 +399,24 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertEqual(after["latLonBoundingBox"], before["latLonBoundingBox"])
         self.assertEqual(after["attributes"], before["attributes"])
 
+    def test_31b_a_filter_geoserver_cannot_read_is_refused_in_the_form(self):
+        # GeoServer stores it with a 200, and the layer then answers nothing.
+        with answering({"cql_filter": "this is not ((( cql"}, refused="CQL filter"):
+            self.dlg._show_layer_info(self.row("Layers", "archsites"))
+        self.assertEqual(self.said(), [])
+        self.assertNotIn("cqlFilter", self.feature_type())
+        with answering({"cql_filter": "cat < 3"}):
+            self.dlg._show_layer_info(self.row("Layers", "archsites"))
+        self.assertEqual(self.said(), ["Layer 'archsites' saved."])
+        self.assertEqual(self.feature_type()["cqlFilter"], "cat < 3")
+        self.banners.clear()
+        with answering({"cql_filter": ""}):
+            self.dlg._show_layer_info(self.row("Layers", "archsites"))
+        self.assertEqual(self.said(), ["Layer 'archsites' saved."])
+        self.assertFalse(
+            self.feature_type().get("cqlFilter")
+        )  # cleared, the key may stay
+
     def test_32_upload_a_style(self):
         with answering(
             {"name": "live_point", "workspace": WS, "sld": SLD.format(colour="#FF0000")}
@@ -403,6 +425,28 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertEqual(len(self.said()), 1)
         body = self.rest("get", f"workspaces/{WS}/styles/live_point.sld").text
         self.assertIn("#FF0000", body)
+
+    def test_32b_a_broken_document_is_refused_before_the_form_closes(self):
+        with answering(
+            {"name": "live_broken", "workspace": WS, "sld": "<a>\n<Rule>\n</a>"},
+            refused="well-formed",
+        ):
+            self.dlg._add_style()
+        self.assertEqual(self.said(), [])
+        self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_broken.json"))
+
+    def test_32c_a_document_geoserver_refuses_comes_back_in_the_form(self):
+        # Well-formed, so the form lets it through; GeoServer refuses it, and
+        # the form opens again with the text, which the user then gives up.
+        with answering(
+            {"name": "live_refused", "workspace": WS, "sld": "<a/>"}, None
+        ) as forms:
+            self.dlg._add_style()
+        (error,) = [text for level, text in self.banners if level == "error"]
+        self.assertIn("live_refused", error)
+        self.assertEqual(forms.shown[1]["sld"], "<a/>")
+        self.assertEqual(forms.shown[1]["name"], "live_refused")
+        self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_refused.json"))
 
     def test_33_set_the_layer_styles(self):
         with answering({"style": f"{WS}:live_point", "others": ["point"]}):
@@ -529,10 +573,13 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertEqual(sorted(keys), ["JDBC_VIRTUAL_TABLE", "cachingEnabled"])
 
     def test_39b_a_sql_geoserver_cannot_run_is_put_back(self):
-        with answering({"sql": "SELECT nope FROM nowhere"}):
+        # The refusal brings the form back with the typed query; the user
+        # gives up (the second answer).
+        with answering({"sql": "SELECT nope FROM nowhere"}, None) as forms:
             self.dlg._show_layer_info(self.row("Layers", "live_view"))
         (error,) = [text for level, text in self.banners if level == "error"]
         self.assertIn("previous one", error)
+        self.assertEqual(forms.shown[1]["sql"], "SELECT nope FROM nowhere")
         # The layer still reads, with the SQL it had.
         self.assertIn("extra", self.features()[0]["properties"])
 

@@ -13,7 +13,13 @@ Usage from the repo root folder:
 import io
 import unittest
 
-from geoserver_manager.toolbelt.rest import ProgressReader, UploadCancelled, raw_rest
+from geoserver_manager.toolbelt.rest import (
+    ProgressReader,
+    UploadCancelled,
+    ows_exception,
+    raw_rest,
+    summarise_body,
+)
 
 
 class TestProgressReader(unittest.TestCase):
@@ -88,6 +94,49 @@ class TestRawRest(unittest.TestCase):
         self.assertEqual(client.calls, [("/x", {})])  # accept is not sent on
         with self.assertRaises(RuntimeError):
             raw_rest(FakeClient(500), "get", "/x", accept=(404,))
+
+
+class TestSummariseBody(unittest.TestCase):
+    def test_an_ows_exception_report_gives_its_reason(self):
+        report = (
+            '<?xml version="1.0" encoding="UTF-8"?><ows:ExceptionReport '
+            'xmlns:ows="http://www.opengis.net/ows/1.1" version="2.0.0">'
+            '<ows:Exception exceptionCode="InvalidParameterValue">'
+            "<ows:ExceptionText>Failed to generate filter from ECQL string\n"
+            "Encountered &quot;cql&quot;</ows:ExceptionText>"
+            "</ows:Exception></ows:ExceptionReport>"
+        )
+        self.assertEqual(
+            summarise_body(report),
+            'Failed to generate filter from ECQL string Encountered "cql"',
+        )
+
+
+class TestOwsException(unittest.TestCase):
+    def test_a_report_gives_its_reason_and_a_feature_collection_nothing(self):
+        report = (
+            "<ows:ExceptionReport><ows:Exception><ows:ExceptionText>Could not "
+            "parse CQL filter list.\n Encountered &quot;is&quot;</ows:ExceptionText>"
+            "</ows:Exception></ows:ExceptionReport>"
+        )
+        self.assertEqual(
+            ows_exception(report), 'Could not parse CQL filter list. Encountered "is"'
+        )
+        features = (
+            '<wfs:FeatureCollection numberMatched="1"><wfs:member><sf:archsites>'
+            "<sf:str1>&lt;ows:ExceptionText&gt;no&lt;/ows:ExceptionText&gt;"
+            "</sf:str1></sf:archsites></wfs:member></wfs:FeatureCollection>"
+        )
+        self.assertEqual(ows_exception(features), "")
+        self.assertEqual(ows_exception(""), "")
+
+    def test_quotes_geoserver_escaped_twice_read_as_quotes(self):
+        # As GeoServer 2.28.5 sends a CQL parse error.
+        report = (
+            "<ows:ExceptionText>Encountered &amp;quot; &amp;quot;is&amp;quot;"
+            "</ows:ExceptionText>"
+        )
+        self.assertEqual(ows_exception(report), 'Encountered " "is"')
 
 
 if __name__ == "__main__":

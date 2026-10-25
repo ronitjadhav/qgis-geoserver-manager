@@ -297,7 +297,9 @@ change:
 - **Advertised**: off leaves the layer out of the capabilities, but GeoServer
   still serves it to whoever names it.
 - **CQL filter** (vector layers): GeoServer serves only the matching
-  features.
+  features. The plugin asks GeoServer to read the filter before it is saved.
+  GeoServer stores a filter it cannot read, and the layer then answers no
+  request at all. So such a filter is refused, and the form stays open.
 
 **Save** sends only what you changed, so everything else the layer has stays
 as it is. The **Data** tab shows the native name, the store, the bounds and
@@ -666,6 +668,10 @@ On GeoServer Cloud (measured on 2.28.5.1, 2.28.6 and 3.0.2):
   non-administrator**. An empty tab says that GeoServer lists nothing this
   account administers there. GeoServer refuses a change outside what the
   account administers (HTTP 403).
+- When GeoServer refuses a save after a form closed, the form opens again
+  with what you typed, and the message says why. A style document that is
+  not even well-formed, or a CQL filter GeoServer cannot read, is refused
+  before the form closes.
 - The interface follows the QGIS theme, dark themes included, and the
   language of QGIS: English, French or German.
   [Corrections and other languages are welcome](../development/translation.md).

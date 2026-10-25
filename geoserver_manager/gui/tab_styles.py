@@ -7,6 +7,7 @@ Used as a mixin for GeoServerMainDialog.
 """
 
 import html
+import json
 import re
 import threading
 from pathlib import Path
@@ -36,6 +37,7 @@ from geoserver_manager.toolbelt.sld import (
     styleable_project_layers,
     unresolved_icons,
     utf8_sld,
+    xml_problem,
 )
 
 # Styles live either globally or inside a workspace; the label for the global
@@ -465,7 +467,11 @@ class StyleTabMixin:
         ]
 
     def _show_style_info(self, row_data):
-        """Open a style: definition read-only, body editable for SLD/MBStyle."""
+        """Open a style: definition read-only, body editable for SLD/MBStyle.
+
+        A save GeoServer refuses after the form closed opens it again with
+        the name and body as typed: the editor used to close with the text.
+        """
         name, workspace_name = row_data[0], scope(row_data[1])
 
         fetched = self._fetch(
@@ -483,68 +489,90 @@ class StyleTabMixin:
             if new_name != name:
                 self._require_safe_name(new_name)
                 self._refuse_taken_style(new_name, workspace_name)
+            if editable:
+                self._check_style_body(style_format, values["body"])
 
-        dlg = ResourceFormDialog(
-            title=translate("StyleTabMixin", "Style '{}'").format(name),
-            description=(
-                translate(
-                    "StyleTabMixin",
-                    "Edit the definition, then Save to replace it on the server. Every "
-                    "layer that uses the style changes with it.",
-                )
-                if editable
-                else None
-            ),
-            fields=self._style_fields(editable, language_version, style_format),
-            values={
-                "name": name,
-                "workspace": global_label() if row_data[1] == GLOBAL else row_data[1],
-                "format": style_format,
-                "version": language_version or "-",
-                "filename": definition.get("filename", ""),
-                "body": body,
-            },
-            parent=self,
-            validate=self._form_check(check),
-        )
-        self._load_legend(
-            dlg, name, workspace_name, body if style_format == "sld" else None
-        )
-        if not editable:
-            dlg.hide_save_button()
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        values = dlg.get_values()
-        new_body, new_name = values["body"], values["name"].strip()
-        if new_body == body.strip() and new_name == name:
-            return
-
-        def save():
-            if new_name != name:
-                # Before the body: a taken name used to fail the save after
-                # the new body was already live on every layer using it.
-                self._require_safe_name(new_name)
-                self._refuse_taken_style(new_name, workspace_name)
-            try:
-                if new_body != body.strip():
-                    self._save_style_body(name, workspace_name, style_format, new_body)
-                if new_name != name:
-                    self._rename_style(name, workspace_name, new_name)
-            except Exception:
-                self._refuse_gone_style(name, workspace_name)
-                raise
-
-        if self._run_action(
-            lambda: self._wait_for_save(save),
-            translate("StyleTabMixin", "Failed to save style '{}'").format(name),
-        ):
-            self.show_success_message(
-                translate("StyleTabMixin", "Style '{}' saved.").format(new_name)
+        typed = None  # a refusal brings the typed name and body back
+        while True:
+            dlg = ResourceFormDialog(
+                title=translate("StyleTabMixin", "Style '{}'").format(name),
+                description=(
+                    translate(
+                        "StyleTabMixin",
+                        "Edit the definition, then Save to replace it on the server. "
+                        "Every layer that uses the style changes with it.",
+                    )
+                    if editable
+                    else None
+                ),
+                fields=self._style_fields(editable, language_version, style_format),
+                values={
+                    "name": typed["name"] if typed else name,
+                    "workspace": (
+                        global_label() if row_data[1] == GLOBAL else row_data[1]
+                    ),
+                    "format": style_format,
+                    "version": language_version or "-",
+                    "filename": definition.get("filename", ""),
+                    "body": typed["body"] if typed else body,
+                },
+                parent=self,
+                validate=self._form_check(check),
             )
-            # After a body save too: a 1.0 body replaced by a 1.1 one is
-            # recorded as 1.1, and the Version cell kept the old one.
-            self._load_styles()
+            self._load_legend(
+                dlg, name, workspace_name, body if style_format == "sld" else None
+            )
+            if not editable:
+                dlg.hide_save_button()
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            values = dlg.get_values()
+            new_body, new_name = values["body"], values["name"].strip()
+            if new_body == body.strip() and new_name == name:
+                return
+
+            def save(new_body=new_body, new_name=new_name):
+                if new_name != name:
+                    # Before the body: a taken name used to fail the save after
+                    # the new body was already live on every layer using it.
+                    self._require_safe_name(new_name)
+                    self._refuse_taken_style(new_name, workspace_name)
+                body_changed = new_body != body.strip()
+                try:
+                    if body_changed:
+                        self._save_style_body(
+                            name, workspace_name, style_format, new_body
+                        )
+                    elif new_name != name:
+                        self._rename_style(name, workspace_name, new_name)
+                except Exception:
+                    self._refuse_gone_style(name, workspace_name)
+                    raise
+                if body_changed and new_name != name:
+                    # The new body is live: a failed rename is no refusal.
+                    self._partly_saved(
+                        lambda: self._rename_style(name, workspace_name, new_name),
+                        translate(
+                            "StyleTabMixin", "Style '{}' saved, but not renamed"
+                        ).format(name),
+                    )
+
+            saved = self._run_action(
+                lambda: self._wait_for_save(save),
+                translate("StyleTabMixin", "Failed to save style '{}'").format(name),
+            )
+            if saved:
+                self.show_success_message(
+                    translate("StyleTabMixin", "Style '{}' saved.").format(new_name)
+                )
+                # After a body save too: a 1.0 body replaced by a 1.1 one is
+                # recorded as 1.1, and the Version cell kept the old one.
+                self._load_styles()
+                return
+            if saved is None:
+                return  # stopped waiting or partly saved: the tab reloads
+            typed = values  # refused after the form closed: back in, as typed
 
     def _rename_style(self, name, workspace_name, new_name):
         """Rename a style in place. Layers and groups keep using it.
@@ -806,8 +834,12 @@ class StyleTabMixin:
         dlg.set_field_visible("file", source == _SOURCE_FILE)
         dlg.set_field_visible("qgis_layer", source == _SOURCE_QGIS)
 
-    def _add_style(self):
-        """Upload a style from pasted SLD, a file, or a QGIS layer."""
+    def _add_style(self, typed=None):
+        """Upload a style from pasted SLD, a file, or a QGIS layer.
+
+        :param typed: the form's values GeoServer refused after it closed:
+            the form opens again with them.
+        """
         workspace_names = self._fetch(
             self._get_workspace_names,
             translate("StyleTabMixin", "Failed to load the workspaces"),
@@ -822,6 +854,7 @@ class StyleTabMixin:
                 "the symbology of a layer in this QGIS project.",
             ),
             fields=self._upload_fields(workspace_names),
+            values=typed,
             parent=self,
             ok_label=translate("StyleTabMixin", "Upload"),
             validate=self._form_check(self._check_new_style),
@@ -829,6 +862,8 @@ class StyleTabMixin:
         dlg.on_value_changed(
             "source", lambda source: self._on_style_source_changed(dlg, source)
         )
+        if typed is not None:
+            self._on_style_source_changed(dlg, typed["source"])
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
 
@@ -845,22 +880,52 @@ class StyleTabMixin:
             if sld is None:
                 return
             values = dict(values, source=_SOURCE_PASTE, format="sld", sld=sld)
-        if self._run_action(
+        uploaded = self._run_action(
             lambda: self._wait_for_save(lambda: self._create_style_from_values(values)),
             failure,
-        ):
+        )
+        if uploaded:
             self.show_success_message(
                 translate("StyleTabMixin", "Style '{}' uploaded.").format(
                     values["name"]
                 )
             )
             self._load_styles()
+        elif uploaded is False:
+            # Refused after the form closed: back in the form, as typed (a
+            # QGIS layer's export too, as the SLD it became).
+            self._add_style(typed=values)
+
+    @staticmethod
+    def _check_style_body(style_format, text):
+        """Refuse a document GeoServer refuses for its syntax, before the form
+        closes: the editor closed with the text, and the text was gone."""
+        if style_format == "sld":
+            problem = xml_problem(text)
+            if problem:
+                raise ValueError(
+                    translate(
+                        "StyleTabMixin", "The SLD is not well-formed XML: {}"
+                    ).format(problem)
+                )
+        elif style_format == "mbstyle":
+            try:
+                json.loads(text)
+            except ValueError as error:
+                raise ValueError(
+                    translate(
+                        "StyleTabMixin", "The MBStyle is not valid JSON: {}"
+                    ).format(error)
+                ) from error
 
     def _check_new_style(self, values):
-        """Refuse a name a URL would eat, or one taken. Reads only: the form
-        runs it before it closes, the upload again."""
+        """Refuse a name a URL would eat, or one taken, or a pasted document
+        that is not even well-formed. Reads only: the form runs it before it
+        closes, the upload again."""
         name = values["name"].strip()
         self._require_safe_name(name)
+        if values.get("source") == _SOURCE_PASTE:
+            self._check_style_body(values.get("format"), values.get("sld") or "")
         if values.get("source") == _SOURCE_FILE:
             path = Path(values["file"])
             if path.suffix.lower() not in _FORMAT_OF_SUFFIX:

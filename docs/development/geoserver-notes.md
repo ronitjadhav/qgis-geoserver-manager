@@ -149,7 +149,15 @@ carries a `TODO(#1)` comment at the call site.
   and listed in the capabilities. A cascaded WMTS layer takes one like any layer.
   **Cascaded WMS layers cannot be edited over REST**: any PUT on `…/wmslayers/{l}`,
   JSON, XML or the document a GET returned, fails with
-  `UnsupportedOperationException`.
+  `UnsupportedOperationException`. **A `cqlFilter` GeoServer cannot parse is
+  stored with a 200** (measured on 2.28.5). Every request on the layer is
+  then a 400 "Failed to generate filter from ECQL string". So the edit form
+  asks a WFS GetFeature with the filter and `count=1` first (row 85 of #1).
+  GeoServer refuses that request with a 400. GeoServer Cloud 3.0.2 answers
+  the same exception report with a 200. So the body decides, not the status.
+  The request also fails when WFS is turned off (a 200 with a report) or the
+  layer is disabled (a 400 "Feature type … unknown"). So a failure blames the
+  filter only when the same request works without it.
 - **Publishing a table: send no bounding box** (row 52 of #1). The facade's
   `create_feature_type(epsg=…)` fills both boxes from a table of 3 EPSG codes. So it
   raises `KeyError` for any other code, and gives those three a world extent. A POST
@@ -429,7 +437,8 @@ carries a `TODO(#1)` comment at the call site.
   "Feature type … unknown" for every layer of the workspace. A new
   workspace with the old URI is a 500 "Namespace with URI … already
   exists". `POST /rest/reload` repairs both, and the plugin says so after
-  such a save. A new layer is cached within half a second. SQL views,
+  such a save. On 3.0.2 a WFS request with a CQL filter it cannot parse is
+  a 200 that carries the exception report. GeoServer answers it with a 400. A new layer is cached within half a second. SQL views,
   dimensions and gridsets work as on GeoServer, and the `pgconfig` resource
   store serves `gwc/geowebcache.xml` too. Its demo catalog caches no layer.
   Cloud 2.28.6's own compose files ship RabbitMQ 4, on which its services

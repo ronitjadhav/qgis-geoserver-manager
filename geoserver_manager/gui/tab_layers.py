@@ -41,7 +41,7 @@ from geoserver_manager.toolbelt.payload import (
 from geoserver_manager.toolbelt.qgis_export import (
     geoserver_name,
 )
-from geoserver_manager.toolbelt.rest import PartlySaved
+from geoserver_manager.toolbelt.rest import PartlySaved, ows_exception, summarise_body
 from geoserver_manager.toolbelt.sld import (
     layer_to_sld,
     styleable_project_layers,
@@ -821,9 +821,12 @@ class LayerTabMixin:
         path = self.gs.rest_service.rest_endpoints.featuretype(ws_name, store, name)
         return self._raw_rest("get", path).json().get("featureType") or {}
 
-    def _show_layer_info(self, row_data):
+    def _show_layer_info(self, row_data, typed=None):
         """Open a layer: an edit form for a vector or a raster, a view for a
         cascaded layer.
+
+        :param typed: the form's values GeoServer refused after it closed:
+            the form opens again with them, the server's state as `before`.
 
         Save sends one partial PUT with only what changed: GeoServer merges it
         (measured on 2.28.5), so everything the form does not show stays as it
@@ -867,11 +870,13 @@ class LayerTabMixin:
                 bands=coverage.get("bands", ""),
             )
         before = dict(values)
+        if typed is not None:
+            values = dict(values, **typed)
 
         def check(after):
             self._check_dimensions(after)
             self._check_layer_edit(
-                ws_name, self._layer_changes(before, after, kind)[0] or {}
+                ws_name, name, self._layer_changes(before, after, kind)[0] or {}
             )
 
         dlg = ResourceFormDialog(
@@ -891,18 +896,22 @@ class LayerTabMixin:
             self._view_changed(before, after) or self._dimensions_changed(before, after)
         ):
             return  # nothing changed: no request
-        if self._run_action(
+        saved = self._run_action(
             # In the worker, behind the waiting box: a slow server must not
             # freeze QGIS on Save either.
             lambda: self._wait_for_save(
                 lambda: self._save_layer(row_data, before, after)
             ),
             translate("LayerTabMixin", "Failed to save layer '{}'").format(name),
-        ):
+        )
+        if saved:
             self.show_success_message(
                 translate("LayerTabMixin", "Layer '{}' saved.").format(after["name"])
             )
             self._load_layers()
+        elif saved is False:
+            # Refused after the form closed: back in the form, as typed.
+            self._show_layer_info(row_data, typed=after)
 
     @staticmethod
     def _layer_changes(before, after, kind):
@@ -948,18 +957,23 @@ class LayerTabMixin:
             return endpoints.coverage(*segments)
         return endpoints.featuretype(*segments)
 
-    def _check_layer_edit(self, ws_name, body):
-        """Refuse an edit GeoServer would take badly. Reads only: the form
-        runs it before it closes, the save again."""
-        if "name" in body:
-            self._require_safe_name(body["name"])
-            qualified = "{}:{}".format(ws_name, body["name"])
-            if self.gs.rest_service.resource_exists(self._layers_url(qualified)):
-                raise ValueError(
-                    translate(
-                        "LayerTabMixin", "Layer '{}' already exists in '{}'."
-                    ).format(body["name"], ws_name)
+    def _refuse_taken_layer(self, ws_name, name):
+        """Refuse a layer name the workspace holds, or a URL would eat.
+        Reads only: a form's check, before it closes."""
+        self._require_safe_name(name)
+        if self.gs.rest_service.resource_exists(self._layers_url(f"{ws_name}:{name}")):
+            raise ValueError(
+                translate("LayerTabMixin", "Layer '{}' already exists in '{}'.").format(
+                    name, ws_name
                 )
+            )
+
+    def _check_layer_edit(self, ws_name, name, body):
+        """Refuse an edit GeoServer would take badly. Reads only: the form
+        runs it before it closes, the save again. `name` is the layer's
+        current name, which a filter is checked on."""
+        if "name" in body:
+            self._refuse_taken_layer(ws_name, body["name"])
         if "srs" in body and not body["srs"].removeprefix("EPSG:").isdigit():
             raise ValueError(
                 translate(
@@ -967,6 +981,52 @@ class LayerTabMixin:
                     "The SRS must be an EPSG code number, such as 3857 or 4326.",
                 )
             )
+        if body.get("cqlFilter"):
+            self._check_cql_filter(ws_name, name, body["cqlFilter"])
+
+    def _check_cql_filter(self, ws_name, name, text):
+        """Ask GeoServer's own parser before the filter is stored.
+
+        A stored filter GeoServer cannot read is answered 200, and every
+        request on the layer is then a 400 (measured on 2.28.5). TODO(#1):
+        the library has no validation call (row 85). Workaround: a WFS
+        GetFeature with the filter and count=1 on the workspace's service.
+        The filter is to blame only when the same request works without it:
+        WFS turned off or a disabled layer fail both (measured on 2.28.5).
+        """
+        reason = self._wfs_probe(ws_name, name, text)
+        if reason and not self._wfs_probe(ws_name, name):
+            raise ValueError(
+                translate(
+                    "LayerTabMixin", "GeoServer cannot read the CQL filter: {}"
+                ).format(reason)
+            )
+
+    def _wfs_probe(self, ws_name, name, cql_filter=None):
+        """GeoServer's reason when a one-feature GetFeature fails, else "".
+
+        A refusal comes as a 400, or as a 200 that carries the exception
+        report: WFS turned off, or any refusal on GeoServer Cloud 3.0.2.
+        """
+        params = {
+            "service": "WFS",
+            "version": "2.0.0",
+            "request": "GetFeature",
+            "typeNames": f"{ws_name}:{name}",
+            "count": 1,
+        }
+        if cql_filter is not None:
+            params["cql_filter"] = cql_filter
+        try:
+            answer = self._raw_rest(
+                "get", f"/{quote(ws_name, safe='')}/ows", params=params
+            )
+        except Exception as error:
+            response = getattr(error, "response", None)
+            return summarise_body(getattr(response, "text", "")) or self._error_text(
+                error
+            )
+        return ows_exception(getattr(answer, "text", ""))
 
     def _save_layer(self, row_data, before, after):
         """Validate, then PUT what changed on the layer's resource.
@@ -979,7 +1039,7 @@ class LayerTabMixin:
         ws_name, kind, store = row_data[1], row_data[2], row_data[3]
         body, recalculate = self._layer_changes(before, after, kind)
         if body is not None:
-            self._check_layer_edit(ws_name, body)
+            self._check_layer_edit(ws_name, before["name"], body)
             wrapper = "coverage" if kind == RASTER else "featureType"
             self._raw_rest(
                 "put",

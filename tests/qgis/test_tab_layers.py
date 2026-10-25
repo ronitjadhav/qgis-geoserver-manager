@@ -24,6 +24,7 @@ from qgis.testing import start_app, unittest
 from geoserver_manager.gui import tab_layers, tab_layers_publish
 from geoserver_manager.gui.dlg_main import GeoServerMainDialog
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
+from geoserver_manager.toolbelt.rest import PartlySaved
 from tests.qgis.sync_dialog import FakePrefs, SyncDialog
 
 start_app()
@@ -2715,8 +2716,9 @@ class SqlViewGS:
 
 
 class Answer:
-    def __init__(self, payload):
+    def __init__(self, payload, text=""):
         self.payload = payload
+        self.text = text
 
     def json(self):
         return self.payload
@@ -3048,6 +3050,169 @@ class TestQualifiedWmts(unittest.TestCase):
 
 # ############################################################################
 # ####### Stand-alone run ########
+
+
+class Refused(Exception):
+    def __init__(self, status, text=""):
+        super().__init__(f"HTTP {status}")
+        self.response = SimpleNamespace(status_code=status, text=text)
+
+
+OWS_400 = (
+    '<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows/1.1">'
+    "<ows:Exception><ows:ExceptionText>Failed to generate filter from ECQL "
+    "string Encountered &quot;cql&quot;</ows:ExceptionText></ows:Exception>"
+    "</ows:ExceptionReport>"
+)
+
+
+WFS_OFF = (
+    '<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows/1.1">'
+    '<ows:Exception exceptionCode="ServiceUnavailable"><ows:ExceptionText>'
+    "Service WFS is disabled</ows:ExceptionText></ows:Exception>"
+    "</ows:ExceptionReport>"
+)
+
+
+class TestCqlFilterCheck(unittest.TestCase):
+    """GeoServer stores a filter it cannot read with a 200, and every request
+    on the layer is then a 400 (measured on 2.28.5)."""
+
+    def setUp(self):
+        self.dlg = SyncDialog()
+        self.dlg.gs = SqlViewGS()
+        self.asked = []
+
+    def answering(self, status, body="", without_filter=(200, "")):
+        """GeoServer's answer with the filter, and without it."""
+
+        def raw_rest(method, path, **kwargs):
+            params = kwargs.get("params")
+            self.asked.append((method, path, params))
+            code, text = (status, body) if "cql_filter" in params else without_filter
+            if code != 200:
+                raise Refused(code, text)
+            return Answer({}, text)
+
+        self.dlg._raw_rest = raw_rest
+
+    def test_the_filter_is_asked_of_geoservers_parser_first(self):
+        self.answering(200)
+        self.dlg._check_layer_edit("topp", "roads", {"cqlFilter": "cat < 3"})
+        ((method, path, params),) = self.asked
+        self.assertEqual((method, path), ("get", "/topp/ows"))
+        self.assertEqual(params["typeNames"], "topp:roads")
+        self.assertEqual(params["cql_filter"], "cat < 3")
+        self.assertEqual(params["count"], 1)
+
+    def test_a_filter_geoserver_cannot_read_is_refused_with_its_reason(self):
+        self.answering(400, OWS_400)
+        with self.assertRaises(ValueError) as ctx:
+            self.dlg._check_layer_edit("topp", "roads", {"cqlFilter": "not ((( cql"})
+        self.assertIn("cannot read the CQL filter", str(ctx.exception))
+        self.assertIn("Failed to generate filter", str(ctx.exception))
+        self.assertNotIn("cql_filter", self.asked[1][2])  # asked again without
+
+    def test_a_report_answered_with_a_200_is_a_refusal_too(self):
+        # GeoServer Cloud 3.0.2 answers the exception report with a 200.
+        self.answering(200, OWS_400)
+        with self.assertRaises(ValueError) as ctx:
+            self.dlg._check_layer_edit("topp", "roads", {"cqlFilter": "not ((( cql"})
+        self.assertIn("Failed to generate filter", str(ctx.exception))
+
+    def test_a_request_that_fails_without_the_filter_too_is_no_refusal(self):
+        # Measured on 2.28.5: WFS turned off is a 200 with a report, a
+        # disabled layer a 400; a server failure is the save's to report.
+        for answer in (
+            (200, WFS_OFF),
+            (400, "Feature type topp:roads unknown"),
+            (500, ""),
+        ):
+            self.answering(*answer, without_filter=answer)
+            self.dlg._check_layer_edit("topp", "roads", {"cqlFilter": "cat < 3"})
+
+    def test_an_emptied_filter_is_not_checked(self):
+        self.answering(500)
+        self.dlg._check_layer_edit("topp", "roads", {"cqlFilter": ""})
+        self.assertEqual(self.asked, [])
+
+
+class TestRefusedLayerEditReopens(unittest.TestCase):
+    """A refusal after the form closed used to take every typed value with it."""
+
+    def test_the_form_opens_again_with_what_was_typed(self):
+        dlg = SyncDialog()
+        dlg.gs = SqlViewGS()
+        dlg._layer_resource = lambda row: {
+            "name": "roads",
+            "nativeName": "roads",
+            "srs": "EPSG:4326",
+            "title": "Roads",
+            "enabled": True,
+            "advertised": True,
+        }
+        dlg._load_layers = lambda: None
+        errors = []
+        dlg.show_error_message = errors.append
+        attempts = []
+
+        def refuse(row, before, after):
+            attempts.append(after["title"])
+            raise Refused(500, "Error while calculating native bounds")
+
+        dlg._save_layer = refuse
+        opened = []
+
+        class Editing(ResourceFormDialog):
+            def exec(inner):
+                opened.append(inner.get_values())
+                if len(opened) == 1:
+                    inner.get_widget("title").setText("Roads, typed")
+                    inner.get_widget("srs").setText("EPSG:999999")
+                    return QDialog.DialogCode.Accepted
+                return QDialog.DialogCode.Rejected  # the user gives up
+
+        with patch.object(tab_layers, "ResourceFormDialog", Editing):
+            dlg._show_layer_info(["roads", "topp", "VECTOR", "pg"])
+        self.assertEqual(attempts, ["Roads, typed"])
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(len(opened), 2)
+        self.assertEqual(opened[1]["title"], "Roads, typed")  # as typed
+        self.assertEqual(opened[1]["srs"], "EPSG:999999")
+
+    def test_a_partial_save_does_not_reopen_the_form(self):
+        # A rename landed, then the dimensions failed: a reopen would read
+        # the layer under its old name, which is gone.
+        dlg = SyncDialog()
+        dlg.gs = SqlViewGS()
+        dlg._layer_resource = lambda row: {
+            "name": "roads",
+            "nativeName": "roads",
+            "srs": "EPSG:4326",
+            "title": "Roads",
+            "enabled": True,
+            "advertised": True,
+        }
+        dlg._load_layers = dlg._reload_current_tab = lambda: None
+        dlg.show_warning_message = lambda text: None
+
+        def partly(row, before, after):
+            raise PartlySaved("Layer 'roads2' saved, but its dimensions were not.")
+
+        dlg._save_layer = partly
+        opened = []
+
+        class Editing(ResourceFormDialog):
+            def exec(inner):
+                opened.append(1)
+                inner.get_widget("name").setText("roads2")
+                return QDialog.DialogCode.Accepted
+
+        with patch.object(tab_layers, "ResourceFormDialog", Editing):
+            dlg._show_layer_info(["roads", "topp", "VECTOR", "pg"])
+        self.assertEqual(opened, [1])
+
+
 # ################################
 if __name__ == "__main__":
     unittest.main()

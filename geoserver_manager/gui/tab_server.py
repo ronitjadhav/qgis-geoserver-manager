@@ -398,7 +398,11 @@ class ServerTabMixin:
                         "Build it from the request's X-Forwarded headers instead",
                     ),
                 ),
-                text("charset", translate("ServerTabMixin", "Character set")),
+                text(
+                    "charset",
+                    translate("ServerTabMixin", "Character set"),
+                    required=True,
+                ),
                 {
                     "key": "num_decimals",
                     "label": translate("ServerTabMixin", "Decimals"),
@@ -435,6 +439,7 @@ class ServerTabMixin:
                 text(
                     "location",
                     translate("ServerTabMixin", "Log file"),
+                    required=True,
                     help=translate("ServerTabMixin", "Relative to the data directory"),
                 ),
                 check(
