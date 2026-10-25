@@ -279,14 +279,27 @@ class TestLayersTab(unittest.TestCase):
         self.dlg.gs = FakeGS()
 
     def test_a_listing_reads_a_workspaces_wmts_stores_once(self):
-        # A page of cascaded WMTS layers used to read the stores once per row.
+        # A page of cascaded WMTS layers used to read the stores once per row,
+        # and the rows are fanned out: the first read must hold the others.
+        import time
+        from concurrent.futures import ThreadPoolExecutor
+
         seen = []
         answer = self.dlg.gs.answer
-        self.dlg.gs.answer = lambda path: (seen.append(path), answer(path))[1]
+
+        def slow_answer(path):
+            seen.append(path)
+            if path.endswith("/wmtsstores.json"):
+                time.sleep(0.05)  # long enough for the other rows to arrive
+            return answer(path)
+
+        self.dlg.gs.answer = slow_answer
         known = {}
-        for _ in range(3):
-            kind, store, _style = self.dlg._layer_summary("sf:tiles", known)
-            self.assertEqual((kind, store), ("WMTS", "remote_wmts"))
+        with ThreadPoolExecutor(4) as pool:
+            summaries = list(
+                pool.map(lambda _: self.dlg._layer_summary("sf:tiles", known), range(4))
+            )
+        self.assertEqual({s[:2] for s in summaries}, {("WMTS", "remote_wmts")})
         self.assertEqual(seen.count(f"{BASE}/workspaces/sf/wmtsstores.json"), 1)
 
     def test_lists_every_layer_of_every_type(self):

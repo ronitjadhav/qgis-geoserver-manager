@@ -9,6 +9,7 @@ Used as a mixin for GeoServerMainDialog.
 
 import math
 import re
+import threading
 from urllib.parse import quote, unquote, urlencode, urlsplit
 
 from qgis.core import QgsDataSourceUri, QgsProject, QgsRasterLayer, QgsVectorLayer
@@ -58,6 +59,9 @@ PROTOCOLS = ("WMS", "WFS", "WMTS")
 _WMTS_TILE_MATRIX_SET = "EPSG:900913"
 # GeoServer's own Layer Preview page renders at 768 px on the long side.
 _PREVIEW_SIZE = 768
+# The first row of a page reads a workspace's WMTS stores; the rows fanned out
+# beside it wait here and reuse them, instead of each reading the same stores.
+_WMTS_READ = threading.Lock()
 
 # GeoServer's layer types, as /rest/layers writes them. The Type column
 # carries them verbatim: they decide which resource a row's actions talk to.
@@ -278,25 +282,30 @@ class LayerTabMixin:
         TODO(#1): upstream as get_wmts_stores(ws); the library lists no
         cascaded store.
         """
-        layers_by_store = None if known is None else known.get(workspace_name)
-        if layers_by_store is None:
-            endpoints = self.gs.rest_service.rest_endpoints
-            payload = self._raw_rest(
-                "get", endpoints.wmtsstores(quote(workspace_name, safe=""))
-            ).json()
-            layers_by_store = {
-                store: self._cascaded_layer_names(workspace_name, store, WMTS)
-                for store in map(
-                    self._name_of, self._unwrap(payload, "wmtsStores", "wmtsStore")
-                )
-            }
-            if known is not None:
-                # ponytail: two rows can read a workspace at once; one extra round
-                known[workspace_name] = layers_by_store
+        if known is None:
+            layers_by_store = self._wmts_layers(workspace_name)
+        else:
+            with _WMTS_READ:
+                if workspace_name not in known:
+                    known[workspace_name] = self._wmts_layers(workspace_name)
+            layers_by_store = known[workspace_name]
         for store, names in layers_by_store.items():
             if layer_name in names:
                 return store
         return None
+
+    def _wmts_layers(self, workspace_name):
+        """{store: its cascaded layer names} for the workspace's WMTS stores."""
+        endpoints = self.gs.rest_service.rest_endpoints
+        payload = self._raw_rest(
+            "get", endpoints.wmtsstores(quote(workspace_name, safe=""))
+        ).json()
+        return {
+            store: self._cascaded_layer_names(workspace_name, store, WMTS)
+            for store in map(
+                self._name_of, self._unwrap(payload, "wmtsStores", "wmtsStore")
+            )
+        }
 
     @staticmethod
     def _layer_form_values(row_data, detail):
