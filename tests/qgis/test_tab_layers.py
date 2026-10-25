@@ -302,6 +302,27 @@ class TestLayersTab(unittest.TestCase):
         self.assertEqual({s[:2] for s in summaries}, {("WMTS", "remote_wmts")})
         self.assertEqual(seen.count(f"{BASE}/workspaces/sf/wmtsstores.json"), 1)
 
+    def test_a_store_that_cannot_be_read_only_hides_its_own_layers(self):
+        # Stores are read in order until the layer is found: a broken store
+        # after the right one is never reached.
+        answer = self.dlg.gs.answer
+
+        def with_a_broken_store(path):
+            if path == f"{BASE}/workspaces/sf/wmtsstores.json":
+                stores = [{"name": "remote_wmts"}, {"name": "broken"}]
+                return ({"wmtsStores": {"wmtsStore": stores}}, 200)
+            if "/wmtsstores/broken/" in path:
+                return ("remote down", 500)
+            return answer(path)
+
+        self.dlg.gs.answer = with_a_broken_store
+        known = {}
+        self.assertEqual(
+            self.dlg._layer_summary("sf:tiles", known)[:2], ("WMTS", "remote_wmts")
+        )
+        with self.assertRaises(Exception):
+            self.dlg._wmts_store_of("sf", "elsewhere", known)
+
     def test_lists_every_layer_of_every_type(self):
         self.dlg._load_layers()
 

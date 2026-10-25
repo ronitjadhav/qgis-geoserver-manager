@@ -283,29 +283,29 @@ class LayerTabMixin:
         cascaded store.
         """
         if known is None:
-            layers_by_store = self._wmts_layers(workspace_name)
-        else:
-            with _WMTS_READ:
-                if workspace_name not in known:
-                    known[workspace_name] = self._wmts_layers(workspace_name)
-            layers_by_store = known[workspace_name]
-        for store, names in layers_by_store.items():
-            if layer_name in names:
-                return store
+            known = {}
+        with _WMTS_READ:
+            stores = known.get(workspace_name)
+            if stores is None:
+                # The stores in GeoServer's order; each one's layers are read
+                # when a lookup reaches it, so a broken store after the right
+                # one is never read.
+                endpoints = self.gs.rest_service.rest_endpoints
+                payload = self._raw_rest(
+                    "get", endpoints.wmtsstores(quote(workspace_name, safe=""))
+                ).json()
+                names = self._unwrap(payload, "wmtsStores", "wmtsStore")
+                stores = known[workspace_name] = dict.fromkeys(
+                    map(self._name_of, names)
+                )
+            for store, layers in stores.items():
+                if layers is None:
+                    layers = stores[store] = self._cascaded_layer_names(
+                        workspace_name, store, WMTS
+                    )
+                if layer_name in layers:
+                    return store
         return None
-
-    def _wmts_layers(self, workspace_name):
-        """{store: its cascaded layer names} for the workspace's WMTS stores."""
-        endpoints = self.gs.rest_service.rest_endpoints
-        payload = self._raw_rest(
-            "get", endpoints.wmtsstores(quote(workspace_name, safe=""))
-        ).json()
-        return {
-            store: self._cascaded_layer_names(workspace_name, store, WMTS)
-            for store in map(
-                self._name_of, self._unwrap(payload, "wmtsStores", "wmtsStore")
-            )
-        }
 
     @staticmethod
     def _layer_form_values(row_data, detail):
