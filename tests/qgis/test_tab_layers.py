@@ -1413,6 +1413,28 @@ class TestEditLayer(unittest.TestCase):
         # the same keywords written differently are the same keywords
         self.assertEqual(self.changes(keywords=["a", "b "]), (None, False))
 
+    def test_a_resource_with_no_policy_is_saved_without_one(self):
+        # 4 of the 5 demo coverages: the form showed FORCE_DECLARED, and an
+        # untouched Save stored it and recomputed both boxes (2.28.5).
+        for policy in ("", "SOME_LATER_POLICY"):
+            with self.subTest(policy):
+                before = dict(self.BEFORE, projection_policy=policy)
+                dlg = SyncDialog()
+                form = ResourceFormDialog(
+                    title="sfdem",
+                    fields=dlg._layer_fields(tab_layers.RASTER, values=before),
+                    values=before,
+                )
+                shown = form.get_values()["projection_policy"]
+                after = dict(before, projection_policy=shown)
+                self.assertEqual(
+                    GeoServerMainDialog._layer_changes(
+                        before, after, tab_layers.RASTER
+                    ),
+                    (None, False),
+                )
+                form.deleteLater()
+
     def test_only_what_changed_goes_out_in_geoservers_spelling(self):
         body, recalc = self.changes(
             name="main_roads", title="", advertised=False, cql_filter="type = 'A'"

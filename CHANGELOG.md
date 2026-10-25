@@ -56,6 +56,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 - **Fixed.** Editing a layer group, setting a layer's styles, or pushing a
   style as a layer's default emptied its authority URLs and identifiers,
   which INSPIRE services publish. They are kept.
+- **Fixed.** A layer with no projection policy, saved without a change, got
+  FORCE_DECLARED and recomputed bounding boxes. 4 of the 5 demo coverages
+  have no policy. The form shows "Not set" for them and keeps it.
 
 ## 1.0.0 - 2026-10-08
 

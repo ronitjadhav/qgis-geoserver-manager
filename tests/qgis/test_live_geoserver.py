@@ -550,6 +550,12 @@ class TestLiveGeoServer(unittest.TestCase):
             return answer.text
         return answer.json()["features"]
 
+    def dated_features_are_served(self):
+        """A parameter without a validator takes a date (the default refuses it)."""
+        dated = self.features(viewparams="lbl:2026-01-01")
+        self.assertIsInstance(dated, list, dated)
+        self.assertEqual(len(dated), 5)
+
     def view(self):
         path = f"workspaces/{WS}/datastores/pg/featuretypes/live_view.json"
         return self.get(path)["featureType"]
@@ -579,10 +585,25 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(7 < box["minx"] < box["maxx"] < 8, box)
 
     def test_39_edit_the_sql_view(self):
-        # Another client's metadata entry, which the edit must keep.
+        # As the web interface can leave it: another client's metadata entry,
+        # a second geometry column and a parameter without a validator. The
+        # edit must keep all three.
         feature_type = self.view()
         entries = feature_type["metadata"]["entry"]
         entries = entries if isinstance(entries, list) else [entries]
+        [view] = [e["virtualTable"] for e in entries if "virtualTable" in e]
+        sql = VIEW_SQL.replace("'p' ||", "'%lbl%' ||").replace(
+            " FROM",
+            ", ST_Buffer(ST_SetSRID(ST_MakePoint(7, 46), 4326), 0.1) AS geom2 FROM",
+        )
+        view.update(
+            sql=sql,
+            geometry=[
+                {"name": "geom", "type": "Point", "srid": 4326},
+                {"name": "geom2", "type": "Polygon", "srid": 4326},
+            ],
+            parameter=[view["parameter"], {"name": "lbl", "defaultValue": "p"}],
+        )
         path = f"workspaces/{WS}/datastores/pg/featuretypes/live_view.json"
         self.rest(
             "put",
@@ -595,13 +616,19 @@ class TestLiveGeoServer(unittest.TestCase):
                 }
             },
         )
-        new_sql = VIEW_SQL.replace("AS label,", "AS label, g * 10 AS extra,")
+        self.dated_features_are_served()
+        new_sql = sql.replace("AS label,", "AS label, g * 10 AS extra,")
         with answering({"sql": new_sql}):
             self.dlg._show_layer_info(self.row("Layers", "live_view"))
         self.assertEqual(self.said(), ["Layer 'live_view' saved."])
         self.assertIn("extra", self.features()[0]["properties"])
-        keys = [entry["@key"] for entry in self.view()["metadata"]["entry"]]
+        entries = self.view()["metadata"]["entry"]
+        keys = [entry["@key"] for entry in entries]
         self.assertEqual(sorted(keys), ["JDBC_VIRTUAL_TABLE", "cachingEnabled"])
+        [view] = [e["virtualTable"] for e in entries if "virtualTable" in e]
+        self.assertEqual(sorted(g["name"] for g in view["geometry"]), ["geom", "geom2"])
+        # Still no validator: a date passes, as before the edit.
+        self.dated_features_are_served()
 
     def test_39b_a_sql_geoserver_cannot_run_is_put_back(self):
         # The refusal brings the form back with the typed query; the user
