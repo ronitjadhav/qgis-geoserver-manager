@@ -1115,7 +1115,8 @@ class TestPublishQgisRaster(RasterFixture):
         self.dlg.gs = FakeGS(exists=True)
         self.dlg.gs.rest_service.rest_client.put = reset
         self.publish(replace=True, on_done=outcomes.append)
-        self.assertIn("Connection reset", self.errors[-1])
+        # Said in the user's language; the QGIS log keeps "Connection reset".
+        self.assertIn("the connection to it was cut", self.errors[-1])
         self.assertIn("can be left without its data file", " ".join(self.warnings))
         self.assertEqual(outcomes, ["failed"])  # a batch still goes on
 

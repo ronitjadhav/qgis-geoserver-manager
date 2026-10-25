@@ -62,6 +62,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
 - **Fixed.** A saved SLD kept only GeoServer's re-encoding of it: its
   comments, any second style and its layout were lost. The SLD is stored as
   written, as GeoServer's own editor stores it.
+- **Changed.** A request that does not reach GeoServer, after a timeout, a
+  refused proxy, an untrusted certificate or a lost connection, is said in
+  one sentence in the plugin's language. The QGIS log keeps the network
+  library's own text.
 
 ## 1.0.0 - 2026-10-08
 

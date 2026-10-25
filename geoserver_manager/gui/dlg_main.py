@@ -17,6 +17,7 @@ from concurrent.futures import CancelledError, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
 
+import requests
 from qgis.core import Qgis, QgsApplication, QgsTask
 from qgis.gui import QgsMessageBar
 from qgis.PyQt import sip, uic
@@ -2071,13 +2072,50 @@ class GeoServerMainDialog(
             return f"HTTP {status}: {summary}" if summary else f"HTTP {status}"
         if summary and summary not in str(error):
             return f"{error}: {summary}"
-        return str(error)
+        return GeoServerMainDialog._network_problem(error) or str(error)
+
+    @staticmethod
+    def _network_problem(error):
+        """A request that never reached GeoServer, said in the user's language,
+        or None. urllib3's own words ("HTTPConnectionPool(host=…): Max
+        retries exceeded…") cannot be translated, and the connection check
+        words the same cases."""
+        exceptions = requests.exceptions
+        translate = QCoreApplication.translate
+        # Timeout first: a connect timeout is a ConnectionError too.
+        if isinstance(error, exceptions.Timeout):
+            return translate(
+                "GeoServerMainDialog", "GeoServer did not answer in time. Try again."
+            )
+        if isinstance(error, exceptions.ProxyError):
+            return translate(
+                "GeoServerMainDialog",
+                "The proxy did not pass the request to GeoServer. Check the proxy "
+                "in the QGIS Options, Network tab.",
+            )
+        if isinstance(error, exceptions.SSLError):
+            return translate(
+                "GeoServerMainDialog",
+                "GeoServer presented a TLS certificate this machine does not trust. "
+                "Test connection, in Settings, says what to do.",
+            )
+        if isinstance(error, exceptions.ConnectionError):
+            # Refused, no such host, or reset mid-upload: the log says which.
+            return translate(
+                "GeoServerMainDialog",
+                "GeoServer cannot be reached, or the connection to it was cut.",
+            )
+        return None
 
     def _report_failure(self, failure_message, error):
-        """A failed action: the same line in the banner and in the QGIS log."""
+        """A failed action: the same line in the banner and in the QGIS log,
+        where a request that never reached GeoServer keeps its cause too."""
         detail = self._error_text(error)
         self.show_error_message(f"{failure_message}: {detail}")
-        self.log(f"{failure_message}: {detail}", log_level=Qgis.MessageLevel.Critical)
+        cause = f" ({error})" if self._network_problem(error) else ""
+        self.log(
+            f"{failure_message}: {detail}{cause}", log_level=Qgis.MessageLevel.Critical
+        )
 
     def _require_connection(self):
         """True when there is a client to talk to; otherwise say so and refuse.

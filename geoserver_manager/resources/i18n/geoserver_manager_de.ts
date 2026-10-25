@@ -1485,362 +1485,382 @@
 </context><context>
     <name>GeoServerMainDialog</name>
     <message>
-        <location filename="../../gui/dlg_main.py" line="237" />
+        <location filename="../../gui/dlg_main.py" line="238" />
         <source>{}: saving…</source>
         <translation>{}: wird gespeichert…</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="484" />
+        <location filename="../../gui/dlg_main.py" line="485" />
         <source>The plugin was unloaded during an upload. The upload goes on, but not its last steps (the layer's title, keywords and style) nor the rest of the batch.</source>
         <translation>Das Plugin wurde während eines Hochladens entladen. Das Hochladen läuft weiter, aber nicht seine letzten Schritte (Titel, Schlüsselwörter und Stil des Layers) und nicht der Rest des Stapels.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="493" />
+        <location filename="../../gui/dlg_main.py" line="494" />
         <source>The plugin was unloaded during a delete batch. It goes on to the end without a report; a delete that fails is logged.</source>
         <translation>Das Plugin wurde während eines Lösch-Stapels entladen. Der Stapel läuft ohne Bericht bis zum Ende; ein fehlgeschlagenes Löschen wird protokolliert.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="501" />
+        <location filename="../../gui/dlg_main.py" line="502" />
         <source>The plugin was unloaded during a save it had stopped waiting for. The save goes on: open its tab again to see whether it landed.</source>
         <translation>Das Plugin wurde während eines Speicherns entladen, auf das es nicht mehr gewartet hat. Das Speichern läuft weiter: Öffnen Sie den Reiter erneut, um zu sehen, ob es angekommen ist.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="992" />
+        <location filename="../../gui/dlg_main.py" line="993" />
         <source>{}: the upload was cancelled. If it replaced a store, GeoServer kept the store but perhaps not its data file.</source>
         <translation>{}: Das Hochladen wurde abgebrochen. Wenn es einen Datenspeicher ersetzt hat, hat GeoServer den Datenspeicher behalten, aber vielleicht nicht seine Datendatei.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1008" />
+        <location filename="../../gui/dlg_main.py" line="1009" />
         <source>An upload finished after the dialog was closed. Its last steps (title, keywords, style) were not applied.</source>
         <translation>Ein Hochladen wurde nach dem Schließen des Dialogs beendet. Seine letzten Schritte (Titel, Schlüsselwörter, Stil) wurden nicht angewendet.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2048" />
+        <location filename="../../gui/dlg_main.py" line="2049" />
         <source>GeoServer answered with something that is not its REST API (a sign-in page?)</source>
         <translation>GeoServer hat mit etwas geantwortet, das nicht seine REST-API ist (eine Anmeldeseite?)</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2057" />
+        <location filename="../../gui/dlg_main.py" line="2058" />
         <source>GeoServer has no function '{}', which this style uses. QGIS writes a label expression with its own function names: label with a plain field, or use GeoServer's function in the SLD.</source>
         <translation>GeoServer hat keine Funktion '{}', die dieser Stil verwendet. QGIS schreibt einen Beschriftungsausdruck mit seinen eigenen Funktionsnamen: Beschriften Sie mit einem einfachen Feld, oder verwenden Sie die Funktion von GeoServer im SLD.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2323" />
+        <location filename="../../gui/dlg_main.py" line="2087" />
+        <source>GeoServer did not answer in time. Try again.</source>
+        <translation>GeoServer hat nicht rechtzeitig geantwortet. Versuchen Sie es erneut.</translation>
+    </message>
+    <message>
+        <location filename="../../gui/dlg_main.py" line="2091" />
+        <source>The proxy did not pass the request to GeoServer. Check the proxy in the QGIS Options, Network tab.</source>
+        <translation>Der Proxy hat die Anfrage nicht an GeoServer weitergeleitet. Prüfen Sie den Proxy in den QGIS-Optionen, Reiter Netzwerk.</translation>
+    </message>
+    <message>
+        <location filename="../../gui/dlg_main.py" line="2097" />
+        <source>GeoServer presented a TLS certificate this machine does not trust. Test connection, in Settings, says what to do.</source>
+        <translation>GeoServer hat ein TLS-Zertifikat vorgelegt, dem dieser Rechner nicht vertraut. „Verbindung testen“ in den Einstellungen sagt, was zu tun ist.</translation>
+    </message>
+    <message>
+        <location filename="../../gui/dlg_main.py" line="2104" />
+        <source>GeoServer cannot be reached, or the connection to it was cut.</source>
+        <translation>GeoServer ist nicht erreichbar, oder die Verbindung zu ihm wurde unterbrochen.</translation>
+    </message>
+    <message>
+        <location filename="../../gui/dlg_main.py" line="2361" />
         <source>Unexpected response (not a JSON list): {}</source>
         <translation>Unerwartete Antwort (keine JSON-Liste): {}</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="336" />
+        <location filename="../../gui/dlg_main.py" line="337" />
         <source>Close the dialog</source>
         <translation>Dialog schließen</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1129" />
-        <location filename="../../gui/dlg_main.py" line="337" />
+        <location filename="../../gui/dlg_main.py" line="1130" />
+        <location filename="../../gui/dlg_main.py" line="338" />
         <source>Refresh the list from the server (F5)</source>
         <translation>Liste vom Server aktualisieren (F5)</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="339" />
+        <location filename="../../gui/dlg_main.py" line="340" />
         <source>Open Settings to change the connection</source>
         <translation>Einstellungen öffnen, um die Verbindung zu ändern</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="342" />
+        <location filename="../../gui/dlg_main.py" line="343" />
         <source>Filter the list by name or any other column (Ctrl+F to go here, Esc to clear)</source>
         <translation>Liste nach Name oder einer anderen Spalte filtern (Ctrl+F springt hierher, Esc leert den Filter)</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="347" />
+        <location filename="../../gui/dlg_main.py" line="348" />
         <source>Filter this list… (Ctrl+F)</source>
         <translation>Diese Liste filtern… (Ctrl+F)</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="348" />
+        <location filename="../../gui/dlg_main.py" line="349" />
         <source>First page</source>
         <translation>Erste Seite</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="349" />
+        <location filename="../../gui/dlg_main.py" line="350" />
         <source>Previous page</source>
         <translation>Vorherige Seite</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="350" />
+        <location filename="../../gui/dlg_main.py" line="351" />
         <source>Next page</source>
         <translation>Nächste Seite</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="351" />
+        <location filename="../../gui/dlg_main.py" line="352" />
         <source>Last page</source>
         <translation>Letzte Seite</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="352" />
+        <location filename="../../gui/dlg_main.py" line="353" />
         <source>Delete the selected rows (Del)</source>
         <translation>Ausgewählte Zeilen löschen (Del)</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="358" />
+        <location filename="../../gui/dlg_main.py" line="359" />
         <source>Switch to another connection</source>
         <translation>Zu einer anderen Verbindung wechseln</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="539" />
+        <location filename="../../gui/dlg_main.py" line="540" />
         <source>Success</source>
         <translation>Erfolg</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="544" />
+        <location filename="../../gui/dlg_main.py" line="545" />
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="549" />
+        <location filename="../../gui/dlg_main.py" line="550" />
         <source>Warning</source>
         <translation>Warnung</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="573" />
+        <location filename="../../gui/dlg_main.py" line="574" />
         <source>Not configured</source>
         <translation>Nicht konfiguriert</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="575" />
+        <location filename="../../gui/dlg_main.py" line="576" />
         <source>GeoServer is not configured. Open Settings to add the URL, user name and password.</source>
         <translation>GeoServer ist nicht konfiguriert. Öffnen Sie die Einstellungen und geben Sie URL, Benutzername und Passwort ein.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="584" />
+        <location filename="../../gui/dlg_main.py" line="585" />
         <source>Auth error</source>
         <translation>Authentifizierungsfehler</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="587" />
+        <location filename="../../gui/dlg_main.py" line="588" />
         <source>The saved user name and password are no longer in the QGIS authentication database. Open Settings and enter them again.</source>
         <translation>Benutzername und Passwort sind nicht mehr in der Authentifizierungsdatenbank von QGIS gespeichert. Öffnen Sie die Einstellungen und geben Sie sie erneut ein.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="592" />
+        <location filename="../../gui/dlg_main.py" line="593" />
         <source>The saved authentication configuration uses {}, and GeoServer Manager only sends a user name and password. Open Settings and enter them.</source>
         <translation>Die gespeicherte Authentifizierungskonfiguration verwendet {}, und GeoServer Manager sendet nur Benutzername und Passwort. Öffnen Sie die Einstellungen und geben Sie diese ein.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="598" />
+        <location filename="../../gui/dlg_main.py" line="599" />
         <source>QGIS did not give the user name and password from its authentication database: its master password was probably declined. Open Settings and save them again.</source>
         <translation>QGIS hat Benutzername und Passwort nicht aus seiner Authentifizierungsdatenbank herausgegeben: Das Master-Passwort wurde wahrscheinlich abgelehnt. Öffnen Sie die Einstellungen und speichern Sie sie erneut.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="728" />
+        <location filename="../../gui/dlg_main.py" line="729" />
         <source>GeoServer Manager is tested with GeoServer {tested}; this server runs {version}. Some features can work differently: see 'Supported GeoServer versions' in the user guide.</source>
         <translation>GeoServer Manager ist mit GeoServer {tested} getestet; dieser Server verwendet {version}. Einige Funktionen können anders arbeiten: Siehe 'Supported GeoServer versions' im Benutzerhandbuch.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="748" />
+        <location filename="../../gui/dlg_main.py" line="749" />
         <source>Connecting…</source>
         <translation>Verbindung wird hergestellt…</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="793" />
+        <location filename="../../gui/dlg_main.py" line="794" />
         <source>Connected as a non-administrator: {}</source>
         <translation>Verbunden ohne Administratorrechte: {}</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="794" />
+        <location filename="../../gui/dlg_main.py" line="795" />
         <source>GeoServer lists only what this account administers. A tab can show less than the server holds, and GeoServer refuses a change outside it.</source>
         <translation>GeoServer listet nur, was dieses Konto verwaltet. Ein Reiter kann weniger zeigen, als der Server enthält, und GeoServer lehnt Änderungen außerhalb davon ab.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="800" />
+        <location filename="../../gui/dlg_main.py" line="801" />
         <source>Connected: {}</source>
         <translation>Verbunden: {}</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="808" />
+        <location filename="../../gui/dlg_main.py" line="809" />
         <source>Resources loaded.</source>
         <translation>Ressourcen geladen.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="816" />
+        <location filename="../../gui/dlg_main.py" line="817" />
         <source>Not connected</source>
         <translation>Nicht verbunden</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="820" />
+        <location filename="../../gui/dlg_main.py" line="821" />
         <source>Connection failed</source>
         <translation>Verbindung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="861" />
+        <location filename="../../gui/dlg_main.py" line="862" />
         <source>A delete, an upload or a save is still running on this server. Let it finish, or cancel it, before connecting again.</source>
         <translation>Auf diesem Server läuft noch ein Löschen, Hochladen oder Speichern. Warten Sie, bis es fertig ist, oder brechen Sie es ab, bevor Sie sich erneut verbinden.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1144" />
-        <location filename="../../gui/dlg_main.py" line="933" />
+        <location filename="../../gui/dlg_main.py" line="1145" />
+        <location filename="../../gui/dlg_main.py" line="934" />
         <source>Uploading…</source>
         <translation>Wird hochgeladen…</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1115" />
+        <location filename="../../gui/dlg_main.py" line="1116" />
         <source>Loading cancelled. Refresh to try again.</source>
         <translation>Laden abgebrochen. Aktualisieren Sie, um es erneut zu versuchen.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1117" />
+        <location filename="../../gui/dlg_main.py" line="1118" />
         <source>Loading cancelled.</source>
         <translation>Laden abgebrochen.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2222" />
-        <location filename="../../gui/dlg_main.py" line="1127" />
+        <location filename="../../gui/dlg_main.py" line="2260" />
+        <location filename="../../gui/dlg_main.py" line="1128" />
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1127" />
+        <location filename="../../gui/dlg_main.py" line="1128" />
         <source>Refresh</source>
         <translation>Aktualisieren</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1131" />
+        <location filename="../../gui/dlg_main.py" line="1132" />
         <source>Cancel the upload</source>
         <translation>Hochladen abbrechen</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1133" />
+        <location filename="../../gui/dlg_main.py" line="1134" />
         <source>Stop after the current one</source>
         <translation>Nach dem aktuellen Löschvorgang anhalten</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1135" />
+        <location filename="../../gui/dlg_main.py" line="1136" />
         <source>Stop loading</source>
         <translation>Laden anhalten</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1142" />
+        <location filename="../../gui/dlg_main.py" line="1143" />
         <source>Loading…</source>
         <translation>Wird geladen…</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2603" />
-        <location filename="../../gui/dlg_main.py" line="1146" />
+        <location filename="../../gui/dlg_main.py" line="2641" />
+        <location filename="../../gui/dlg_main.py" line="1147" />
         <source>Working…</source>
         <translation>Wird ausgeführt…</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1184" />
+        <location filename="../../gui/dlg_main.py" line="1185" />
         <source>Workspaces</source>
         <translation>Arbeitsbereiche</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1185" />
+        <location filename="../../gui/dlg_main.py" line="1186" />
         <source>Datastores</source>
         <translation>Datenspeicher</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1186" />
+        <location filename="../../gui/dlg_main.py" line="1187" />
         <source>Coverage Stores</source>
         <translation>Rasterdatenspeicher</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1187" />
+        <location filename="../../gui/dlg_main.py" line="1188" />
         <source>Cascaded Stores</source>
         <translation>Kaskadierte Datenspeicher</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1188" />
+        <location filename="../../gui/dlg_main.py" line="1189" />
         <source>Layers</source>
         <translation>Layer</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1189" />
+        <location filename="../../gui/dlg_main.py" line="1190" />
         <source>Layer Groups</source>
         <translation>Gruppenlayer</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1190" />
+        <location filename="../../gui/dlg_main.py" line="1191" />
         <source>Styles</source>
         <translation>Stile</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1191" />
+        <location filename="../../gui/dlg_main.py" line="1192" />
         <source>Tile Cache</source>
         <translation>Kachel-Cache</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1192" />
+        <location filename="../../gui/dlg_main.py" line="1193" />
         <source>Server</source>
         <translation>Server</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1201" />
+        <location filename="../../gui/dlg_main.py" line="1202" />
         <source>Namespaces that group stores, layers and styles; one is the default.</source>
         <translation>Namensräume, die Datenspeicher, Layer und Stile gruppieren; einer ist der Standard.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1204" />
+        <location filename="../../gui/dlg_main.py" line="1205" />
         <source>Vector sources: the databases and files on the server that layers come from.</source>
         <translation>Vektorquellen: die Datenbanken und Dateien auf dem Server, aus denen Layer stammen.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1208" />
+        <location filename="../../gui/dlg_main.py" line="1209" />
         <source>Raster sources: GeoTIFFs, COGs and image mosaics.</source>
         <translation>Rasterquellen: GeoTIFFs, COGs und Bildmosaike.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1211" />
+        <location filename="../../gui/dlg_main.py" line="1212" />
         <source>WMS and WMTS stores that proxy another server's layers.</source>
         <translation>WMS- und WMTS-Datenspeicher, die die Layer eines anderen Servers weiterleiten.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1214" />
+        <location filename="../../gui/dlg_main.py" line="1215" />
         <source>Everything published (vector, raster and cascaded), with its store and default style.</source>
         <translation>Alles Publizierte (Vektor, Raster und kaskadiert), mit Datenspeicher und Standardstil.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1218" />
+        <location filename="../../gui/dlg_main.py" line="1219" />
         <source>Several layers served as one, in drawing order.</source>
         <translation>Mehrere Layer, als einer ausgeliefert, in Zeichenreihenfolge.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1219" />
+        <location filename="../../gui/dlg_main.py" line="1220" />
         <source>SLD, CSS, YSLD and MBStyle styles, global or per workspace.</source>
         <translation>SLD-, CSS-, YSLD- und MBStyle-Stile, global oder pro Arbeitsbereich.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1222" />
+        <location filename="../../gui/dlg_main.py" line="1223" />
         <source>The tile cache: tiles per layer, gridset and format.</source>
         <translation>Der Kachel-Cache: Kacheln pro Layer, Gridset und Format.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1225" />
+        <location filename="../../gui/dlg_main.py" line="1226" />
         <source>Settings of the whole server: contact, services, logging, catalog.</source>
         <translation>Einstellungen des ganzen Servers: Kontakt, Dienste, Protokollierung, Katalog.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1345" />
+        <location filename="../../gui/dlg_main.py" line="1346" />
         <source>Delete Selected</source>
         <translation>Ausgewählte löschen</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1717" />
-        <location filename="../../gui/dlg_main.py" line="1414" />
+        <location filename="../../gui/dlg_main.py" line="1718" />
+        <location filename="../../gui/dlg_main.py" line="1415" />
         <source>Actions</source>
         <translation>Aktionen</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1564" />
+        <location filename="../../gui/dlg_main.py" line="1565" />
         <source>Click to open (or select and press Enter)</source>
         <translation>Zum Öffnen klicken (oder auswählen und Enter drücken)</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1566" />
+        <location filename="../../gui/dlg_main.py" line="1567" />
         <source>Click to open</source>
         <translation>Zum Öffnen klicken</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../gui/dlg_main.py" line="1618" />
+        <location filename="../../gui/dlg_main.py" line="1619" />
         <source>Results {} to {} (out of %n item(s))</source>
         <translation>
             <numerusform>Ergebnisse {} bis {} (von %n Eintrag)</numerusform>
@@ -1848,93 +1868,93 @@
         </translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1625" />
+        <location filename="../../gui/dlg_main.py" line="1626" />
         <source>Not connected. Press Refresh (F5), or open Settings.</source>
         <translation>Nicht verbunden. Klicken Sie auf „Aktualisieren“ (F5), oder öffnen Sie die Einstellungen.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1628" />
+        <location filename="../../gui/dlg_main.py" line="1629" />
         <source>Nothing matches '{}'. Esc clears the filter.</source>
         <translation>Nichts passt zu '{}'. Esc leert den Filter.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1633" />
+        <location filename="../../gui/dlg_main.py" line="1634" />
         <source>Nothing here that this account administers.</source>
         <translation>Hier ist nichts, was dieses Konto verwaltet.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1637" />
+        <location filename="../../gui/dlg_main.py" line="1638" />
         <source>Nothing here yet. Start with '{}' above.</source>
         <translation>Hier ist noch nichts. Beginnen Sie oben mit '{}'.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1640" />
+        <location filename="../../gui/dlg_main.py" line="1641" />
         <source>No results</source>
         <translation>Keine Ergebnisse</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1717" />
+        <location filename="../../gui/dlg_main.py" line="1718" />
         <source>More</source>
         <translation>Mehr</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1722" />
+        <location filename="../../gui/dlg_main.py" line="1723" />
         <source>Actions for {}</source>
         <translation>Aktionen für {}</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1863" />
+        <location filename="../../gui/dlg_main.py" line="1864" />
         <source>Yes</source>
         <translation>Ja</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1863" />
+        <location filename="../../gui/dlg_main.py" line="1864" />
         <source>No</source>
         <translation>Nein</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1966" />
-        <location filename="../../gui/dlg_main.py" line="1937" />
+        <location filename="../../gui/dlg_main.py" line="1967" />
+        <location filename="../../gui/dlg_main.py" line="1938" />
         <source>Failed to load the details</source>
         <translation>Die Details konnten nicht geladen werden</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="1999" />
+        <location filename="../../gui/dlg_main.py" line="2000" />
         <source>'{}' has a '/', '?', '#' or '%' in its name, so the plugin cannot address it. Rename it in GeoServer's web interface to manage it here.</source>
         <translation>'{}' hat ein '/', '?', '#' oder '%' im Namen. Daher kann das Plugin es nicht ansprechen. Benennen Sie es in der Weboberfläche von GeoServer um, um es hier zu verwalten.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2017" />
+        <location filename="../../gui/dlg_main.py" line="2018" />
         <source>'{}' is not a valid name: it has a '/', '?', '#', '%', or a space at the start or the end.</source>
         <translation>'{}' ist kein gültiger Name: Er enthält ein '/', '?', '#', '%' oder ein Leerzeichen am Anfang oder Ende.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2028" />
+        <location filename="../../gui/dlg_main.py" line="2029" />
         <source>The SRS must be an EPSG code number, such as 3857 or 4326.</source>
         <translation>Das SRS muss eine EPSG-Codenummer sein, zum Beispiel 3857 oder 4326.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2097" />
+        <location filename="../../gui/dlg_main.py" line="2135" />
         <source>Not connected to GeoServer. Press Refresh (F5) to connect.</source>
         <translation>Nicht mit GeoServer verbunden. Klicken Sie auf „Aktualisieren“ (F5), um sich zu verbinden.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2137" />
+        <location filename="../../gui/dlg_main.py" line="2175" />
         <source>Stopped waiting. GeoServer can still apply the change: the tab reloads when it answers.</source>
         <translation>Warten beendet. GeoServer kann die Änderung trotzdem noch anwenden: Der Reiter lädt neu, sobald GeoServer antwortet.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2221" />
+        <location filename="../../gui/dlg_main.py" line="2259" />
         <source>Waiting for GeoServer…</source>
         <translation>Warten auf GeoServer…</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2449" />
+        <location filename="../../gui/dlg_main.py" line="2487" />
         <source>'{}' was saved, but GeoServer cannot read it: {} Check the connection, the path and the password. The server log says why: Server tab, Logging, Show the log.</source>
         <translation>'{}' wurde gespeichert, aber GeoServer kann ihn nicht lesen: {} Prüfen Sie Verbindung, Pfad und Passwort. Den Grund nennt das Serverprotokoll: Reiter Server, Protokollierung, Protokoll anzeigen.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../gui/dlg_main.py" line="2473" />
+        <location filename="../../gui/dlg_main.py" line="2511" />
         <source>%n item(s) could not be listed: {names}. Details in the QGIS log (GeoServer Manager tab).</source>
         <translation>
             <numerusform>%n Eintrag konnte nicht aufgelistet werden: {names}. Details im QGIS-Protokoll (Reiter GeoServer Manager).</numerusform>
@@ -1942,61 +1962,61 @@
         </translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2504" />
+        <location filename="../../gui/dlg_main.py" line="2542" />
         <source>This action cannot be undone.</source>
         <translation>Diese Aktion kann nicht rückgängig gemacht werden.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2507" />
+        <location filename="../../gui/dlg_main.py" line="2545" />
         <source>Confirm</source>
         <translation>Bestätigen</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2536" />
+        <location filename="../../gui/dlg_main.py" line="2574" />
         <source>A delete is already running. Wait for it or cancel it.</source>
         <translation>Es läuft bereits ein Löschvorgang. Warten Sie darauf oder brechen Sie ihn ab.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2567" />
+        <location filename="../../gui/dlg_main.py" line="2605" />
         <source>These failed:
 {errors}</source>
         <translation>Diese sind fehlgeschlagen:
 {errors}</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2576" />
+        <location filename="../../gui/dlg_main.py" line="2614" />
         <source>Cancelled; what was already done stays done. These failed:
 {errors}</source>
         <translation>Abgebrochen; was bereits erledigt ist, bleibt erledigt. Diese sind fehlgeschlagen:
 {errors}</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2583" />
+        <location filename="../../gui/dlg_main.py" line="2621" />
         <source>Cancelled. What was already done stays done.</source>
         <translation>Abgebrochen. Was bereits erledigt ist, bleibt erledigt.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2599" />
+        <location filename="../../gui/dlg_main.py" line="2637" />
         <source>The batch stopped</source>
         <translation>Der Stapel wurde angehalten</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2627" />
+        <location filename="../../gui/dlg_main.py" line="2665" />
         <source>An upload is already running. Wait for it or cancel it.</source>
         <translation>Es läuft bereits ein Hochladen. Warten Sie darauf oder brechen Sie es ab.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2717" />
+        <location filename="../../gui/dlg_main.py" line="2755" />
         <source>Upload of '{name}' cancelled: GeoServer kept the {kind} and its layer, but had already removed their data file. Upload it again with Replace ticked, or delete the {kind}.</source>
         <translation>Hochladen von '{name}' abgebrochen: GeoServer hat den {kind} und seinen Layer behalten, aber ihre Datendatei bereits entfernt. Laden Sie die Datei erneut mit aktiviertem „Ersetzen“ hoch, oder löschen Sie den {kind}.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2723" />
+        <location filename="../../gui/dlg_main.py" line="2761" />
         <source>Upload of '{name}' cancelled. Check the {tab} tab for what was left.</source>
         <translation>Hochladen von '{name}' abgebrochen. Prüfen Sie im Reiter {tab}, was übrig geblieben ist.</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_main.py" line="2727" />
+        <location filename="../../gui/dlg_main.py" line="2765" />
         <source>Upload of '{name}' cancelled. Nothing was left on the server.</source>
         <translation>Hochladen von '{name}' abgebrochen. Auf dem Server ist nichts übrig geblieben.</translation>
     </message>

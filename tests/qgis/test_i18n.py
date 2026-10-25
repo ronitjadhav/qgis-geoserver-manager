@@ -308,6 +308,18 @@ class TestPluralForms(unittest.TestCase):
         self.assertIsNotNone(plugin.translator)
         self.assertTrue(any(str(english) in str(k.get("message")) for k in logged))
 
+    def test_every_string_is_translated_in_every_shipped_locale(self):
+        # lrelease leaves out an unfinished entry: it shows in English.
+        for path in sorted(I18N.glob("*.ts")):
+            if path.stem.endswith("_en"):
+                continue  # the source language
+            for message in ElementTree.parse(path).iter("message"):
+                translation = message.find("translation")
+                text = "".join(translation.itertext()).strip()
+                with self.subTest(locale=path.name, source=message.find("source").text):
+                    self.assertNotEqual(translation.get("type"), "unfinished")
+                    self.assertTrue(text)
+
     def test_every_plural_is_finished_in_every_shipped_locale(self):
         for path in sorted(I18N.glob("*.ts")):
             plurals = [
