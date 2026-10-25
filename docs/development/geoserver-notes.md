@@ -391,7 +391,10 @@ carries a `TODO(#1)` comment at the call site.
   and it fetches an http one. GeoServer serves a style's folder without a login at
   `{base}/styles/{file}` and `{base}/styles/{ws}/{file}`. Its 1.0 rendition names
   those files `file:{data dir}/workspaces/{ws}/styles/{file}`. So *Apply* reads an
-  SLD 1.1 style as stored and makes its icons such URLs. QGIS also reads a `<Size>`
+  SLD 1.1 style as stored and makes its icons such URLs. Any other path in it is a
+  path on the server too: *Apply* asks for that file name beside the style. Handed
+  over as it was, QGIS opened the file of that path on the user's machine, and a push
+  of the layer's style uploaded it beside the style. QGIS also reads a `<Size>`
   given as `<ogc:Literal>` as 0, which draws nothing (the demo style `burg`). So
   `apply_sld_to_layer` hands such a Size over as its number.
 - **Per-workspace services and the namespace URI** (row 61, measured on 2.28.5):

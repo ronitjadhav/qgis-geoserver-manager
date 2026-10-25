@@ -275,6 +275,8 @@ class GeoServerMainDialog(
         self._status_kind = "neutral"  # re-applied when the theme changes
 
         uic.loadUi(Path(__file__).parent / "dlg_main.ui", self)
+        # It shows the version the server gives: never markup.
+        self.lbl_status.setTextFormat(Qt.TextFormat.PlainText)
         self.plg_settings = PlgOptionsManager()
 
         # Inline message bar (sits above the splitter)

@@ -668,6 +668,31 @@ class TestSaveStyleToDisk(unittest.TestCase):
         ):
             dlg._save_style_to_disk(["population", GLOBAL])
 
+    def test_the_dialog_gets_the_servers_file_name_never_its_folders(self):
+        # A style filed as ".config/autostart/x.desktop" (GeoServer stores
+        # what it is given) opened the dialog in that folder, under that name.
+        dlg = SyncDialog()
+        asked = []
+
+        def ask(parent, caption, suggested, filters):
+            asked.append(suggested)
+            return "", ""
+
+        for filename, style_format in (
+            (".config/autostart/x.desktop", "sld"),
+            ("../../../../tmp/x.sld", "sld"),
+            ("roads.json", "mbstyle"),
+            (None, "css"),
+        ):
+            dlg._style_as_stored = lambda *a, f=filename, s=style_format: (
+                {"filename": f},
+                s,
+                b"",
+            )
+            with patch.object(tab_styles.QFileDialog, "getSaveFileName", ask):
+                dlg._save_style_to_disk(["population", GLOBAL])
+        self.assertEqual(asked, ["x.sld", "x.sld", "roads.json", "population.css"])
+
 
 # ############################################################################
 # ###### Legend preview ##########
@@ -1369,41 +1394,22 @@ class TestApplyFetchesTheIcons(unittest.TestCase):
             'xlink:href="http://gs.example.org/geoserver/styles/burg02.svg"', sld
         )
 
-    def test_an_icon_qgis_cannot_open_is_a_warning_not_a_success(self):
-        from qgis.core import (
-            QgsMarkerSymbol,
-            QgsSingleSymbolRenderer,
-            QgsSvgMarkerSymbolLayer,
-        )
-
+    def test_a_file_of_this_machine_the_style_names_is_never_opened(self):
+        # QGIS opened it, and a push of the layer's style uploaded it beside
+        # the style, where GeoServer serves it without a login.
         folder = Path(tempfile.mkdtemp(prefix="gsm_test_"))
-        gone = folder / "anchor.svg"
-        gone.write_bytes(b"<svg/>")
-        source = point_layer("source")
-        symbol = QgsMarkerSymbol()
-        symbol.changeSymbolLayer(0, QgsSvgMarkerSymbolLayer(str(gone)))
-        source.setRenderer(QgsSingleSymbolRenderer(symbol))
-        sld = layer_to_sld(source)
-        shutil.rmtree(folder)  # pushed from another machine
-        QgsProject.instance().removeAllMapLayers()
-        self.addCleanup(QgsProject.instance().removeAllMapLayers)
-        QgsProject.instance().addMapLayer(point_layer("towns"))
-        warnings, successes = [], []
-        self.dlg.show_warning_message = warnings.append
-        self.dlg.show_success_message = successes.append
-
-        class Accepting(ResourceFormDialog):
-            def exec(inner):
-                return QDialog.DialogCode.Accepted
-
-        with (
-            patch.object(tab_styles, "ResourceFormDialog", Accepting),
-            patch.object(type(self.dlg), "_sld_of", lambda *a: sld),
-        ):
-            self.dlg._apply_style_to_qgis(["population", GLOBAL])
-        self.assertEqual(successes, [])
-        self.assertIn(str(gone), warnings[0])
-        self.assertIn("now uses the style", warnings[0])
+        self.addCleanup(shutil.rmtree, folder)
+        private = folder / "private.svg"
+        private.write_bytes(b"<svg/>")
+        for href in (str(private), private.as_uri()):
+            with self.subTest(href):
+                self.dlg.gs.body = sld_with_icon(href).encode()
+                sld = self.dlg._sld_of("population", None)
+                self.assertNotIn(str(private), sld)
+                self.assertIn(
+                    'xlink:href="http://gs.example.org/geoserver/styles/private.svg"',
+                    sld,
+                )
 
 
 class TestApplyOffersVectorLayersOnly(unittest.TestCase):

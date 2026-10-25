@@ -19,7 +19,7 @@ from collections import deque
 
 import requests
 from qgis.core import Qgis
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox
 
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
@@ -47,6 +47,18 @@ LOG_LEVELS = (
 # (no Range support, gzip, no length), and a production log can be large.
 _LOG_TAIL_BYTES = 256 * 1024
 _LOG_TAIL_LINES = 500
+
+
+def _say_over(form, icon, text):
+    """A box over the modal form, as plain text: Qt read a link in the
+    server's words as rich text, and a click opened it in the browser."""
+    box = QMessageBox(
+        icon, form.windowTitle(), text, QMessageBox.StandardButton.Ok, form
+    )
+    box.setTextFormat(Qt.TextFormat.PlainText)
+    box.exec()
+    box.deleteLater()
+
 
 # (form key, REST key) of each form, for payload.changed().
 _CONTACT_KEYS = (
@@ -550,9 +562,9 @@ class ServerTabMixin:
         location = (location or "logs/geoserver.log").strip()
         if location.startswith("/") or ":" in location.split("/")[0]:
             # The REST resource API only reaches the data directory.
-            QMessageBox.warning(
+            _say_over(
                 form,
-                form.windowTitle(),
+                QMessageBox.Icon.Warning,
                 translate(
                     "ServerTabMixin",
                     "GeoServer writes the log to {}, outside its data directory, "
@@ -580,13 +592,13 @@ class ServerTabMixin:
                     translate("ServerTabMixin", "Failed to read the log"), detail
                 )
                 self.log(problem, log_level=Qgis.MessageLevel.Critical)
-                QMessageBox.warning(form, form.windowTitle(), problem)
+                _say_over(form, QMessageBox.Icon.Warning, problem)
                 return
             tail = ""  # no such file: "Undefined resource path." (measured)
         if not tail.strip():
-            QMessageBox.information(
+            _say_over(
                 form,
-                form.windowTitle(),
+                QMessageBox.Icon.Information,
                 translate(
                     "ServerTabMixin",
                     "GeoServer has written nothing to {}. A server that logs only to "

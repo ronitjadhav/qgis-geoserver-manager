@@ -31,11 +31,7 @@ from geoserver_manager.gui.icons import icon
 from geoserver_manager.toolbelt.log_handler import PlgLogger
 from geoserver_manager.toolbelt.qgis_export import geoserver_name
 from geoserver_manager.toolbelt.rest import Abandoned
-from geoserver_manager.toolbelt.sld import (
-    apply_sld_to_layer,
-    layer_to_sld,
-    unresolved_icons,
-)
+from geoserver_manager.toolbelt.sld import apply_sld_to_layer, layer_to_sld
 
 # Not a QObject, so self.tr() is not available; the context is this class.
 translate = QCoreApplication.translate
@@ -461,17 +457,7 @@ class LayerTreeMenu:
             return None
         applied, message = outcome
         layer.triggerRepaint()
-        missing = unresolved_icons(sld)
-        if applied and missing:
-            self._say(
-                translate(
-                    "LayerTreeMenu",
-                    "'{}' now uses the GeoServer style '{}', but QGIS cannot open "
-                    "these icons of it: {}",
-                ).format(layer.name(), style, ", ".join(missing)),
-                Qgis.MessageLevel.Warning,
-            )
-        elif applied:
+        if applied:
             self._say(
                 translate(
                     "LayerTreeMenu", "'{}' now uses the GeoServer style '{}'."

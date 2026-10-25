@@ -34,7 +34,6 @@ from geoserver_manager.toolbelt.sld import (
     sld_version,
     style_text,
     styleable_project_layers,
-    unresolved_icons,
     utf8_sld,
     xml_problem,
 )
@@ -1062,16 +1061,7 @@ class StyleTabMixin:
         ):
             return
         ok, message = outcome[0], outcome[1]
-        missing = unresolved_icons(sld)
-        if ok and missing:
-            self.show_warning_message(
-                translate(
-                    "StyleTabMixin",
-                    "'{}' now uses the style '{}', but QGIS cannot open these "
-                    "icons of it: {}",
-                ).format(layer.name(), name, ", ".join(missing))
-            )
-        elif ok:
+        if ok:
             self.show_success_message(
                 translate("StyleTabMixin", "'{}' now uses the style '{}'.").format(
                     layer.name(), name
@@ -1096,7 +1086,13 @@ class StyleTabMixin:
             return
         definition, style_format, body = fetched
 
-        suggested = definition.get("filename") or f"{name}.{style_format}"
+        # The server's file name only: a style filed as
+        # ".config/autostart/x.desktop" opened the dialog in that folder.
+        filename = Path(definition.get("filename") or name)
+        suffix = filename.suffix.lower()
+        if _FORMAT_OF_SUFFIX.get(suffix) != style_format:
+            suffix = f".{style_format}"
+        suggested = f"{filename.stem or name}{suffix}"
         path, _selected = QFileDialog.getSaveFileName(
             self,
             translate("StyleTabMixin", "Save style '{}'").format(name),
