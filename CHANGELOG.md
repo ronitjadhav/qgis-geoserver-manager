@@ -37,6 +37,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   workspace holds is refused in the form, not after it closed.
 - **Added.** The whole interface in French and in German. The plugin follows
   the language of QGIS.
+- **Fixed.** On a QGIS whose Python has the simplejson package (OSGeo4W's
+  `qgis-full-free` set installs it), every Add form refused a new name with
+  "GeoServer answered with something that is not its REST API": GeoServer's
+  text answer for a missing resource was read as a broken one.
+- **Fixed.** The datastore form took a workspace name with a '/', '?', '#'
+  or '%', which the paths cannot carry; it is refused like a store name. A
+  server whose version document has one entry connects.
+- **Changed.** The Layers tab reads a workspace's WMTS stores once per
+  listing, not once per cascaded WMTS layer on the page.
 
 ## 1.0.0 - 2026-10-08
 

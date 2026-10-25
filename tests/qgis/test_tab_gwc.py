@@ -773,9 +773,6 @@ class TestNamesInPaths(unittest.TestCase):
             "<name>a&amp;b</name>",
             tab_gwc._NEW_LAYER_XML.format(name=tab_gwc.escape("a&b")),
         )
-        self.assertEqual(tab_gwc._int_or_zero("4"), 4)
-        self.assertEqual(tab_gwc._int_or_zero("four"), 0)
-        self.assertEqual(tab_gwc._int_or_zero(None), 0)
 
 
 class TestSeed(unittest.TestCase):
@@ -974,7 +971,7 @@ GRIDSET_FORM = {
 
 class TestGridsets(unittest.TestCase):
     def test_level_0_holds_the_extent_and_each_level_halves(self):
-        xml = GwcTabMixin._gridset_xml(GRIDSET_FORM, [0, 0, 512000, 256000], 1.0)
+        xml = SyncDialog()._gridset_xml(GRIDSET_FORM, [0, 0, 512000, 256000], 1.0)
         root = ElementTree.fromstring(xml)
         self.assertEqual(root.findtext("name"), "swiss<&>")  # escaped, parsed back
         self.assertEqual(root.findtext("srs/number"), "2056")
@@ -987,13 +984,13 @@ class TestGridsets(unittest.TestCase):
     def test_a_geographic_crs_gets_its_metres_per_degree(self):
         """Without it GeoWebCache stores 1.0, and a level 0 scale of 781
         instead of 86 million (measured on 2.28.5)."""
-        _extent, unit = GwcTabMixin._gridset_frame(dict(GRIDSET_FORM, epsg="4258"))
+        _extent, unit = SyncDialog()._gridset_frame(dict(GRIDSET_FORM, epsg="4258"))
         self.assertAlmostEqual(unit, 111319.49079327358)
-        xml = GwcTabMixin._gridset_xml(GRIDSET_FORM, [-16, 32, 40, 84], unit)
+        xml = SyncDialog()._gridset_xml(GRIDSET_FORM, [-16, 32, 40, 84], unit)
         self.assertIn("<metersPerUnit>111319.49079327358</metersPerUnit>", xml)
 
     def test_an_empty_extent_is_the_area_of_use_of_the_crs(self):
-        extent, unit = GwcTabMixin._gridset_frame(GRIDSET_FORM)
+        extent, unit = SyncDialog()._gridset_frame(GRIDSET_FORM)
         self.assertEqual(unit, 1.0)
         self.assertTrue(2400000 < extent[0] < extent[2] < 2900000, extent)
         self.assertTrue(1000000 < extent[1] < extent[3] < 1350000, extent)
@@ -1001,7 +998,18 @@ class TestGridsets(unittest.TestCase):
     def test_a_crs_qgis_does_not_know_is_refused(self):
         for epsg in ("999999", "abc"):
             with self.assertRaises(ValueError, msg=epsg):
-                GwcTabMixin._gridset_frame(dict(GRIDSET_FORM, epsg=epsg))
+                SyncDialog()._gridset_frame(dict(GRIDSET_FORM, epsg=epsg))
+
+    def test_the_area_of_use_is_read_without_the_project(self):
+        """The check runs in a worker thread: the project is the GUI thread's."""
+        from qgis.core import QgsProject
+
+        def not_here():
+            raise AssertionError("project read in a worker")
+
+        with patch.object(QgsProject, "instance", not_here):
+            extent, _unit = SyncDialog()._gridset_frame(GRIDSET_FORM)
+        self.assertTrue(extent[0] < extent[2])
 
     def test_a_gridset_of_ones_own_is_in_the_file_and_in_the_list(self):
         """The demo's file names EPSG:2163, which GeoWebCache never loaded."""

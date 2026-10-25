@@ -697,6 +697,14 @@ class TestStoreWithoutAType(unittest.TestCase):
             "Replace only overwrites a GeoPackage store", str(caught.exception)
         )
 
+    def test_an_unsafe_workspace_name_is_refused_before_a_request(self):
+        # The library reads the workspace raw: sf#x would check and create in sf.
+        with self.assertRaises(ValueError) as caught:
+            self.dlg._check_new_datastore(
+                {"workspace": "sf#x", "name": "fresh", "type": "Shapefile"}
+            )
+        self.assertIn("not a valid name", str(caught.exception))
+
     def test_it_opens_in_the_parameter_editor_and_saves_without_a_type(self):
         self.dlg._warn_if_reaches_nothing = lambda values: None
         self.dlg._load_datastores = lambda: None

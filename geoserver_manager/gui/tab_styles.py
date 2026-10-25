@@ -6,9 +6,7 @@ Styles tab: list, view/edit, upload and delete styles.
 Used as a mixin for GeoServerMainDialog.
 """
 
-import html
 import json
-import re
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -23,6 +21,7 @@ from qgis.PyQt.QtWidgets import QDialog, QFileDialog
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
 from geoserver_manager.gui.scope import GLOBAL, PENDING, global_label, scope
 from geoserver_manager.toolbelt.payload import unwrap
+from geoserver_manager.toolbelt.rest import ows_exception, summarise_body
 from geoserver_manager.toolbelt.sld import (
     SLD_1_0,
     apply_sld_to_layer,
@@ -664,23 +663,17 @@ class StyleTabMixin:
         style = f"{workspace_name}:{name}" if workspace_name else name
         response = self.gs.get_legend_graphic(layer, style=style)
         if not response.headers.get("Content-Type", "").startswith("image/"):
-            raise RuntimeError(self._ogc_exception_text(response.text))
+            raise RuntimeError(self._legend_failure(response.text))
         return response.content
 
     @staticmethod
-    def _ogc_exception_text(text):
-        """The sentence inside an OGC exception report, else its first line."""
-        match = re.search(
-            r"<(?:\w+:)?(?:ServiceException|ExceptionText)\b[^>]*>\s*([^<]+?)\s*<",
-            text or "",
+    def _legend_failure(text):
+        """What to show instead of a legend GeoServer did not draw."""
+        return (
+            ows_exception(text)
+            or summarise_body(text)
+            or translate("StyleTabMixin", "GeoServer returned no image")
         )
-        if match:
-            # GeoServer escapes it: "No such style: roads &amp; rivers".
-            return html.unescape(match.group(1))
-        lines = (text or "").strip().splitlines()
-        if lines:
-            return lines[0][:200]
-        return translate("StyleTabMixin", "GeoServer returned no image")
 
     def _load_legend(self, dlg, name, workspace_name, sld=None):
         """Fetch the legend into the dialog's image field, off the GUI thread.

@@ -31,6 +31,14 @@ def as_list(value):
     return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
+def as_int(value, default=0):
+    """An integer as GeoServer wrote it, or the default when it is not one."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def keyword_list(value):
     """A resource's keywords as a list of strings.
 

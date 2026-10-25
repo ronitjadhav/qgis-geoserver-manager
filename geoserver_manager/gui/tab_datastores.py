@@ -13,6 +13,7 @@ from qgis.PyQt.QtWidgets import QDialog
 
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
 from geoserver_manager.gui.scope import PENDING
+from geoserver_manager.toolbelt.payload import as_int
 from geoserver_manager.toolbelt.rest import PartlySaved
 
 # Datastore types this form has dedicated fields for. Every other type
@@ -129,14 +130,6 @@ def _is_secret(key):
     "Expose primary keys"."""
     letters = "".join(c for c in key.lower() if c.isalpha())
     return any(word in letters for word in _SECRET_WORDS)
-
-
-def _as_int(value, default):
-    """An integer parameter as GeoServer returned it, or the default."""
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 class DatastoreTabMixin:
@@ -781,8 +774,10 @@ class DatastoreTabMixin:
         """Refuse, before anything is sent, a datastore the Add form cannot
         create. Reads only: the form runs it before it closes."""
         ws, name = values["workspace"], values["name"]
-        # The name goes into a REST path: refuse what a URL would eat.
+        # Both go into a REST path: refuse what a URL would eat. The library's
+        # reads take the workspace raw: sf#x reads sf.
         self._require_safe_name(name)
+        self._require_safe_name(ws)
         if values["type"] == _OTHER and not (values.get("custom_type") or "").strip():
             raise ValueError(
                 translate("DatastoreTabMixin", "Give the GeoServer type name.")
@@ -1054,7 +1049,7 @@ class DatastoreTabMixin:
         port) was prefilled as 5432 and saved as 5432 by an unrelated edit.
         """
         port = int(values.get("pg_port", 5432))
-        if stored is not None and _as_int(stored, 5432) == port:
+        if stored is not None and as_int(stored, 5432) == port:
             return stored
         return port
 
@@ -1167,7 +1162,7 @@ class DatastoreTabMixin:
             # PostGIS
             "pg_host": conn_params.get("host", ""),
             # GeoServer allows `${PG_PORT}` here (environment parametrisation).
-            "pg_port": _as_int(conn_params.get("port"), 5432),
+            "pg_port": as_int(conn_params.get("port"), 5432),
             "pg_db": conn_params.get("database", ""),
             "pg_user": conn_params.get("user", ""),
             # Never prefilled: GeoServer returns it encrypted ("crypt1:…") or
@@ -1197,8 +1192,8 @@ class DatastoreTabMixin:
             "wfs_url": conn_params.get(_WFS_URL, ""),
             "wfs_user": conn_params.get(_WFS_USER, ""),
             "wfs_password": "",  # nosec B105
-            "wfs_timeout": _as_int(conn_params.get(_WFS_KEY + "TIMEOUT"), 3000),
-            "wfs_max_features": _as_int(conn_params.get(_WFS_KEY + "MAXFEATURES"), 0),
+            "wfs_timeout": as_int(conn_params.get(_WFS_KEY + "TIMEOUT"), 3000),
+            "wfs_max_features": as_int(conn_params.get(_WFS_KEY + "MAXFEATURES"), 0),
             "wfs_lenient": str(conn_params.get(_WFS_KEY + "LENIENT", "true")).lower()
             == "true",
             # Typed stores: what their form does not own; secrets masked

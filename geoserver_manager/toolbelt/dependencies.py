@@ -104,6 +104,25 @@ def _try_import(logger=None) -> bool:
         return False
 
 
+def widen_json_errors():
+    """Let the library read a text answer when requests uses simplejson.
+
+    TODO(#1): restservice catches json.JSONDecodeError only. With simplejson
+    installed (OSGeo4W's qgis-full-free set has it) requests raises a subclass
+    of simplejson's instead, and a 404's text answer escaped every read, so no
+    Add form could tell a free name from a taken one. Measured on 2.28.5.
+    """
+    import json
+
+    import requests
+    from geoservercloud.services import restservice
+
+    restservice.JSONDecodeError = (
+        json.JSONDecodeError,
+        requests.exceptions.JSONDecodeError,
+    )
+
+
 def ensure_dependencies() -> bool:
     """Ensure geoservercloud is installed and importable.
 
@@ -146,6 +165,7 @@ def ensure_dependencies() -> bool:
     #    bundled wheel, say so, and which version it is)
     if _try_import():
         _report_resolved_version(logger)
+        widen_json_errors()
         return True
 
     logger(
@@ -158,6 +178,7 @@ def ensure_dependencies() -> bool:
 
     if _try_import(logger):
         _report_resolved_version(logger)
+        widen_json_errors()
         return True
 
     # 3. All methods failed

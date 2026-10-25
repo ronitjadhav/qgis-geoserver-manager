@@ -278,6 +278,17 @@ class TestLayersTab(unittest.TestCase):
         self.dlg.show_success_message = lambda text: None
         self.dlg.gs = FakeGS()
 
+    def test_a_listing_reads_a_workspaces_wmts_stores_once(self):
+        # A page of cascaded WMTS layers used to read the stores once per row.
+        seen = []
+        answer = self.dlg.gs.answer
+        self.dlg.gs.answer = lambda path: (seen.append(path), answer(path))[1]
+        known = {}
+        for _ in range(3):
+            kind, store, _style = self.dlg._layer_summary("sf:tiles", known)
+            self.assertEqual((kind, store), ("WMTS", "remote_wmts"))
+        self.assertEqual(seen.count(f"{BASE}/workspaces/sf/wmtsstores.json"), 1)
+
     def test_lists_every_layer_of_every_type(self):
         self.dlg._load_layers()
 

@@ -7,6 +7,7 @@ import unittest
 from geoserver_manager.toolbelt.payload import (
     DEFAULT_VALIDATOR,
     VIRTUAL_TABLE,
+    as_int,
     as_list,
     bbox_text,
     crs_text,
@@ -49,6 +50,13 @@ class TestSmallOnes(unittest.TestCase):
         self.assertEqual(as_list("one"), ["one"])
         self.assertEqual(as_list({"name": "x"}), [{"name": "x"}])
         self.assertEqual(as_list(("a", "b")), ["a", "b"])
+
+    def test_as_int(self):
+        self.assertEqual(as_int("4"), 4)
+        self.assertEqual(as_int(4.0), 4)
+        self.assertEqual(as_int("four"), 0)
+        self.assertEqual(as_int(None), 0)
+        self.assertEqual(as_int("", 10), 10)
 
     def test_name_of(self):
         self.assertEqual(name_of({"name": "topp"}), "topp")

@@ -24,7 +24,7 @@ from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
-    QgsProject,
+    QgsCoordinateTransformContext,
     QgsUnitTypes,
 )
 from qgis.PyQt import sip
@@ -33,7 +33,7 @@ from qgis.PyQt.QtWidgets import QDialog
 
 from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
 from geoserver_manager.gui.scope import GLOBAL, PENDING
-from geoserver_manager.toolbelt.payload import as_list
+from geoserver_manager.toolbelt.payload import as_int, as_list
 from geoserver_manager.toolbelt.rest import raw_rest, summarise_body
 
 _XML = {"Content-Type": "application/xml"}
@@ -84,14 +84,6 @@ def _seed_types():
         (translate("GwcTabMixin", "Reseed"), "reseed"),
         (translate("GwcTabMixin", "Truncate"), "truncate"),
     ]
-
-
-def _int_or_zero(text):
-    """An integer out of a GWC document, 0 when it is not one."""
-    try:
-        return int(text or 0)
-    except ValueError:
-        return 0
 
 
 class GwcTabMixin:
@@ -358,12 +350,9 @@ class GwcTabMixin:
         root = GwcTabMixin._parse_xml(xml_text)
 
         def number(tag):
-            return _int_or_zero(root.findtext(tag))
+            return as_int(root.findtext(tag))
 
-        meta = [
-            _int_or_zero(element.text)
-            for element in root.findall("metaWidthHeight/int")
-        ]
+        meta = [as_int(element.text) for element in root.findall("metaWidthHeight/int")]
         return {
             "name": root.findtext("name") or "",
             "enabled": (root.findtext("enabled") or "true").strip().lower() == "true",
@@ -1236,8 +1225,7 @@ class GwcTabMixin:
             "description": root.findtext("description") or "",
         }
 
-    @staticmethod
-    def _gridset_xml(values, extent, meters_per_unit):
+    def _gridset_xml(self, values, extent, meters_per_unit):
         """A new gridset's XML. Pure.
 
         Level 0 holds the whole extent in one tile, and each level halves the
@@ -1260,7 +1248,7 @@ class GwcTabMixin:
                 if description
                 else ""
             )
-            + f"<srs><number>{GwcTabMixin._epsg_number(values['epsg'])}</number></srs>"
+            + f"<srs><number>{self._epsg_number(values['epsg'])}</number></srs>"
             + "<extent><coords>"
             + "".join(f"<double>{float(v)!r}</double>" for v in extent)
             + "</coords></extent><alignTopLeft>false</alignTopLeft>"
@@ -1270,25 +1258,11 @@ class GwcTabMixin:
             + f"<tileHeight>{tile}</tileHeight><tileWidth>{tile}</tileWidth></gridSet>"
         )
 
-    @staticmethod
-    def _epsg_number(text):
-        """The EPSG code of a form's text as a number; raises on anything else."""
-        code = str(text or "").strip().upper().removeprefix("EPSG:")
-        if not code.isdigit():
-            raise ValueError(
-                translate(
-                    "GwcTabMixin",
-                    "The SRS must be an EPSG code number, such as 2056 or 4326.",
-                )
-            )
-        return int(code)
-
-    @staticmethod
-    def _gridset_frame(values):
+    def _gridset_frame(self, values):
         """(extent, metersPerUnit) of a new gridset, from QGIS's CRS: the
         typed extent, or the CRS's area of use when it is empty."""
         crs = QgsCoordinateReferenceSystem(
-            "EPSG:{}".format(GwcTabMixin._epsg_number(values["epsg"]))
+            "EPSG:{}".format(self._epsg_number(values["epsg"]))
         )
         if not crs.isValid():
             raise ValueError(
@@ -1300,8 +1274,11 @@ class GwcTabMixin:
         if text:
             extent = [float(v) for v in text.split(",")]
         else:
+            # No project read: this runs in a worker thread (invariant 9).
             box = QgsCoordinateTransform(
-                QgsCoordinateReferenceSystem("EPSG:4326"), crs, QgsProject.instance()
+                QgsCoordinateReferenceSystem("EPSG:4326"),
+                crs,
+                QgsCoordinateTransformContext(),
             ).transformBoundingBox(crs.bounds())
             extent = [box.xMinimum(), box.yMinimum(), box.xMaximum(), box.yMaximum()]
         if not (extent[0] < extent[2] and extent[1] < extent[3]):
