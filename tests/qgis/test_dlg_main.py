@@ -1588,6 +1588,15 @@ class TestWhatTheServerRuns(unittest.TestCase):
         label = SyncDialog()._fetch_version_label(fake_server(version="2.28.5"))
         self.assertEqual(label, "GeoServer 2.28.5")
 
+    def test_a_one_entry_version_document_is_a_bare_object(self):
+        # GeoServer's JSON drops the list around a single resource.
+        gs = fake_server(version="2.28.5")
+        gs.get_version = lambda: (
+            {"about": {"resource": {"@name": "GeoServer", "Version": "2.28.5"}}},
+            200,
+        )
+        self.assertEqual(SyncDialog()._fetch_version_label(gs), "GeoServer 2.28.5")
+
     def test_another_series_is_said_once_per_server(self):
         dlg = ConnectingDialog(fake_server(version="2.27.6"))
         dlg.refresh_ui()

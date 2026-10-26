@@ -890,20 +890,7 @@ class LayerPublishMixin:
                     "that layer first.",
                 ).format(qualified, store)
             )
-        return self._epsg_of(values)
-
-    @staticmethod
-    def _epsg_of(values):
-        """The form's EPSG code as a number; raises on anything else."""
-        epsg = str(values.get("epsg") or "").strip().upper().removeprefix("EPSG:")
-        if not epsg.isdigit():
-            raise ValueError(
-                translate(
-                    "LayerPublishMixin",
-                    "The SRS must be an EPSG code number, such as 3857 or 4326.",
-                )
-            )
-        return int(epsg)
+        return self._epsg_number(values.get("epsg"))
 
     def _check_publish_sql(self, values):
         """Refuse a SQL view GeoServer would take badly; returns the EPSG code.
@@ -931,7 +918,7 @@ class LayerPublishMixin:
                     "store of files.",
                 ).format(ds_name)
             )
-        return self._epsg_of(values)
+        return self._epsg_number(values.get("epsg"))
 
     def _publish_sql_view(self, values):
         """Publish a SQL view as a feature type.

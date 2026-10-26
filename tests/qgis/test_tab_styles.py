@@ -1453,12 +1453,14 @@ class TestLegendTextIsText(unittest.TestCase):
 
     def test_the_entities_are_decoded_and_an_empty_answer_is_said(self):
         self.assertEqual(
-            StyleTabMixin._ogc_exception_text(self.REPORT),
+            StyleTabMixin._legend_failure(self.REPORT),
             'No such style: roads & rivers "v2" <b>',
         )
         self.assertEqual(
-            StyleTabMixin._ogc_exception_text(""), "GeoServer returned no image"
+            StyleTabMixin._legend_failure(""), "GeoServer returned no image"
         )
+        # Not a report: the first line, as a banner would show it.
+        self.assertEqual(StyleTabMixin._legend_failure("Boom\nmore"), "Boom")
 
     def test_the_field_shows_a_tag_as_it_is(self):
         from qgis.PyQt.QtCore import Qt

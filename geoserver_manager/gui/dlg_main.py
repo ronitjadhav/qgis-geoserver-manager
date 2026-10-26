@@ -635,12 +635,13 @@ class GeoServerMainDialog(
         manifest instead: "GeoServer Cloud 2.28.5.1".
         """
         try:
-            info = self._check(gs.get_version())
+            # unwrap: a one-entry document carries a bare object, not a list
+            resources = unwrap(self._check(gs.get_version()), "about", "resource")
         except Exception:
             return ""
-        if not isinstance(info, dict):
-            return ""
-        for res in info.get("about", {}).get("resource", []):
+        for res in resources:
+            if not isinstance(res, dict):
+                continue
             if res.get("@name", "").lower().startswith("geoserver"):
                 version = res.get("Version", "")
                 if not version:
@@ -2014,6 +2015,15 @@ class GeoServerMainDialog(
                     "space at the start or the end."
                 ).format(name)
             )
+
+    def _epsg_number(self, text):
+        """The EPSG code of a form's SRS text as a number; raises on anything else."""
+        code = str(text or "").strip().upper().removeprefix("EPSG:")
+        if not code.isdigit():
+            raise ValueError(
+                self.tr("The SRS must be an EPSG code number, such as 3857 or 4326.")
+            )
+        return int(code)
 
     @staticmethod
     def _error_text(error):

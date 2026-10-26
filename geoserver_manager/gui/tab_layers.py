@@ -9,6 +9,7 @@ Used as a mixin for GeoServerMainDialog.
 
 import math
 import re
+import threading
 from urllib.parse import quote, unquote, urlencode, urlsplit
 
 from qgis.core import QgsDataSourceUri, QgsProject, QgsRasterLayer, QgsVectorLayer
@@ -58,6 +59,9 @@ PROTOCOLS = ("WMS", "WFS", "WMTS")
 _WMTS_TILE_MATRIX_SET = "EPSG:900913"
 # GeoServer's own Layer Preview page renders at 768 px on the long side.
 _PREVIEW_SIZE = 768
+# The first row of a page reads a workspace's WMTS stores; the rows fanned out
+# beside it wait here and reuse them, instead of each reading the same stores.
+_WMTS_READ = threading.Lock()
 
 # GeoServer's layer types, as /rest/layers writes them. The Type column
 # carries them verbatim: they decide which resource a row's actions talk to.
@@ -190,7 +194,8 @@ class LayerTabMixin:
             ]
         )
         self._path_columns = (0, 1, 3)  # the store is in the resource's path
-        self._row_detail = lambda row: self._layer_summary(f"{row[1]}:{row[0]}")
+        known = {}  # a workspace's WMTS stores, read once per listing
+        self._row_detail = lambda row: self._layer_summary(f"{row[1]}:{row[0]}", known)
         self._detail_columns = (2, 3, 4)
         self._cell_display = {2: _kind_label}
         self._start_load(
@@ -235,7 +240,7 @@ class LayerTabMixin:
             self._name_of(layer) for layer in self._unwrap(payload, "layers", "layer")
         )
 
-    def _layer_summary(self, qualified_name):
+    def _layer_summary(self, qualified_name, known=None):
         """(type, store, default style) of one layer. Raises on HTTP errors.
 
         TODO(#1): rest_service.get_layer() exists, but its Layer model keeps
@@ -251,7 +256,7 @@ class LayerTabMixin:
             # GeoServer 2.28.5 writes no href for a wmtsLayer resource, so the
             # store has to be found among the workspace's WMTS stores.
             workspace, _, name = qualified_name.rpartition(":")
-            store = self._wmts_store_of(workspace, name)
+            store = self._wmts_store_of(workspace, name, known)
         style = (layer.get("defaultStyle") or {}).get("name") or "-"
         return kind, store or "-", style
 
@@ -266,23 +271,40 @@ class LayerTabMixin:
         )
         return unquote(match.group(1)) if match else None
 
-    def _wmts_store_of(self, workspace_name, layer_name):
+    def _wmts_store_of(self, workspace_name, layer_name, known=None):
         """The WMTS store holding this cascaded layer, or None.
 
         The workspace's WMTS stores only: the Cascaded Stores tab's listing
         GETs the WMS stores too, which this never reads. Their layers come
         from that tab's helper, reached through the shared dialog class.
+        `known` keeps {workspace: {store: layer names}} for one listing: a
+        page of cascaded WMTS layers used to read the stores once per row.
         TODO(#1): upstream as get_wmts_stores(ws); the library lists no
         cascaded store.
         """
-        endpoints = self.gs.rest_service.rest_endpoints
-        payload = self._raw_rest(
-            "get", endpoints.wmtsstores(quote(workspace_name, safe=""))
-        ).json()
-        for store in self._unwrap(payload, "wmtsStores", "wmtsStore"):
-            store = self._name_of(store)
-            if layer_name in self._cascaded_layer_names(workspace_name, store, WMTS):
-                return store
+        if known is None:
+            known = {}
+        with _WMTS_READ:
+            stores = known.get(workspace_name)
+            if stores is None:
+                # The stores in GeoServer's order; each one's layers are read
+                # when a lookup reaches it, so a broken store after the right
+                # one is never read.
+                endpoints = self.gs.rest_service.rest_endpoints
+                payload = self._raw_rest(
+                    "get", endpoints.wmtsstores(quote(workspace_name, safe=""))
+                ).json()
+                names = self._unwrap(payload, "wmtsStores", "wmtsStore")
+                stores = known[workspace_name] = dict.fromkeys(
+                    map(self._name_of, names)
+                )
+            for store, layers in stores.items():
+                if layers is None:
+                    layers = stores[store] = self._cascaded_layer_names(
+                        workspace_name, store, WMTS
+                    )
+                if layer_name in layers:
+                    return store
         return None
 
     @staticmethod

@@ -11,8 +11,11 @@ No QGIS import: the unit suite runs this on a plain Python.
 import html
 import re
 
+# OWS reports say ExceptionText; a WMS 1.1 report (GetLegendGraphic) says
+# ServiceException, with attributes.
 _EXCEPTION_TEXT = re.compile(
-    r"<(?:\w+:)?ExceptionText>(.*?)</(?:\w+:)?ExceptionText>", re.I | re.S
+    r"<(?:\w+:)?(ExceptionText|ServiceException)\b[^>]*>(.*?)</(?:\w+:)?\1>",
+    re.I | re.S,
 )
 
 
@@ -27,7 +30,7 @@ def ows_exception(text):
     if not found:
         return ""
     # GeoServer escapes the CQL parser's quotes twice: &amp;quot;
-    return " ".join(html.unescape(html.unescape(found.group(1))).split())
+    return " ".join(html.unescape(html.unescape(found.group(2))).split())
 
 
 def summarise_body(text, limit=300):

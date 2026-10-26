@@ -278,6 +278,58 @@ class TestLayersTab(unittest.TestCase):
         self.dlg.show_success_message = lambda text: None
         self.dlg.gs = FakeGS()
 
+    def test_a_listing_reads_a_workspaces_wmts_stores_once(self):
+        # A page of cascaded WMTS layers used to read the stores once per row,
+        # and the rows are fanned out: the first read must hold the others.
+        import time
+        from concurrent.futures import ThreadPoolExecutor
+
+        seen = []
+        answer = self.dlg.gs.answer
+
+        def slow_answer(path):
+            seen.append(path)
+            if path.endswith("/wmtsstores.json"):
+                time.sleep(0.05)  # long enough for the other rows to arrive
+            return answer(path)
+
+        self.dlg.gs.answer = slow_answer
+        known = {}
+        with ThreadPoolExecutor(4) as pool:
+            summaries = list(
+                pool.map(lambda _: self.dlg._layer_summary("sf:tiles", known), range(4))
+            )
+        self.assertEqual({s[:2] for s in summaries}, {("WMTS", "remote_wmts")})
+        self.assertEqual(seen.count(f"{BASE}/workspaces/sf/wmtsstores.json"), 1)
+
+    def test_a_store_that_cannot_be_read_only_hides_its_own_layers(self):
+        # Stores are read in order until the layer is found: a broken store
+        # after the right one is never reached.
+        answer = self.dlg.gs.answer
+        seen = []
+
+        def with_a_broken_store(path):
+            seen.append(path)
+            if path == f"{BASE}/workspaces/sf/wmtsstores.json":
+                stores = [{"name": "remote_wmts"}, {"name": "broken"}]
+                return ({"wmtsStores": {"wmtsStore": stores}}, 200)
+            if "/wmtsstores/broken/" in path:
+                return ("remote down", 500)
+            return answer(path)
+
+        self.dlg.gs.answer = with_a_broken_store
+        known = {}
+        self.assertEqual(
+            self.dlg._layer_summary("sf:tiles", known)[:2], ("WMTS", "remote_wmts")
+        )
+        broken = f"{BASE}/workspaces/sf/wmtsstores/broken/layers.json"
+        self.assertNotIn(broken, seen)
+        # A layer in no earlier store reaches it, and its failure is reported.
+        with self.assertRaises(RuntimeError) as caught:
+            self.dlg._wmts_store_of("sf", "elsewhere", known)
+        self.assertIn("remote down", str(caught.exception))
+        self.assertIn(broken, seen)
+
     def test_lists_every_layer_of_every_type(self):
         self.dlg._load_layers()
 

@@ -113,6 +113,16 @@ class TestSummariseBody(unittest.TestCase):
 
 
 class TestOwsException(unittest.TestCase):
+    def test_a_wms_1_1_report_says_service_exception(self):
+        # GetLegendGraphic on 2.28.5: the tag carries a code attribute.
+        report = (
+            '<?xml version="1.0"?><ServiceExceptionReport version="1.1.1">'
+            '<ServiceException code="StyleNotDefined">\n  No such style: '
+            "roads &amp; rivers &quot;v2&quot;\n</ServiceException>"
+            "</ServiceExceptionReport>"
+        )
+        self.assertEqual(ows_exception(report), 'No such style: roads & rivers "v2"')
+
     def test_a_report_gives_its_reason_and_a_feature_collection_nothing(self):
         report = (
             "<ows:ExceptionReport><ows:Exception><ows:ExceptionText>Could not "

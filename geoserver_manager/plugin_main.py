@@ -267,7 +267,17 @@ class GeoServerManagerPlugin:
         if self.translator:
             QCoreApplication.removeTranslator(self.translator)
 
-        # remove actions
+        # Delete them: removed from the menus, they stayed parented to the
+        # main window, and each reload left another set behind.
+        for action in (
+            self.action_main,
+            self.action_settings,
+            self.action_help,
+            self.action_help_plugin_menu_documentation,
+            self._help_separator,
+        ):
+            if action:
+                action.deleteLater()
         del self.action_main
         del self.action_settings
         del self.action_help

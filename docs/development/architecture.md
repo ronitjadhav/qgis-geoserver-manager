@@ -102,6 +102,7 @@ PyQt5 **and** PyQt6 through `qgis.PyQt`.
   | `_report_partial_failures([(label, exc)])` | one warning banner + log lines for what a listing could not fetch |
   | `_delete_many([(label, fn)], reload_fn, ask, done, cascade=…)` | confirm + run in a task of its own slot (`_delete`), with progress, and report one or many deletions. A tab switch or F5 never stops it, Cancel does, one batch runs at a time, and it reloads only the tab it started from. `ask` and `done` are whole sentences from `_one_or_many(one, many)`: `one.format(name)` for a single resource, else `many(count)`, the tab's `n -> translate(ctx, "…%n layer(s)…", None, n)`, so each locale gets its plural forms ([translations](translation.md)); a tab whose action is not a delete (the tile cache's "stop caching") words them that way |
   | `_require_safe_name(name)` | every Add form, before any request: refuses `/ ? # %` and edge spaces; `requests` sends `datastores/a#b.json` as `datastores/a` |
+  | `_epsg_number(text)` | a form's SRS as an EPSG number, for the publish forms and the gridset form; one refusal for all |
   | `_yes_no(value)` | a boolean cell, translated, never Python's `True` / `False` |
   | `_unwrap` / `_as_list` / `_name_of` | GeoServer's collection shapes, from `toolbelt/payload.py`; no tab keeps its own copy |
   | `_reload_current_tab()` | after an action reachable from another tab |
