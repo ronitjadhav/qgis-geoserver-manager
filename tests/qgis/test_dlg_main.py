@@ -525,6 +525,53 @@ class TestErrorText(unittest.TestCase):
             self.assertIn("no function 'upper'", text)
             self.assertNotIn("java.lang", text)
 
+    def test_a_request_that_never_reached_geoserver_is_said_not_quoted(self):
+        # urllib3's own words reached the banner in English, in every locale.
+        raw = "HTTPConnectionPool(host='gs', port=8080): Max retries exceeded"
+        exceptions = requests.exceptions
+        for error, said in (
+            (exceptions.ConnectionError(raw), "cannot be reached"),
+            (exceptions.ConnectTimeout(raw), "did not answer in time"),
+            (exceptions.ReadTimeout(raw), "did not answer in time"),
+            (exceptions.ProxyError(raw), "The proxy did not pass"),
+            (exceptions.SSLError(raw), "does not trust"),
+        ):
+            with self.subTest(type(error).__name__):
+                text = GeoServerMainDialog._error_text(error)
+                self.assertIn(said, text)
+                self.assertNotIn("HTTPConnectionPool", text)
+
+    def test_the_log_keeps_the_cause_the_banner_drops(self):
+        dlg = SyncDialog()
+        banners, logged = [], []
+        dlg.show_error_message = banners.append
+        dlg.log = lambda text, **kwargs: logged.append(text)
+        raw = "HTTPConnectionPool(host='gs', port=8080): Connection refused"
+        dlg._report_failure("Failed to load workspaces", requests.ConnectionError(raw))
+        self.assertEqual(
+            banners,
+            [
+                "Failed to load workspaces: GeoServer cannot be reached, or the "
+                "connection to it was cut."
+            ],
+        )
+        self.assertIn(raw, logged[0])
+
+    def test_every_log_line_keeps_the_cause(self):
+        # A listing that failed for one workspace logged the sentence only.
+        dlg = SyncDialog()
+        logged = []
+        dlg.log = lambda text, **kwargs: logged.append(text)
+        dlg.show_warning_message = lambda text: None
+        raw = "HTTPConnectionPool(host='gs', port=8080): Connection reset by peer"
+        dlg._report_partial_failures(
+            [("workspace 'sf'", requests.ConnectionError(raw))]
+        )
+        self.assertIn("connection to it was cut", logged[0])
+        self.assertIn(raw, logged[0])
+        # Anything else is logged as before.
+        self.assertEqual(GeoServerMainDialog._logged_error(ValueError("nope")), "nope")
+
 
 # ############################################################################
 # ###### Background loading ######

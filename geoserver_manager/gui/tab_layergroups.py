@@ -387,7 +387,8 @@ class LayerGroupTabMixin:
 
         TODO(#1): no update_layer_group() in the library (row 57). GeoServer
         merges a partial PUT, but a new layer list needs a style per entry,
-        and it keeps the old bounds, so they are recomputed here.
+        and it keeps the old bounds, so they are recomputed here. The two
+        lists it replaces whole go back as stored (_replaced_lists).
         """
         body, layers_changed = self._group_changes(before, after)
         if after["mode"] == "EO" and (
@@ -410,10 +411,10 @@ class LayerGroupTabMixin:
             body["bounds"] = self._group_bounds(published + root, context)
         if not body:
             return False
+        path = self._group_path(name, workspace_name)
         try:
-            self._raw_rest(
-                "put", self._group_path(name, workspace_name), json={"layerGroup": body}
-            )
+            body.update(self._replaced_lists(path, "layerGroup"))
+            self._raw_rest("put", path, json={"layerGroup": body})
         except Exception:
             self._refuse_gone_group(name, workspace_name)
             raise

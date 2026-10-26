@@ -18,7 +18,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox
 
 from geoserver_manager.gui.dlg_preview import LayerPreviewDialog, load_error
-from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
+from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog, as_typed
 from geoserver_manager.gui.scope import PENDING
 from geoserver_manager.toolbelt.payload import (
     DIMENSIONS,
@@ -33,6 +33,7 @@ from geoserver_manager.toolbelt.payload import (
     text_of,
     unwrap,
     view_form_values,
+    view_geometries,
     view_of,
     virtual_table,
     with_dimensions,
@@ -370,6 +371,14 @@ class LayerTabMixin:
         types and coverages alike); the CQL filter exists for vectors only.
         """
         data = translate("LayerTabMixin", "Data")
+        # A resource can have no policy (4 of the 5 demo coverages): shown as
+        # FORCE_DECLARED, an untouched Save stored it and recomputed the boxes.
+        policy = (values or {}).get("projection_policy") or ""
+        policies = list(_PROJECTION_POLICIES)
+        if not policy:
+            policies.insert(0, (translate("LayerTabMixin", "Not set"), ""))
+        elif policy not in policies:
+            policies.append(policy)
         fields = [
             {
                 "key": "name",
@@ -415,7 +424,7 @@ class LayerTabMixin:
                 "key": "projection_policy",
                 "label": translate("LayerTabMixin", "Projection policy"),
                 "type": "combo",
-                "options": list(_PROJECTION_POLICIES),
+                "options": policies,
                 "help": translate(
                     "LayerTabMixin",
                     "FORCE_DECLARED uses the declared SRS as it is. "
@@ -891,7 +900,7 @@ class LayerTabMixin:
                 size=coverage.get("size", ""),
                 bands=coverage.get("bands", ""),
             )
-        before = dict(values)
+        before = as_typed(values)
         if typed is not None:
             values = dict(values, **typed)
 
@@ -1137,7 +1146,7 @@ class LayerTabMixin:
         # SRS (projectionPolicy reconciles the two): a view made elsewhere
         # with srid 2056 and declared 3857 keeps 2056. Only a view without a
         # geometry yet takes the declared one.
-        srid = (old.get("geometry") or {}).get("srid")
+        srid = (view_geometries(old) or [{}])[0].get("srid")
         if srid is None:
             code = str(values.get("srs") or "").upper().removeprefix("EPSG:")
             srid = int(code) if code.isdigit() else None
@@ -1146,6 +1155,7 @@ class LayerTabMixin:
             values,
             srid,
             escape_sql=bool(old.get("escapeSql")),
+            old=old,
         )
         self._raw_rest(
             "put",
@@ -1353,7 +1363,7 @@ class LayerTabMixin:
                     else None
                 ),
             )
-            self._check(self.gs.rest_service.update_layer(layer, ws_name))
+            self._put_layer(ws_name, layer)
 
         if self._run_action(
             lambda: self._wait_for_save(save),
@@ -1553,14 +1563,26 @@ class LayerTabMixin:
                     style_name, workspace_name, "sld", sld, local_icons=True
                 )
             if set_default:
-                self._check(
-                    self.gs.set_default_layer_style(
-                        layer_name, workspace_name, f"{workspace_name}:{style_name}"
-                    )
+                from geoservercloud.models.layer import Layer
+
+                default = f"{workspace_name}:{style_name}"
+                self._put_layer(
+                    workspace_name, Layer(layer_name, default_style_name=default)
                 )
 
         self._wait_for_save(write)
         return True
+
+    def _put_layer(self, ws_name, layer):
+        """The library's update_layer(), with the lists a partial PUT empties
+        (_replaced_lists). Runs in a worker.
+
+        TODO(#1): update_layer() sends a partial layer document (row 87).
+        """
+        path = self._layers_url(f"{ws_name}:{layer.name}")
+        payload = layer.put_payload()
+        payload["layer"].update(self._replaced_lists(path, "layer"))
+        self._raw_rest("put", path, json=payload)
 
     def _confirm_replace_style(self, style_name, workspace_name):
         """Ask before a push overwrites a style other layers may share."""

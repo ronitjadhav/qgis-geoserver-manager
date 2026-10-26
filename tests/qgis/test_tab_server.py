@@ -16,7 +16,8 @@ import copy
 import threading
 from unittest.mock import patch
 
-from qgis.PyQt.QtWidgets import QDialog, QPushButton
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import QDialog, QMessageBox, QPushButton
 from qgis.testing import start_app, unittest
 
 from geoserver_manager.gui import tab_server
@@ -346,13 +347,36 @@ class TestLogAndCatalog(unittest.TestCase):
         dlg.show_warning_message = warnings.append
         dlg._fetch = dlg._wait_for = lambda *args, **kwargs: self.fail("no request")
         form, button = log_form(dlg, "/var/log/geoserver.log")
-        with patch.object(tab_server, "QMessageBox", create=True) as box:
+        with patch.object(tab_server, "_say_over") as said:
             button.click()
-        box.warning.assert_called_once()
-        parent, _title, text = box.warning.call_args.args
+        said.assert_called_once()
+        parent, icon, text = said.call_args.args
         self.assertIs(parent, form)
+        self.assertEqual(icon, QMessageBox.Icon.Warning)
         self.assertIn("outside its data directory", text)
         self.assertEqual(warnings, [])
+
+    def test_the_servers_words_are_shown_as_text_not_as_a_link(self):
+        # The location comes from the server: Qt took a link in it for rich
+        # text, and a click opened that page in the browser.
+        dlg = SyncDialog()
+        location = "/var/log/<a href='https://example.org/'>sign in</a>"
+        form, button = log_form(dlg, location)
+        shown = []
+
+        def exec_(box):
+            shown.append((box.textFormat(), box.text(), box.parent()))
+
+        with (
+            patch.object(tab_server.QMessageBox, "exec", exec_),
+            # The static box guesses the format; stubbed, it cannot block.
+            patch.object(tab_server.QMessageBox, "warning", lambda *a: shown.append(a)),
+        ):
+            button.click()
+        [(text_format, text, parent)] = shown
+        self.assertEqual(text_format, Qt.TextFormat.PlainText)
+        self.assertIn(location, text)
+        self.assertIs(parent, form)
 
     def test_the_log_keeps_only_its_end(self):
         class Streamed:
@@ -425,12 +449,13 @@ class TestLogAndCatalog(unittest.TestCase):
 
         with (
             patch.object(tab_server.requests, "get", return_value=Refused()),
-            patch.object(tab_server, "QMessageBox", create=True) as box,
+            patch.object(tab_server, "_say_over") as said,
         ):
             button.click()
-        box.warning.assert_called_once()
-        parent, _title, text = box.warning.call_args.args
+        said.assert_called_once()
+        parent, icon, text = said.call_args.args
         self.assertIs(parent, form)
+        self.assertEqual(icon, QMessageBox.Icon.Warning)
         self.assertIn("HTTP 403: Access denied", text)
         self.assertEqual(banners, [])
 
@@ -443,11 +468,11 @@ class TestLogAndCatalog(unittest.TestCase):
         form, button = log_form(dlg, "logs/geoserver.log")
         with (
             patch.object(tab_server.requests, "get", return_value=answer),
-            patch.object(tab_server, "QMessageBox", create=True) as box,
+            patch.object(tab_server, "_say_over") as said,
             patch.object(tab_server, "ResourceFormDialog") as viewer,
         ):
             button.click()
-        return form, box, viewer
+        return form, said, viewer
 
     def test_a_missing_log_file_is_explained_not_reported_as_a_404(self):
         # GeoServer Cloud writes no log file (reported on its pgconfig
@@ -461,12 +486,12 @@ class TestLogAndCatalog(unittest.TestCase):
             def __exit__(self, *exc):
                 return False
 
-        form, box, viewer = self.show_log(Missing())
-        box.warning.assert_not_called()
+        form, said, viewer = self.show_log(Missing())
         viewer.assert_not_called()
-        box.information.assert_called_once()
-        parent, _title, text = box.information.call_args.args
+        said.assert_called_once()
+        parent, icon, text = said.call_args.args
         self.assertIs(parent, form)
+        self.assertEqual(icon, QMessageBox.Icon.Information)
         self.assertIn("GeoServer has written nothing to logs/geoserver.log", text)
         self.assertIn("standard output", text)
 
@@ -484,10 +509,11 @@ class TestLogAndCatalog(unittest.TestCase):
             def iter_content(self, size):
                 return iter(())
 
-        _form, box, viewer = self.show_log(Empty())
+        _form, said, viewer = self.show_log(Empty())
         viewer.assert_not_called()
-        box.information.assert_called_once()
-        self.assertIn("written nothing", box.information.call_args.args[2])
+        said.assert_called_once()
+        self.assertEqual(said.call_args.args[1], QMessageBox.Icon.Information)
+        self.assertIn("written nothing", said.call_args.args[2])
 
     def test_cancel_on_the_waiting_box_stops_that_download(self):
         # _log_tail stops on its event; nothing checked that the waiting
@@ -509,11 +535,11 @@ class TestLogAndCatalog(unittest.TestCase):
 
         dlg._log_tail = tail
         dlg._wait_for = cancelled
-        with patch.object(tab_server, "QMessageBox", create=True) as box:
+        with patch.object(tab_server, "_say_over") as said:
             button.click()
         [stop] = downloads
         self.assertTrue(stop is not None and stop.is_set())
-        box.warning.assert_not_called()
+        said.assert_not_called()
 
     def test_reload_and_reset_post_to_their_endpoint(self):
         dlg = SyncDialog()

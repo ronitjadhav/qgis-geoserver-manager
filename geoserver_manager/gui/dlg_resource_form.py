@@ -137,6 +137,22 @@ _CODE_EDITORS = {
 }
 
 
+def as_typed(values):
+    """Prefill values as the form gives them back untouched: each text
+    stripped, its line ends as a text box keeps them. A form's change is
+    what differs from these: GeoServer keeps "…\\r\\nline two  " as its web
+    interface wrote it, which the form's "…\\nline two" never equalled, so an
+    untouched Save rewrote it."""
+
+    def text(value):
+        return value.replace("\r\n", "\n").replace("\r", "\n").strip()
+
+    return {
+        key: text(value) if isinstance(value, str) else value
+        for key, value in values.items()
+    }
+
+
 def _scaled(font, factor):
     """The font, `factor` times its size, never below a readable 7 pt."""
     if font.pointSizeF() > 0:

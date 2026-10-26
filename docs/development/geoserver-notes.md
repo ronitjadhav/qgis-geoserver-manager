@@ -391,7 +391,10 @@ carries a `TODO(#1)` comment at the call site.
   and it fetches an http one. GeoServer serves a style's folder without a login at
   `{base}/styles/{file}` and `{base}/styles/{ws}/{file}`. Its 1.0 rendition names
   those files `file:{data dir}/workspaces/{ws}/styles/{file}`. So *Apply* reads an
-  SLD 1.1 style as stored and makes its icons such URLs. QGIS also reads a `<Size>`
+  SLD 1.1 style as stored and makes its icons such URLs. Any other path in it is a
+  path on the server too: *Apply* asks for that file name beside the style. Handed
+  over as it was, QGIS opened the file of that path on the user's machine, and a push
+  of the layer's style uploaded it beside the style. QGIS also reads a `<Size>`
   given as `<ogc:Literal>` as 0, which draws nothing (the demo style `burg`). So
   `apply_sld_to_layer` hands such a Size over as its number.
 - **Per-workspace services and the namespace URI** (row 61, measured on 2.28.5):
@@ -515,6 +518,12 @@ carries a `TODO(#1)` comment at the call site.
   meanwhile fails where a GET says 404. A body is a 400 "Invalid style: … info is
   null", a rename a 500 NullPointerException, a zip a 500 "Error processing the
   style". So a failed save reads the style again before it reports.
+- **A layer or layer group PUT replaces two lists** (row 87 of #1, measured on
+  2.28.5). `authorityURLs` and `identifiers` become what the PUT holds, while
+  the other fields of a partial PUT merge. A group's title edit, or a default
+  style set through the library's `update_layer()`, emptied both lists, which
+  no form shows. `_replaced_lists` reads them and sends them back with every
+  partial PUT of a layer or a layer group.
 - **Workspace WMS settings** (rows 25–26 of #1): `WmsSettings` models none of the
   service metadata (`title`, `abstrct`, `keywords`, `srs`, …), and there is no delete.
   So `tab_workspaces.py` GETs, PUTs and DELETEs the settings path itself. The

@@ -31,7 +31,12 @@ from tests.qgis.test_sld import point_layer
 
 start_app()
 
-SLD = '<?xml version="1.0"?><StyledLayerDescriptor version="1.0.0"/>'
+# The least GeoServer stores as a style: a UserStyle in an SLD (sld_outline).
+SLD = (
+    '<?xml version="1.0"?><StyledLayerDescriptor version="1.0.0">'
+    "<NamedLayer><UserStyle/></NamedLayer></StyledLayerDescriptor>"
+)
+EDITED = "<UserStyle><Title>edited</Title></UserStyle>"
 
 # ############################################################################
 # ########## Fakes ###############
@@ -162,8 +167,8 @@ class Recording(ResourceFormDialog):
 
 LATIN1_SLD = (
     '<?xml version="1.0" encoding="ISO-8859-1"?>'
-    '<StyledLayerDescriptor version="1.0.0"><Title>Caf\xe9</Title>'
-    "</StyledLayerDescriptor>"
+    '<StyledLayerDescriptor version="1.0.0"><NamedLayer><UserStyle>'
+    "<Title>Caf\xe9</Title></UserStyle></NamedLayer></StyledLayerDescriptor>"
 )
 
 
@@ -206,7 +211,7 @@ class TestOtherEncodings(unittest.TestCase):
 
     def test_an_edited_latin1_body_is_put_as_utf8(self):
         self.dlg._put_sld_body("population", None, LATIN1_SLD)
-        body = self.dlg.gs.calls[-1][-1]
+        body = self.dlg.gs.calls[-1][-1]["data"]
         self.assertIn(b'encoding="UTF-8"', body)
         self.assertIn("Caf\xe9".encode("utf-8"), body)
 
@@ -288,7 +293,7 @@ class TestStylesTab(unittest.TestCase):
         # one is recorded as 1.1, and the row kept 1.0.0 until F5.
         class Editing(ResourceFormDialog):
             def exec(self):
-                self.get_widget("body").setText("<sld version='1.1.0'/>")
+                self.get_widget("body").setText(SLD.replace('"1.0.0"', '"1.1.0"'))
                 return QDialog.DialogCode.Accepted
 
         reloads = []
@@ -296,7 +301,9 @@ class TestStylesTab(unittest.TestCase):
         with patch.object(tab_styles, "ResourceFormDialog", Editing):
             self.dlg._show_style_info(["population", GLOBAL])
         self.assertEqual(reloads, [1])
-        self.assertEqual(self.dlg.gs.calls[-1][:2], ("PUT-body", "population"))
+        self.assertEqual(
+            self.dlg.gs.calls[-1][:2], ("PUT", "/rest/styles/population.sld")
+        )
 
     def test_upload_from_a_string_sends_the_body_with_its_own_content_type(self):
         self.dlg._create_style_from_values(
@@ -443,7 +450,7 @@ class TestStyleDialogLayout(unittest.TestCase):
 # QGIS writes 1.1; GeoServer's own styles are 1.0.
 SLD_11 = (
     '<?xml version="1.0"?><StyledLayerDescriptor xmlns:se="http://www.opengis.net/se"'
-    ' version="1.1.0"><NamedLayer/></StyledLayerDescriptor>'
+    ' version="1.1.0"><NamedLayer><UserStyle/></NamedLayer></StyledLayerDescriptor>'
 )
 
 
@@ -494,12 +501,23 @@ class TestContentTypeByVersion(unittest.TestCase):
         self.dlg = SyncDialog()
         self.dlg.gs = FakeGS()
 
-    def test_a_1_0_body_goes_through_the_library(self):
+    def test_a_1_0_body_goes_raw_with_its_own_content_type(self):
+        # Parsed, GeoServer stored its re-encoding of the first UserStyle
+        # only: the comments and any other style went (2.28.5).
         self.dlg._put_sld_body("population", None, SLD)
         self.assertEqual(
-            self.dlg.gs.calls[-1], ("PUT-body", "population", None, "sld", SLD.encode())
+            self.dlg.gs.calls[-1],
+            (
+                "PUT",
+                "/rest/styles/population.sld",
+                {
+                    "params": {"raw": "true"},
+                    "data": SLD.encode(),
+                    "headers": {"Content-Type": SLD_1_0},
+                },
+            ),
         )
-        self.assertFalse([c for c in self.dlg.gs.calls if c[0] == "PUT"])
+        self.assertFalse([c for c in self.dlg.gs.calls if c[0] == "PUT-body"])
 
     def test_a_1_1_body_is_sent_with_the_symbology_encoding_content_type(self):
         # rest_service.create_style() can only send application/vnd.ogc.sld+xml,
@@ -509,6 +527,7 @@ class TestContentTypeByVersion(unittest.TestCase):
         self.assertEqual(verb, "PUT")
         self.assertEqual(path, "/rest/workspaces/topp/styles/from_qgis.sld")
         self.assertEqual(kwargs["headers"]["Content-Type"], SLD_1_1)
+        self.assertEqual(kwargs["params"], {"raw": "true"})
         self.assertEqual(kwargs["data"], SLD_11.encode())
         self.assertFalse([c for c in self.dlg.gs.calls if c[0] == "PUT-body"])
 
@@ -667,6 +686,31 @@ class TestSaveStyleToDisk(unittest.TestCase):
             tab_styles.QFileDialog, "getSaveFileName", lambda *a, **k: ("", "")
         ):
             dlg._save_style_to_disk(["population", GLOBAL])
+
+    def test_the_dialog_gets_the_servers_file_name_never_its_folders(self):
+        # A style filed as ".config/autostart/x.desktop" (GeoServer stores
+        # what it is given) opened the dialog in that folder, under that name.
+        dlg = SyncDialog()
+        asked = []
+
+        def ask(parent, caption, suggested, filters):
+            asked.append(suggested)
+            return "", ""
+
+        for filename, style_format in (
+            (".config/autostart/x.desktop", "sld"),
+            ("../../../../tmp/x.sld", "sld"),
+            ("roads.json", "mbstyle"),
+            (None, "css"),
+        ):
+            dlg._style_as_stored = lambda *a, f=filename, s=style_format: (
+                {"filename": f},
+                s,
+                b"",
+            )
+            with patch.object(tab_styles.QFileDialog, "getSaveFileName", ask):
+                dlg._save_style_to_disk(["population", GLOBAL])
+        self.assertEqual(asked, ["x.sld", "x.sld", "roads.json", "population.css"])
 
 
 # ############################################################################
@@ -931,6 +975,19 @@ class TestRenameCopyAndUsage(unittest.TestCase):
         self.assertEqual(kwargs["json"], {"style": {"name": "new_population"}})
         self.assertEqual(reads, [])
 
+    def test_a_rename_keeps_the_styles_metadata(self):
+        # A PUT of the name alone dropped it (2.28.5).
+        metadata = {"entry": {"@key": "kept", "$": "yes"}}
+        client = self.dlg.gs.rest_service.rest_client
+        answer = type("Answer", (), {"status_code": 200, "history": ()})()
+        answer.json = lambda: {"style": {"name": "population", "metadata": metadata}}
+        client.get = lambda path, **kwargs: answer
+        self.dlg._rename_style("population", None, "new_population")
+        ((_verb, _path, kwargs),) = self.calls("PUT")
+        self.assertEqual(
+            kwargs["json"], {"style": {"name": "new_population", "metadata": metadata}}
+        )
+
     def test_a_rename_onto_a_taken_name_stays_in_the_form_and_sends_nothing(self):
         seen = {}
 
@@ -1180,9 +1237,10 @@ def sld_with_icon(href):
     return (
         '<?xml version="1.0" encoding="UTF-8"?><StyledLayerDescriptor '
         'version="1.1.0" xmlns:se="http://www.opengis.net/se" '
-        'xmlns:xlink="http://www.w3.org/1999/xlink"><se:ExternalGraphic>'
-        f'<se:OnlineResource xlink:href="{href}" xlink:type="simple"/>'
-        "</se:ExternalGraphic></StyledLayerDescriptor>"
+        'xmlns:xlink="http://www.w3.org/1999/xlink"><NamedLayer><UserStyle>'
+        f'<se:ExternalGraphic><se:OnlineResource xlink:href="{href}" '
+        'xlink:type="simple"/></se:ExternalGraphic>'
+        "</UserStyle></NamedLayer></StyledLayerDescriptor>"
     )
 
 
@@ -1245,6 +1303,7 @@ class TestIconsGoWithTheStyle(unittest.TestCase):
                 "PUT",
                 "/rest/workspaces/topp/styles/from_qgis.sld",
                 {
+                    "params": {"raw": "true"},
                     "data": package.read("style.sld"),
                     "headers": {"Content-Type": SLD_1_1},
                 },
@@ -1257,7 +1316,18 @@ class TestIconsGoWithTheStyle(unittest.TestCase):
         zip_put, sld_put = self.dlg.gs.calls
         self.assertEqual(zip_put[:4], ("PUT-body", "population", None, "zip"))
         document = zipfile.ZipFile(io.BytesIO(zip_put[4])).read("style.sld")
-        self.assertEqual(sld_put, ("PUT-body", "population", None, "sld", document))
+        self.assertEqual(
+            sld_put,
+            (
+                "PUT",
+                "/rest/styles/population.sld",
+                {
+                    "params": {"raw": "true"},
+                    "data": document,
+                    "headers": {"Content-Type": SLD_1_0},
+                },
+            ),
+        )
 
     def test_a_body_from_the_server_never_takes_a_file_of_this_machine(self):
         """A stored SLD naming a file here made Copy and the edit form's Save
@@ -1286,8 +1356,8 @@ class TestIconsGoWithTheStyle(unittest.TestCase):
         self.dlg.gs.calls.clear()
         sld = sld_with_icon(self.svg).replace('version="1.1.0"', 'version="1.0.0"')
         self.dlg._put_sld_body("a#b", None, sld)
-        ((_put, name, workspace, style_format, _body),) = self.dlg.gs.calls
-        self.assertEqual((name, workspace, style_format), ("a%23b", None, "sld"))
+        ((verb, path, _kwargs),) = self.dlg.gs.calls
+        self.assertEqual((verb, path), ("PUT", "/rest/styles/a%23b.sld"))
 
     def test_an_icon_geoserver_would_not_unpack_is_refused_before_a_request(self):
         """GeoServer unpacks svg, png, jpg, bmp and gif files from a style zip
@@ -1369,41 +1439,22 @@ class TestApplyFetchesTheIcons(unittest.TestCase):
             'xlink:href="http://gs.example.org/geoserver/styles/burg02.svg"', sld
         )
 
-    def test_an_icon_qgis_cannot_open_is_a_warning_not_a_success(self):
-        from qgis.core import (
-            QgsMarkerSymbol,
-            QgsSingleSymbolRenderer,
-            QgsSvgMarkerSymbolLayer,
-        )
-
+    def test_a_file_of_this_machine_the_style_names_is_never_opened(self):
+        # QGIS opened it, and a push of the layer's style uploaded it beside
+        # the style, where GeoServer serves it without a login.
         folder = Path(tempfile.mkdtemp(prefix="gsm_test_"))
-        gone = folder / "anchor.svg"
-        gone.write_bytes(b"<svg/>")
-        source = point_layer("source")
-        symbol = QgsMarkerSymbol()
-        symbol.changeSymbolLayer(0, QgsSvgMarkerSymbolLayer(str(gone)))
-        source.setRenderer(QgsSingleSymbolRenderer(symbol))
-        sld = layer_to_sld(source)
-        shutil.rmtree(folder)  # pushed from another machine
-        QgsProject.instance().removeAllMapLayers()
-        self.addCleanup(QgsProject.instance().removeAllMapLayers)
-        QgsProject.instance().addMapLayer(point_layer("towns"))
-        warnings, successes = [], []
-        self.dlg.show_warning_message = warnings.append
-        self.dlg.show_success_message = successes.append
-
-        class Accepting(ResourceFormDialog):
-            def exec(inner):
-                return QDialog.DialogCode.Accepted
-
-        with (
-            patch.object(tab_styles, "ResourceFormDialog", Accepting),
-            patch.object(type(self.dlg), "_sld_of", lambda *a: sld),
-        ):
-            self.dlg._apply_style_to_qgis(["population", GLOBAL])
-        self.assertEqual(successes, [])
-        self.assertIn(str(gone), warnings[0])
-        self.assertIn("now uses the style", warnings[0])
+        self.addCleanup(shutil.rmtree, folder)
+        private = folder / "private.svg"
+        private.write_bytes(b"<svg/>")
+        for href in (str(private), private.as_uri()):
+            with self.subTest(href):
+                self.dlg.gs.body = sld_with_icon(href).encode()
+                sld = self.dlg._sld_of("population", None)
+                self.assertNotIn(str(private), sld)
+                self.assertIn(
+                    'xlink:href="http://gs.example.org/geoserver/styles/private.svg"',
+                    sld,
+                )
 
 
 class TestApplyOffersVectorLayersOnly(unittest.TestCase):
@@ -1524,7 +1575,7 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
         state = {"gone": False, "failed": False}
         definition = dlg.gs.get_style_definition
 
-        def put_body(name, body, workspace_name=None, format="sld"):
+        def put_body(path, **kwargs):
             state["gone"] = deleted
             state["failed"] = True
             raise RuntimeError(failure)
@@ -1536,7 +1587,7 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
                 return reread
             return definition(*args)
 
-        dlg.gs.rest_service.create_style = put_body
+        dlg.gs.rest_service.rest_client.put = put_body
         dlg.gs.get_style_definition = get_definition
 
         shown = []
@@ -1546,7 +1597,7 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
                 shown.append(self)
                 if len(shown) > 1:  # back in the editor after the refusal: give up
                     return QDialog.DialogCode.Rejected
-                self.get_widget("body").setText("<StyledLayerDescriptor/>")
+                self.get_widget("body").setText(SLD.replace("<UserStyle/>", EDITED))
                 return QDialog.DialogCode.Accepted
 
         with patch.object(tab_styles, "ResourceFormDialog", Editing):
@@ -1584,6 +1635,41 @@ class TestStyleBodyCheck(unittest.TestCase):
             StyleTabMixin._check_style_body("sld", "<a>\n  <Rule>\n</a>")
         self.assertIn("not well-formed XML", str(ctx.exception))
         self.assertIn("line 3", str(ctx.exception))
+
+    def test_what_geoserver_would_not_store_is_refused_before_a_request(self):
+        # A parsed save refused these with a 400 (2.28.5); a raw one stored
+        # them, and the layers using the style drew nothing.
+        dlg = SyncDialog()
+        dlg.gs = FakeGS()
+        for body, said in (
+            ("<foo/>", "root element is <foo>"),
+            ("<html><body/></html>", "root element is <html>"),
+            ('<StyledLayerDescriptor version="1.0.0"/>', "no UserStyle"),
+            (
+                "<StyledLayerDescriptor><NamedLayer><NamedStyle><Name>point</Name>"
+                "</NamedStyle></NamedLayer></StyledLayerDescriptor>",
+                "no UserStyle",
+            ),
+        ):
+            with self.subTest(body):
+                with self.assertRaises(ValueError) as ctx:
+                    StyleTabMixin._check_style_body("sld", body)
+                self.assertIn(said, str(ctx.exception))
+                with self.assertRaises(ValueError):
+                    dlg._put_sld_body("population", None, body)
+        self.assertEqual(dlg.gs.calls, [])
+        # What GeoServer took: a UserLayer, a prefix, a misspelt element.
+        for body in (
+            "<StyledLayerDescriptor><UserLayer><UserStyle/></UserLayer>"
+            "</StyledLayerDescriptor>",
+            '<sld:StyledLayerDescriptor xmlns:sld="http://www.opengis.net/sld">'
+            "<sld:NamedLayer><sld:UserStyle/></sld:NamedLayer>"
+            "</sld:StyledLayerDescriptor>",
+            "<StyledLayerDescriptor><NamedLayer><UserStyle><FeatureTypeStyl/>"
+            "</UserStyle></NamedLayer></StyledLayerDescriptor>",
+        ):
+            with self.subTest(body):
+                StyleTabMixin._check_style_body("sld", body)
 
     def test_an_mbstyle_that_is_not_json_is_refused(self):
         with self.assertRaises(ValueError) as ctx:

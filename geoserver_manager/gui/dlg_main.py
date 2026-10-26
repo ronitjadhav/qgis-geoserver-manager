@@ -17,6 +17,7 @@ from concurrent.futures import CancelledError, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
 
+import requests
 from qgis.core import Qgis, QgsApplication, QgsTask
 from qgis.gui import QgsMessageBar
 from qgis.PyQt import sip, uic
@@ -90,6 +91,8 @@ _WAIT_BEFORE_BOX = 0.3
 _TESTED_SERIES = ((2, 28), (3, 0))
 # The jar every GeoServer Cloud service is built on, then Cloud's own version.
 _CLOUD_JAR = "gs-cloud-base-spring-boot-"
+# The lists a layer or layer group PUT replaces whole (_replaced_lists).
+_REPLACED_LISTS = ("authorityURLs", "identifiers")
 # GeoServer's 500 for a style naming a function it lacks.
 _UNKNOWN_FUNCTION = re.compile(r"Unable to find function (\w+)")
 
@@ -275,6 +278,8 @@ class GeoServerMainDialog(
         self._status_kind = "neutral"  # re-applied when the theme changes
 
         uic.loadUi(Path(__file__).parent / "dlg_main.ui", self)
+        # It shows the version the server gives: never markup.
+        self.lbl_status.setTextFormat(Qt.TextFormat.PlainText)
         self.plg_settings = PlgOptionsManager()
 
         # Inline message bar (sits above the splitter)
@@ -966,7 +971,7 @@ class GeoServerMainDialog(
                 # the Cancel button now.
                 if slot == "_upload" and error is not None:
                     self.log(
-                        f"{failure_message}: {self._error_text(error)}",
+                        f"{failure_message}: {self._logged_error(error)}",
                         log_level=Qgis.MessageLevel.Critical,
                     )
                 return
@@ -994,7 +999,7 @@ class GeoServerMainDialog(
                     )
                 elif error is not None:
                     self.log(
-                        f"{failure_message}: {self._error_text(error)}",
+                        f"{failure_message}: {self._logged_error(error)}",
                         log_level=Qgis.MessageLevel.Critical,
                     )
                 elif slot == "_upload" and (completed or not task.isCanceled()):
@@ -2067,13 +2072,59 @@ class GeoServerMainDialog(
             return f"HTTP {status}: {summary}" if summary else f"HTTP {status}"
         if summary and summary not in str(error):
             return f"{error}: {summary}"
-        return str(error)
+        return GeoServerMainDialog._network_problem(error) or str(error)
+
+    @staticmethod
+    def _network_problem(error):
+        """A request that never reached GeoServer, said in the user's language,
+        or None. urllib3's own words ("HTTPConnectionPool(host=…): Max
+        retries exceeded…") cannot be translated, and the connection check
+        words the same cases."""
+        exceptions = requests.exceptions
+        translate = QCoreApplication.translate
+        # Timeout first: a connect timeout is a ConnectionError too.
+        if isinstance(error, exceptions.Timeout):
+            return translate(
+                "GeoServerMainDialog", "GeoServer did not answer in time. Try again."
+            )
+        if isinstance(error, exceptions.ProxyError):
+            return translate(
+                "GeoServerMainDialog",
+                "The proxy did not pass the request to GeoServer. Check the proxy "
+                "in the QGIS Options, Network tab.",
+            )
+        if isinstance(error, exceptions.SSLError):
+            return translate(
+                "GeoServerMainDialog",
+                "GeoServer presented a TLS certificate this machine does not trust. "
+                "Test connection, in Settings, says what to do.",
+            )
+        if isinstance(error, exceptions.ConnectionError):
+            # Refused, no such host, or reset mid-upload: the log says which.
+            return translate(
+                "GeoServerMainDialog",
+                "GeoServer cannot be reached, or the connection to it was cut.",
+            )
+        return None
+
+    @staticmethod
+    def _logged_error(error):
+        """_error_text for a log line. A request that never reached GeoServer
+        keeps the network library's own words there: they tell a refused
+        connection from a reset one, which the translated sentence does not."""
+        detail = GeoServerMainDialog._error_text(error)
+        if GeoServerMainDialog._network_problem(error):
+            return f"{detail} ({error})"
+        return detail
 
     def _report_failure(self, failure_message, error):
-        """A failed action: the same line in the banner and in the QGIS log."""
-        detail = self._error_text(error)
-        self.show_error_message(f"{failure_message}: {detail}")
-        self.log(f"{failure_message}: {detail}", log_level=Qgis.MessageLevel.Critical)
+        """A failed action: the same line in the banner and in the QGIS log,
+        where a request that never reached GeoServer keeps its cause too."""
+        self.show_error_message(f"{failure_message}: {self._error_text(error)}")
+        self.log(
+            f"{failure_message}: {self._logged_error(error)}",
+            log_level=Qgis.MessageLevel.Critical,
+        )
 
     def _require_connection(self):
         """True when there is a client to talk to; otherwise say so and refuse.
@@ -2284,6 +2335,16 @@ class GeoServerMainDialog(
         """
         return raw_rest(self.gs.rest_service.rest_client, method, path, **kwargs)
 
+    def _replaced_lists(self, path, root):
+        """A layer's or layer group's authorityURLs and identifiers as stored,
+        for a partial PUT of it to carry. Runs in a worker.
+
+        GeoServer replaces both lists with what the PUT holds, so a PUT of a
+        title or a default style emptied them (measured on 2.28.5).
+        """
+        stored = self._raw_rest("get", path).json().get(root) or {}
+        return {key: stored[key] for key in _REPLACED_LISTS if stored.get(key)}
+
     def _resource_exists(self, getter, *args):
         """True when a GET for the resource returns 200, False on 404.
 
@@ -2449,7 +2510,7 @@ class GeoServerMainDialog(
         for label, error in failures:
             # With GeoServer's reason: an HTTPError alone says only the URL.
             self.log(
-                f"Could not list {label}: {self._error_text(error)}",
+                f"Could not list {label}: {self._logged_error(error)}",
                 log_level=Qgis.MessageLevel.Warning,
             )
         shown = ", ".join(label for label, _ in failures[:5])
@@ -2539,7 +2600,10 @@ class GeoServerMainDialog(
                     detail = self._error_text(e)
                     errors.append((label, detail))
                     # Logged here: a batch that ends after Close shows no banner.
-                    self.log(f"{label}: {detail}", log_level=Qgis.MessageLevel.Critical)
+                    self.log(
+                        f"{label}: {self._logged_error(e)}",
+                        log_level=Qgis.MessageLevel.Critical,
+                    )
                 if task is not None:
                     task.setProgress(100 * (index + 1) / len(labeled_deletes))
             return errors

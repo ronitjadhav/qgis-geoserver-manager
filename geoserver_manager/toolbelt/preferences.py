@@ -67,9 +67,11 @@ class PlgSettingsStructure:
             return (self.geoserver_username, self.geoserver_password)
         auth_mgr = QgsApplication.authManager()
         auth_cfg = QgsAuthMethodConfig()
-        if auth_mgr.loadAuthenticationConfig(
+        # PyQGIS returns (ok, config): the tuple alone is always true.
+        loaded, _config = auth_mgr.loadAuthenticationConfig(
             self.geoserver_auth_cfg_id, auth_cfg, True
-        ):
+        )
+        if loaded:
             config_map = auth_cfg.configMap()
             return (
                 config_map.get("username", ""),

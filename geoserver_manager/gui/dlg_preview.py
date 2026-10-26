@@ -109,6 +109,7 @@ class LayerPreviewDialog(QDialog):
 
         self.message = QLabel(self)
         self.message.setWordWrap(True)
+        self.message.setTextFormat(Qt.TextFormat.PlainText)  # the server's words
         self.message.hide()
         self.canvas = QgsMapCanvas(self)
         # The name finds the node it writes into a saved project.

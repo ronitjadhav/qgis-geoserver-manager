@@ -27,9 +27,9 @@ from geoserver_manager.toolbelt.sld import (
     local_icons,
     relative_hrefs,
     sld_content_type,
+    sld_outline,
     sld_version,
     style_text,
-    unresolved_icons,
     utf8_sld,
     xml_problem,
 )
@@ -283,37 +283,50 @@ class TestIconsForQgis(unittest.TestCase):
             + graphic(f"{self.BASE}/styles/icons/pin.png"),
         )
 
-    def test_urls_fonts_and_local_paths_are_left_alone(self):
-        kept = (
-            graphic("http://example.org/pin.svg")
-            + graphic("ttf://DejaVu%20Sans")
-            + graphic("/usr/share/qgis/svg/gpsicons/plane.svg?fill=%23232323")
-            + graphic("C:/Users/me/pin.svg")
-            + graphic("file:/opt/geoserver_data/usr/share/qgis/svg/plane.svg")
-        )
+    def test_urls_and_fonts_are_left_alone(self):
+        kept = graphic("http://example.org/pin.svg") + graphic("ttf://DejaVu%20Sans")
         self.assertEqual(icons_for_qgis(kept, self.BASE, "topp"), kept)
+        self.assertEqual(icons_for_qgis(None, self.BASE), "")
 
-    def test_what_qgis_cannot_open_is_named_once(self):
+    def test_a_path_names_no_file_of_this_machine(self):
+        """A server's style named a file here: QGIS opened it, and a push of
+        the layer's style uploaded it beside the style, readable by anyone."""
+        beside = f"{self.BASE}/styles/topp"
         with tempfile.NamedTemporaryFile(suffix=".svg") as here:
-            sld = (
-                graphic("http://example.org/pin.svg")
-                + graphic("ttf://DejaVu%20Sans")
-                + graphic(here.name)
-                + graphic(f"file://{here.name}")
-                + graphic("/nowhere/plane.svg?fill=%23232323")
-                + graphic("/nowhere/plane.svg")
-                + graphic("burg02.svg")
-                + graphic("file:/opt/geoserver_data/usr/plane.svg")
-            )
-            self.assertEqual(
-                unresolved_icons(sld),
-                [
-                    "/nowhere/plane.svg",
-                    "burg02.svg",
-                    "file:/opt/geoserver_data/usr/plane.svg",
-                ],
-            )
-        self.assertEqual(unresolved_icons(None), [])
+            for href, url in (
+                (here.name, f"{beside}/{Path(here.name).name}"),
+                (f"file://{here.name}", f"{beside}/{Path(here.name).name}"),
+                (
+                    "/usr/share/qgis/svg/gpsicons/plane.svg?fill=%23232323",
+                    f"{beside}/plane.svg?fill=%23232323",
+                ),
+                ("C:/Users/me/pin.svg", f"{beside}/pin.svg"),
+                ("\\\\host\\share\\pin.png", f"{beside}/pin.png"),
+                ("file:/opt/geoserver_data/usr/plane.svg", f"{beside}/plane.svg"),
+                (
+                    "/opt/geoserver_data/workspaces/sf/styles/pin.svg",
+                    f"{self.BASE}/styles/sf/pin.svg",
+                ),
+            ):
+                with self.subTest(href):
+                    self.assertEqual(
+                        icons_for_qgis(graphic(href), self.BASE, "topp"), graphic(url)
+                    )
+
+
+class TestSldOutline(unittest.TestCase):
+    def test_the_root_and_a_userstyle_are_read_whatever_the_prefix(self):
+        se = '<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" '
+        se += 'xmlns:se="http://www.opengis.net/se"><NamedLayer><UserStyle>'
+        se += "<se:FeatureTypeStyle/></UserStyle></NamedLayer></StyledLayerDescriptor>"
+        self.assertEqual(sld_outline(se), ("StyledLayerDescriptor", True))
+        self.assertEqual(sld_outline("<foo><UserStyle/></foo>"), ("foo", True))
+        self.assertEqual(
+            sld_outline(
+                "<StyledLayerDescriptor><!-- UserStyle --></StyledLayerDescriptor>"
+            ),
+            ("StyledLayerDescriptor", False),
+        )
 
 
 class TestXmlProblem(unittest.TestCase):

@@ -12,7 +12,7 @@ from urllib.parse import quote
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QDialog
 
-from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
+from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog, as_typed
 from geoserver_manager.gui.scope import PENDING
 from geoserver_manager.toolbelt.payload import bbox_text, changed, keyword_list, text_of
 from geoserver_manager.toolbelt.rest import PartlySaved
@@ -783,7 +783,7 @@ class CascadedStoreTabMixin:
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
         after = dlg.get_values()
-        body = self._cascaded_store_changes(before, after)
+        body = self._cascaded_store_changes(as_typed(before), after)
         if not body:
             return
         if self._run_action(

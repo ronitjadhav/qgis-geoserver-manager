@@ -110,6 +110,8 @@ class ConfigOptionsPage(QgsOptionsPageWidget):
         for field in (self.txt_gs_url, self.txt_gs_username, self.txt_gs_password):
             field.textChanged.connect(self.lbl_test_result.clear)
         self.opt_verify_tls.toggled.connect(self.lbl_test_result.clear)
+        # It can quote a redirect the server chose: never markup.
+        self.lbl_test_result.setTextFormat(Qt.TextFormat.PlainText)
 
         # load previously saved settings
         self.load_settings()

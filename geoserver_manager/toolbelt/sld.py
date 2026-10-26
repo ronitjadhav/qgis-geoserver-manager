@@ -71,6 +71,23 @@ def xml_problem(text):
     return ""
 
 
+def sld_outline(text):
+    """(the root element's local name, whether a UserStyle is in it) of a
+    well-formed document.
+
+    GeoServer stores a style only from a StyledLayerDescriptor that holds a
+    UserStyle: a parsed save refused any other root, and an SLD with none,
+    with a 400 (measured on 2.28.5). A raw save, which keeps the text as
+    written, stores either, and the layers using the style draw nothing.
+    """
+    root = ElementTree.fromstring(text.encode("utf-8"))  # nosec B314
+
+    def local(tag):
+        return str(tag).rpartition("}")[2]
+
+    return local(root.tag), any(local(e.tag) == "UserStyle" for e in root.iter())
+
+
 def sld_version(sld):
     """The SLD version of a document: "1.1.0" or "1.0.0".
 
@@ -237,46 +254,40 @@ def icon_package(sld, style_name):
 
 
 def icons_for_qgis(sld, base_url, workspace_name=None):
-    """The SLD with each icon kept beside the style made a URL QGIS fetches.
+    """The SLD of a style on the server, each icon's href made a URL there.
 
     QGIS keeps a relative href relative and draws a "?" for it, even beside
     the SLD it read (measured on 3.44). GeoServer serves a style's folder
     without a login at {base}/styles, or {base}/styles/{workspace}, and its
     SLD 1.0 rendition of a stored 1.1 style names the same files as
-    file:{data directory}/…/styles/…, a path on the server.
+    file:{data directory}/…/styles/…, a path on the server. Any other path
+    is on the server too, never a file of this machine: QGIS opened the file
+    of that path here, and a push of the layer's style then uploaded it. It
+    is looked for by its name beside the style. A URL is QGIS's to fetch.
     """
     styles = f"{base_url}/styles"
     folder = f"{styles}/{quote(workspace_name, safe='')}" if workspace_name else styles
 
     def fetchable(match):
         path, mark, query = match.group(3).partition("?")
-        if path[:5].lower() == "file:":
-            head, found, rest = urlparse(path).path.rpartition("/styles/")
-            if not found:
-                return match.group(0)
-            owner = re.search(r"/workspaces/([^/]+)$", head)
-            url = f"{styles}/{owner.group(1)}/{rest}" if owner else f"{styles}/{rest}"
-        elif path and not _SCHEME.match(path) and not _ROOTED.match(path):
+        if path[:5].lower() == "file:" or _ROOTED.match(path):
+            if path[:5].lower() == "file:":
+                path = urlparse(path).path
+            head, found, rest = path.replace("\\", "/").rpartition("/styles/")
+            if found:
+                owner = re.search(r"/workspaces/([^/]+)$", head)
+                url = (
+                    f"{styles}/{owner.group(1)}/{rest}" if owner else f"{styles}/{rest}"
+                )
+            else:
+                url = f"{folder}/{rest.rpartition('/')[2]}"
+        elif path and not _SCHEME.match(path):
             url = f"{folder}/{path}"
         else:
             return match.group(0)
         return f"{match.group(1)}{match.group(2)}{url}{mark}{query}{match.group(2)}"
 
     return _HREF.sub(fetchable, sld or "")
-
-
-def unresolved_icons(sld):
-    """The icons of an SLD that QGIS cannot open, once each: a relative path,
-    or a file that is not on this machine. A URL is QGIS's to fetch."""
-    missing = []
-    for match in _HREF.finditer(sld or ""):
-        href = match.group(3)
-        path = _href_path(href)
-        if not path or (_SCHEME.match(path) and path[:5].lower() != "file:"):
-            continue
-        if _local_file(href) is None:
-            missing.append(path)
-    return list(dict.fromkeys(missing))
 
 
 def styleable_project_layers(rasters=True):

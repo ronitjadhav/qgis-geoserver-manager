@@ -31,10 +31,10 @@ from geoserver_manager.toolbelt.sld import (
     layer_to_sld,
     relative_hrefs,
     sld_content_type,
+    sld_outline,
     sld_version,
     style_text,
     styleable_project_layers,
-    unresolved_icons,
     utf8_sld,
     xml_problem,
 )
@@ -307,16 +307,21 @@ class StyleTabMixin:
         1.0.0: accepted, rendered, and mislabelled. Sending
         application/vnd.ogc.se+xml records it as 1.1.0. The body goes as
         UTF-8 (`utf8_sld`): GeoServer reads it so, whatever its declaration
-        says. An SLD that draws icons from files on this machine first goes
-        as a zip with them (`icon_package`). That PUT unpacks the icons but
-        keeps the style's recorded format and version (2.28.5: a CSS style
-        then held SLD and drew nothing), so the zip's SLD follows as below.
+        says, and raw, kept as written, as GeoServer's own editor keeps it:
+        parsed, it stored its re-encoding of the first UserStyle only, the
+        comments and any other style gone (2.28.5). A parsed PUT checked no
+        more: it took an SLD whose NamedLayer was misspelt too. An SLD that
+        draws icons from files on this machine first goes as a zip with them
+        (`icon_package`). That PUT unpacks the icons but keeps the style's
+        recorded format and version (2.28.5: a CSS style then held SLD and
+        drew nothing), so the zip's SLD follows as below.
 
         :param local_icons: package the icons only when the SLD was made on
             this machine (a QGIS export, a file or text the user gave). A body
             the server supplied (the edit form) could name any file here,
             which would be read and uploaded without the user knowing.
         """
+        self._check_style_body("sld", sld)  # every caller: the raw PUT checks none
         content_type = sld_content_type(sld)
         data = utf8_sld(sld)
         package = icon_package(data.decode("utf-8"), name) if local_icons else None
@@ -327,16 +332,10 @@ class StyleTabMixin:
                     *_quoted(name, workspace_name, zipped), format="zip"
                 )
             )
-        if content_type == SLD_1_0:
-            self._check(
-                self.gs.rest_service.create_style(
-                    *_quoted(name, workspace_name, data), format="sld"
-                )
-            )
-            return
         self._raw_rest(
             "put",
             self._style_path(name, workspace_name, "sld"),
+            params={"raw": "true"},
             data=data,
             headers={"Content-Type": content_type},
         )
@@ -579,13 +578,16 @@ class StyleTabMixin:
         Measured on 2.28.5: a PUT of the new name on the definition renames the
         style and its references follow, since GeoServer links them by id.
         The caller has refused an unsafe or taken name before the body PUT.
+        A PUT of the name alone dropped the style's metadata, so it goes along
+        as stored (the library's model of a style has none).
         TODO(#1): no rename in the library (row 58).
         """
-        self._raw_rest(
-            "put",
-            self._style_path(name, workspace_name, "json"),
-            json={"style": {"name": new_name}},
-        )
+        path = self._style_path(name, workspace_name, "json")
+        style = {"name": new_name}
+        stored = self._raw_rest("get", path).json().get("style") or {}
+        if stored.get("metadata"):
+            style["metadata"] = stored["metadata"]
+        self._raw_rest("put", path, json={"style": style})
 
     def _refuse_taken_style(self, name, workspace_name):
         """Raise when the scope already has a style of that name."""
@@ -901,6 +903,24 @@ class StyleTabMixin:
                         "StyleTabMixin", "The SLD is not well-formed XML: {}"
                     ).format(problem)
                 )
+            # A raw save stores what GeoServer's parsing refused (sld_outline).
+            root, styled = sld_outline(text)
+            if root != "StyledLayerDescriptor":
+                raise ValueError(
+                    translate(
+                        "StyleTabMixin",
+                        "This is not an SLD: its root element is <{}>, not "
+                        "<StyledLayerDescriptor>.",
+                    ).format(root)
+                )
+            if not styled:
+                raise ValueError(
+                    translate(
+                        "StyleTabMixin",
+                        "The SLD holds no UserStyle, which GeoServer needs to store "
+                        "it as a style.",
+                    )
+                )
         elif style_format == "mbstyle":
             try:
                 json.loads(text)
@@ -1062,16 +1082,7 @@ class StyleTabMixin:
         ):
             return
         ok, message = outcome[0], outcome[1]
-        missing = unresolved_icons(sld)
-        if ok and missing:
-            self.show_warning_message(
-                translate(
-                    "StyleTabMixin",
-                    "'{}' now uses the style '{}', but QGIS cannot open these "
-                    "icons of it: {}",
-                ).format(layer.name(), name, ", ".join(missing))
-            )
-        elif ok:
+        if ok:
             self.show_success_message(
                 translate("StyleTabMixin", "'{}' now uses the style '{}'.").format(
                     layer.name(), name
@@ -1096,7 +1107,13 @@ class StyleTabMixin:
             return
         definition, style_format, body = fetched
 
-        suggested = definition.get("filename") or f"{name}.{style_format}"
+        # The server's file name only: a style filed as
+        # ".config/autostart/x.desktop" opened the dialog in that folder.
+        filename = Path(definition.get("filename") or name)
+        suffix = filename.suffix.lower()
+        if _FORMAT_OF_SUFFIX.get(suffix) != style_format:
+            suffix = f".{style_format}"
+        suggested = f"{filename.stem or name}{suffix}"
         path, _selected = QFileDialog.getSaveFileName(
             self,
             translate("StyleTabMixin", "Save style '{}'").format(name),

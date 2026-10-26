@@ -186,6 +186,41 @@ class TestSqlViews(unittest.TestCase):
             [{"name": "n", "defaultValue": "1", "regexpValidator": DEFAULT_VALIDATOR}],
         )
 
+    def test_a_parameter_stored_without_a_validator_keeps_none(self):
+        # A date needs none: an SQL edit added the default one, and clients
+        # sending "lbl:2026-01-01" were refused (2.28.5).
+        old = dict(
+            STORED_VIEW,
+            parameter=[STORED_VIEW["parameter"], {"name": "lbl", "defaultValue": "p"}],
+        )
+        values = dict(
+            view_form_values(old),
+            parameters=[["n", "5", "^[\\d]+$"], ["lbl", "p", ""], ["new", "1", ""]],
+        )
+        self.assertEqual(
+            view_of("pts", values, 4326, old=old)["parameter"],
+            [
+                {"name": "n", "defaultValue": "5", "regexpValidator": "^[\\d]+$"},
+                {"name": "lbl", "defaultValue": "p"},
+                {
+                    "name": "new",
+                    "defaultValue": "1",
+                    "regexpValidator": DEFAULT_VALIDATOR,
+                },
+            ],
+        )
+
+    def test_a_second_geometry_column_is_kept(self):
+        # The form read a list of them as one, and failed on it.
+        second = {"name": "geom2", "type": "Polygon", "srid": 4326}
+        old = dict(STORED_VIEW, geometry=[STORED_VIEW["geometry"], second])
+        values = view_form_values(old)
+        self.assertEqual(values["geometry_column"], "geom")
+        self.assertEqual(
+            view_of("pts", values, 4326, old=old)["geometry"],
+            [STORED_VIEW["geometry"], second],
+        )
+
     def test_no_geometry_column_sends_no_geometry_and_two_keys_a_list(self):
         view = view_of("v", {"sql": "x", "key_columns": ["a", " b "]}, 4326)
         self.assertNotIn("geometry", view)

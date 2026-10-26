@@ -23,7 +23,7 @@ from qgis.core import Qgis
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QDialog
 
-from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog
+from geoserver_manager.gui.dlg_resource_form import ResourceFormDialog, as_typed
 from geoserver_manager.gui.scope import PENDING
 
 # Every path this tab builds quotes its segments, as the cascaded tab does;
@@ -355,7 +355,7 @@ class CoverageStoreTabMixin:
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
         after = dlg.get_values()
-        body = changed(before, after, _STORE_EDITS)
+        body = changed(as_typed(before), after, _STORE_EDITS)
         if not body:
             return
         if self._run_action(

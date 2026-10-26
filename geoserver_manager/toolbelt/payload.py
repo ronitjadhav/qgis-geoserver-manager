@@ -139,10 +139,16 @@ def virtual_table(resource):
     return None
 
 
+def view_geometries(view):
+    """A SQL view's geometry columns, always as a list: a view made in the web
+    interface can have several, and GeoServer then writes a list."""
+    return [g for g in as_list((view or {}).get("geometry")) if isinstance(g, dict)]
+
+
 def view_form_values(view):
-    """A SQL view as the form shows it. GeoServer adds a newline to the SQL
-    and writes a numeric default as a number."""
-    geometry = view.get("geometry") or {}
+    """A SQL view as the form shows it: its first geometry column. GeoServer
+    adds a newline to the SQL and writes a numeric default as a number."""
+    geometry = (view_geometries(view) or [{}])[0]
     return {
         "sql": str(view.get("sql") or "").strip(),
         "geometry_column": str(geometry.get("name") or ""),
@@ -160,29 +166,48 @@ def view_form_values(view):
     }
 
 
-def view_of(name, values, srid, escape_sql=False):
-    """The virtualTable GeoServer stores, from the form's values. A parameter
-    without a validator gets DEFAULT_VALIDATOR."""
+def view_of(name, values, srid, escape_sql=False, old=None):
+    """The virtualTable GeoServer stores, from the form's values and the view
+    stored before (`old`, None for a new one).
+
+    The form shows one geometry column: the others of `old` are kept. A new
+    parameter without a validator gets DEFAULT_VALIDATOR; one stored without
+    keeps none, as a date or a decimal needs (an SQL edit added it, and
+    clients sending "2026-01-01" were refused).
+    """
     view = {"name": name, "sql": values["sql"].strip(), "escapeSql": escape_sql}
     keys = [key.strip() for key in values.get("key_columns") or [] if key.strip()]
     if keys:
         view["keyColumn"] = keys if len(keys) > 1 else keys[0]
+    geometries = view_geometries(old)[1:]
     column = (values.get("geometry_column") or "").strip()
     if column:
-        view["geometry"] = {
-            "name": column,
-            "type": values.get("geometry_type") or "Geometry",
-            "srid": srid,
-        }
-    parameters = [
-        {
-            "name": name.strip(),
-            "defaultValue": default or "",
-            "regexpValidator": validator or DEFAULT_VALIDATOR,
-        }
-        for name, default, validator in values.get("parameters") or []
-        if name.strip()
-    ]
+        geometries.insert(
+            0,
+            {
+                "name": column,
+                "type": values.get("geometry_type") or "Geometry",
+                "srid": srid,
+            },
+        )
+    if geometries:
+        view["geometry"] = geometries if len(geometries) > 1 else geometries[0]
+    unvalidated = {
+        str(p.get("name") or "")
+        for p in as_list((old or {}).get("parameter"))
+        if isinstance(p, dict) and not p.get("regexpValidator")
+    }
+    parameters = []
+    for name, default, validator in values.get("parameters") or []:
+        if not name.strip():
+            continue
+        parameter = {"name": name.strip(), "defaultValue": default or ""}
+        validator = validator or (
+            "" if name.strip() in unvalidated else DEFAULT_VALIDATOR
+        )
+        if validator:
+            parameter["regexpValidator"] = validator
+        parameters.append(parameter)
     if parameters:
         view["parameter"] = parameters
     return view

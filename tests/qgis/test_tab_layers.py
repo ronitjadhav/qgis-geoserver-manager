@@ -1413,6 +1413,28 @@ class TestEditLayer(unittest.TestCase):
         # the same keywords written differently are the same keywords
         self.assertEqual(self.changes(keywords=["a", "b "]), (None, False))
 
+    def test_a_resource_with_no_policy_is_saved_without_one(self):
+        # 4 of the 5 demo coverages: the form showed FORCE_DECLARED, and an
+        # untouched Save stored it and recomputed both boxes (2.28.5).
+        for policy in ("", "SOME_LATER_POLICY"):
+            with self.subTest(policy):
+                before = dict(self.BEFORE, projection_policy=policy)
+                dlg = SyncDialog()
+                form = ResourceFormDialog(
+                    title="sfdem",
+                    fields=dlg._layer_fields(tab_layers.RASTER, values=before),
+                    values=before,
+                )
+                shown = form.get_values()["projection_policy"]
+                after = dict(before, projection_policy=shown)
+                self.assertEqual(
+                    GeoServerMainDialog._layer_changes(
+                        before, after, tab_layers.RASTER
+                    ),
+                    (None, False),
+                )
+                form.deleteLater()
+
     def test_only_what_changed_goes_out_in_geoservers_spelling(self):
         body, recalc = self.changes(
             name="main_roads", title="", advertised=False, cql_filter="type = 'A'"
@@ -1586,7 +1608,8 @@ class _EditFakeGS:
 
 
 class TestSetLayerStyle(unittest.TestCase):
-    """The default style is read from the layer and written through the library."""
+    """The default style is read from the layer and written as the library's
+    model of it, in one PUT of the layer."""
 
     def setUp(self):
         self.dlg = SyncDialog()
@@ -1607,16 +1630,17 @@ class TestSetLayerStyle(unittest.TestCase):
             def get_layer(inner, ws, name):
                 return (LayerModel(), 200)
 
-            def update_layer(inner, layer, ws):
-                outer.update_calls.append((ws, layer.put_payload()["layer"]))
-                return ("", 200)
+        def put(path, json=None, **kwargs):
+            ws = path.rsplit("/layers/", 1)[1].partition(":")[0]
+            outer.update_calls.append((ws, json["layer"]))
+            return Response("", 200)
 
         class GS(FakeGS):
             def __init__(inner):
                 super().__init__()
                 # keep the base's client and endpoints; add the layer getter
                 inner.rest_service.get_layer = Rest().get_layer
-                inner.rest_service.update_layer = Rest().update_layer
+                inner.rest_service.rest_client.put = put
 
             def get_styles(inner, workspace_name=None):
                 if workspace_name is None:
@@ -1894,6 +1918,13 @@ class TestLayerStylesAsGeoServerWritesThem(unittest.TestCase):
             dlg._layer_styles("sf", "missing")
 
 
+def default_style_put(path, kwargs):
+    """A PUT of a layer's default style, recorded as the call it makes."""
+    ws, _, layer = path.rsplit("/", 1)[1][: -len(".json")].partition(":")
+    style = kwargs["json"]["layer"]["defaultStyle"]["name"]
+    return ("set_default", layer, ws, style)
+
+
 class StyleFakeGS(FakeGS):
     """Records the style calls the push makes."""
 
@@ -1903,8 +1934,14 @@ class StyleFakeGS(FakeGS):
         outer = self
 
         class Client:
+            def get(inner, path, **kwargs):
+                return Response({"layer": {}})  # without the two INSPIRE lists
+
             def put(inner, path, **kwargs):
-                outer.style_calls.append(("PUT", path, kwargs))
+                if "/layers/" in path:
+                    outer.style_calls.append(default_style_put(path, kwargs))
+                else:
+                    outer.style_calls.append(("PUT", path, kwargs))
                 return Response()
 
             def post(inner, path, **kwargs):
@@ -1938,10 +1975,6 @@ class StyleFakeGS(FakeGS):
     def create_style_definition(self, name, filename, workspace_name=None):
         self.style_calls.append(("definition", name, filename, workspace_name))
         return ("", 201)
-
-    def set_default_layer_style(self, layer_name, workspace_name, style):
-        self.style_calls.append(("set_default", layer_name, workspace_name, style))
-        return ("", 200)
 
 
 class TestStyleFromQgis(unittest.TestCase):
@@ -2153,6 +2186,9 @@ class GpkgPublishFakeGS(StyleFakeGS):
                 return response
 
             def put(inner, path, **kwargs):
+                if "/layers/" in path:
+                    outer.style_calls.append(default_style_put(path, kwargs))
+                    return Response()
                 body = kwargs.get("data")
                 if hasattr(body, "read"):  # a streaming upload: record its bytes
                     kwargs = {**kwargs, "data": body.read()}
@@ -3231,6 +3267,32 @@ class TestRefusedLayerEditReopens(unittest.TestCase):
         self.assertEqual(len(opened), 2)
         self.assertEqual(opened[1]["title"], "Roads, typed")  # as typed
         self.assertEqual(opened[1]["srs"], "EPSG:999999")
+
+    def test_text_as_the_web_interface_stores_it_is_no_change(self):
+        # GeoServer keeps "…\r\n…  " as typed there; the form gives "…\n…",
+        # and an untouched Save rewrote the abstract (the demo sfdem).
+        dlg = SyncDialog()
+        dlg.gs = SqlViewGS()
+        dlg._layer_resource = lambda row: {
+            "name": "roads",
+            "nativeName": "roads",
+            "srs": "EPSG:4326",
+            "projectionPolicy": "FORCE_DECLARED",
+            "title": "Roads ",
+            "abstract": "line one\r\nline two  ",
+            "enabled": True,
+            "advertised": True,
+        }
+        saved = []
+        dlg._save_layer = lambda row, before, after: saved.append(after)
+
+        class Untouched(ResourceFormDialog):
+            def exec(inner):
+                return QDialog.DialogCode.Accepted
+
+        with patch.object(tab_layers, "ResourceFormDialog", Untouched):
+            dlg._show_layer_info(["roads", "topp", "VECTOR", "pg"])
+        self.assertEqual(saved, [])
 
     def test_a_partial_save_does_not_reopen_the_form(self):
         # A rename landed, then the dimensions failed: a reopen would read

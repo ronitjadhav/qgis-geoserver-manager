@@ -212,6 +212,25 @@ class TestLiveGeoServer(unittest.TestCase):
     def gone(self, path):
         return self.rest("get", path, accept=404).status_code == 404
 
+    # Two lists no form shows, which a partial PUT emptied (2.28.5).
+    INSPIRE = {
+        "authorityURLs": {
+            "AuthorityURL": [{"name": "live", "href": "https://example.org/live"}]
+        },
+        "identifiers": {"Identifier": [{"authority": "live", "identifier": "live-1"}]},
+    }
+
+    def inspire(self, path, root, name):
+        """Give a layer or a layer group both lists; return them as stored."""
+        self.rest("put", path, json={root: {"name": name, **self.INSPIRE}})
+        stored = self.lists(path, root)
+        self.assertTrue(all(stored.values()), stored)
+        return stored
+
+    def lists(self, path, root):
+        document = self.get(path)[root]
+        return {key: document.get(key) for key in self.INSPIRE}
+
     def setUp(self):
         self.banners.clear()
 
@@ -436,19 +455,36 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_broken.json"))
 
     def test_32c_a_document_geoserver_refuses_comes_back_in_the_form(self):
-        # Well-formed, so the form lets it through; GeoServer refuses it, and
-        # the form opens again with the text, which the user then gives up.
+        # An SLD the form lets through, with a filter GeoServer's parser
+        # cannot read: a 500 (2.28.5). The form opens again with the text,
+        # which the user then gives up.
+        sld = SLD.format(colour="#FF0000").replace(
+            "<Rule>",
+            "<Rule><ogc:Filter><ogc:PropertyIsEqualTo><ogc:Nope/>"
+            "</ogc:PropertyIsEqualTo></ogc:Filter>",
+        )
         with answering(
-            {"name": "live_refused", "workspace": WS, "sld": "<a/>"}, None
+            {"name": "live_refused", "workspace": WS, "sld": sld}, None
         ) as forms:
             self.dlg._add_style()
         (error,) = [text for level, text in self.banners if level == "error"]
         self.assertIn("live_refused", error)
-        self.assertEqual(forms.shown[1]["sld"], "<a/>")
+        self.assertEqual(forms.shown[1]["sld"], sld.strip())
         self.assertEqual(forms.shown[1]["name"], "live_refused")
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_refused.json"))
 
+    def test_32d_a_document_that_is_no_sld_stays_in_the_form(self):
+        # GeoServer's parsed save refused it with a 400; a raw save would
+        # store it, so the form refuses it before it closes.
+        with answering(
+            {"name": "live_no_sld", "workspace": WS, "sld": "<a/>"},
+            refused="not an SLD",
+        ):
+            self.dlg._add_style()
+        self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_no_sld.json"))
+
     def test_33_set_the_layer_styles(self):
+        kept = self.inspire(f"layers/{LAYER}.json", "layer", "archsites")
         with answering({"style": f"{WS}:live_point", "others": ["point"]}):
             self.dlg._set_layer_style(self.row("Layers", "archsites"))
         self.assertEqual(len(self.said()), 1)
@@ -457,6 +493,7 @@ class TestLiveGeoServer(unittest.TestCase):
         others = layer["styles"]["style"]
         others = others if isinstance(others, list) else [others]
         self.assertEqual([style["name"] for style in others], ["point"])
+        self.assertEqual(self.lists(f"layers/{LAYER}.json", "layer"), kept)
 
     def test_34_what_uses_the_style(self):
         with answering(None) as forms:
@@ -465,12 +502,29 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertIn(f"{LAYER} (default style)", forms.shown[0]["users"])
 
     def test_35_edit_and_rename_the_style(self):
-        with answering({"body": SLD.format(colour="#0000FF"), "name": "live_blue"}):
+        # The author's comment stays, as GeoServer's own editor keeps it: a
+        # parsed PUT stored GeoServer's re-encoding instead.
+        body = SLD.format(colour="#0000FF").replace(
+            "<NamedLayer>", "<!-- kept --><NamedLayer>"
+        )
+        # Metadata no form shows, which a PUT of the new name alone dropped.
+        definition = f"workspaces/{WS}/styles/live_point.json"
+        metadata = {"entry": [{"@key": "live", "$": "kept"}]}
+        self.rest("put", definition, json={"style": {"metadata": metadata}})
+        metadata = self.get(definition)["style"]["metadata"]
+        self.assertTrue(metadata)
+        with answering({"body": body, "name": "live_blue"}):
             self.dlg._show_style_info(self.row("Styles", "live_point"))
         self.assertEqual(len(self.said()), 1)
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_point.json"))
         body = self.rest("get", f"workspaces/{WS}/styles/live_blue.sld").text
         self.assertIn("#0000FF", body)
+        style = self.get(f"workspaces/{WS}/styles/live_blue.json")["style"]
+        stored = self.rest(
+            "get", f"resource/workspaces/{WS}/styles/{style['filename']}"
+        )
+        self.assertIn("<!-- kept -->", stored.text)
+        self.assertEqual(style.get("metadata"), metadata)
         # The layer follows the rename.
         layer = self.get(f"layers/{LAYER}.json")["layer"]
         self.assertEqual(layer["defaultStyle"]["name"], f"{WS}:live_blue")
@@ -481,6 +535,16 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertEqual(len(self.said()), 1)
         body = self.rest("get", f"workspaces/{WS}/styles/live_copy.sld").text
         self.assertIn("#0000FF", body)
+
+    def test_36a_push_a_style_as_the_layers_default(self):
+        kept = self.inspire(f"layers/{LAYER}.json", "layer", "archsites")
+        sld = SLD.format(colour="#00FF00")
+        self.assertTrue(
+            self.dlg._push_qgis_style("live_pushed", WS, sld, "archsites", True)
+        )
+        layer = self.get(f"layers/{LAYER}.json")["layer"]
+        self.assertEqual(layer["defaultStyle"]["name"], f"{WS}:live_pushed")
+        self.assertEqual(self.lists(f"layers/{LAYER}.json", "layer"), kept)
 
     def test_37_add_the_layer_to_qgis(self):
         for protocol in ("WFS", "WMS", "WMTS"):
@@ -519,6 +583,12 @@ class TestLiveGeoServer(unittest.TestCase):
             return answer.text
         return answer.json()["features"]
 
+    def dated_features_are_served(self):
+        """A parameter without a validator takes a date (the default refuses it)."""
+        dated = self.features(viewparams="lbl:2026-01-01")
+        self.assertIsInstance(dated, list, dated)
+        self.assertEqual(len(dated), 5)
+
     def view(self):
         path = f"workspaces/{WS}/datastores/pg/featuretypes/live_view.json"
         return self.get(path)["featureType"]
@@ -548,10 +618,25 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(7 < box["minx"] < box["maxx"] < 8, box)
 
     def test_39_edit_the_sql_view(self):
-        # Another client's metadata entry, which the edit must keep.
+        # As the web interface can leave it: another client's metadata entry,
+        # a second geometry column and a parameter without a validator. The
+        # edit must keep all three.
         feature_type = self.view()
         entries = feature_type["metadata"]["entry"]
         entries = entries if isinstance(entries, list) else [entries]
+        [view] = [e["virtualTable"] for e in entries if "virtualTable" in e]
+        sql = VIEW_SQL.replace("'p' ||", "'%lbl%' ||").replace(
+            " FROM",
+            ", ST_Buffer(ST_SetSRID(ST_MakePoint(7, 46), 4326), 0.1) AS geom2 FROM",
+        )
+        view.update(
+            sql=sql,
+            geometry=[
+                {"name": "geom", "type": "Point", "srid": 4326},
+                {"name": "geom2", "type": "Polygon", "srid": 4326},
+            ],
+            parameter=[view["parameter"], {"name": "lbl", "defaultValue": "p"}],
+        )
         path = f"workspaces/{WS}/datastores/pg/featuretypes/live_view.json"
         self.rest(
             "put",
@@ -564,13 +649,19 @@ class TestLiveGeoServer(unittest.TestCase):
                 }
             },
         )
-        new_sql = VIEW_SQL.replace("AS label,", "AS label, g * 10 AS extra,")
+        self.dated_features_are_served()
+        new_sql = sql.replace("AS label,", "AS label, g * 10 AS extra,")
         with answering({"sql": new_sql}):
             self.dlg._show_layer_info(self.row("Layers", "live_view"))
         self.assertEqual(self.said(), ["Layer 'live_view' saved."])
         self.assertIn("extra", self.features()[0]["properties"])
-        keys = [entry["@key"] for entry in self.view()["metadata"]["entry"]]
+        entries = self.view()["metadata"]["entry"]
+        keys = [entry["@key"] for entry in entries]
         self.assertEqual(sorted(keys), ["JDBC_VIRTUAL_TABLE", "cachingEnabled"])
+        [view] = [e["virtualTable"] for e in entries if "virtualTable" in e]
+        self.assertEqual(sorted(g["name"] for g in view["geometry"]), ["geom", "geom2"])
+        # Still no validator: a date passes, as before the edit.
+        self.dated_features_are_served()
 
     def test_39b_a_sql_geoserver_cannot_run_is_put_back(self):
         # The refusal brings the form back with the typed query; the user
@@ -632,11 +723,14 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(589000 < box["minx"] < box["maxx"] < 609000, box)
 
     def test_41_edit_the_layer_group(self):
+        path = f"workspaces/{WS}/layergroups/live_group.json"
+        kept = self.inspire(path, "layerGroup", "live_group")
         with answering({"title": "Live group, edited"}):
             self.dlg._show_layer_group_info(self.row("Layer Groups", "live_group"))
         self.assertEqual(len(self.said()), 1)
-        group = self.get(f"workspaces/{WS}/layergroups/live_group.json")["layerGroup"]
+        group = self.get(path)["layerGroup"]
         self.assertEqual(group["title"], "Live group, edited")
+        self.assertEqual(self.lists(path, "layerGroup"), kept)
 
     # -- Tile cache ----------------------------------------------------------
 

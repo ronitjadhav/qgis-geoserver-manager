@@ -46,6 +46,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   server whose version document has one entry connects.
 - **Changed.** The Layers tab reads a workspace's WMTS stores once per
   listing, not once per cascaded WMTS layer on the page.
+- **Fixed.** A style applied from GeoServer could name a file of your
+  machine as an icon. QGIS then opened that file, and a push of the layer's
+  style uploaded it beside the style, where GeoServer serves it without a
+  login. An icon of a server's style now comes from the server only.
+- **Fixed.** Text from the server shows as plain text. A link in the log
+  location or in an error was a live link in the Server tab's boxes. *Save
+  to disk* suggests the style's file name without the server's folders.
+- **Fixed.** Editing a layer group, setting a layer's styles, or pushing a
+  style as a layer's default emptied its authority URLs and identifiers,
+  which INSPIRE services publish. They are kept.
+- **Fixed.** A layer with no projection policy, saved without a change, got
+  FORCE_DECLARED and recomputed bounding boxes. 4 of the 5 demo coverages
+  have no policy. The form shows "Not set" for them and keeps it.
+- **Fixed.** A saved SLD kept only GeoServer's re-encoding of it: its
+  comments, any second style and its layout were lost. The SLD is stored as
+  written, as GeoServer's own editor stores it. A document GeoServer would
+  not store, one that is not an SLD or holds no UserStyle, is refused in the
+  editor.
+- **Fixed.** A renamed style lost its metadata. A layer, coverage store or
+  cascaded store saved without a change rewrote a text that GeoServer's web
+  interface wrote with Windows line ends or spaces at its ends. Both are
+  kept.
+- **Changed.** A request that does not reach GeoServer, after a timeout, a
+  refused proxy, an untrusted certificate or a lost connection, is said in
+  one sentence in the plugin's language. The QGIS log keeps the network
+  library's own text.
 
 ## 1.0.0 - 2026-10-08
 

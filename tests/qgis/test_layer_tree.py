@@ -618,12 +618,6 @@ class TestApply(MenuCase):
             self.menu.apply_style(self.layer)
         return self.iface.bar.messages[-1]
 
-    def test_an_icon_qgis_cannot_open_is_a_warning_not_a_success(self):
-        sld = '<OnlineResource xlink:href="/nowhere/plane.svg?fill=%23ff0000"/>'
-        text, level = self.outcome((True, ""), sld)
-        self.assertIn("/nowhere/plane.svg", text)
-        self.assertEqual(level, Qgis.MessageLevel.Warning)
-
     def test_a_refusal_is_not_called_a_partial_read(self):
         text, level = self.outcome((False, "Info: NamedLayer element not found."), "")
         self.assertIn("could not apply", text)
