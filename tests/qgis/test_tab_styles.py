@@ -31,7 +31,12 @@ from tests.qgis.test_sld import point_layer
 
 start_app()
 
-SLD = '<?xml version="1.0"?><StyledLayerDescriptor version="1.0.0"/>'
+# The least GeoServer stores as a style: a UserStyle in an SLD (sld_outline).
+SLD = (
+    '<?xml version="1.0"?><StyledLayerDescriptor version="1.0.0">'
+    "<NamedLayer><UserStyle/></NamedLayer></StyledLayerDescriptor>"
+)
+EDITED = "<UserStyle><Title>edited</Title></UserStyle>"
 
 # ############################################################################
 # ########## Fakes ###############
@@ -162,8 +167,8 @@ class Recording(ResourceFormDialog):
 
 LATIN1_SLD = (
     '<?xml version="1.0" encoding="ISO-8859-1"?>'
-    '<StyledLayerDescriptor version="1.0.0"><Title>Caf\xe9</Title>'
-    "</StyledLayerDescriptor>"
+    '<StyledLayerDescriptor version="1.0.0"><NamedLayer><UserStyle>'
+    "<Title>Caf\xe9</Title></UserStyle></NamedLayer></StyledLayerDescriptor>"
 )
 
 
@@ -288,7 +293,7 @@ class TestStylesTab(unittest.TestCase):
         # one is recorded as 1.1, and the row kept 1.0.0 until F5.
         class Editing(ResourceFormDialog):
             def exec(self):
-                self.get_widget("body").setText("<sld version='1.1.0'/>")
+                self.get_widget("body").setText(SLD.replace('"1.0.0"', '"1.1.0"'))
                 return QDialog.DialogCode.Accepted
 
         reloads = []
@@ -445,7 +450,7 @@ class TestStyleDialogLayout(unittest.TestCase):
 # QGIS writes 1.1; GeoServer's own styles are 1.0.
 SLD_11 = (
     '<?xml version="1.0"?><StyledLayerDescriptor xmlns:se="http://www.opengis.net/se"'
-    ' version="1.1.0"><NamedLayer/></StyledLayerDescriptor>'
+    ' version="1.1.0"><NamedLayer><UserStyle/></NamedLayer></StyledLayerDescriptor>'
 )
 
 
@@ -1232,9 +1237,10 @@ def sld_with_icon(href):
     return (
         '<?xml version="1.0" encoding="UTF-8"?><StyledLayerDescriptor '
         'version="1.1.0" xmlns:se="http://www.opengis.net/se" '
-        'xmlns:xlink="http://www.w3.org/1999/xlink"><se:ExternalGraphic>'
-        f'<se:OnlineResource xlink:href="{href}" xlink:type="simple"/>'
-        "</se:ExternalGraphic></StyledLayerDescriptor>"
+        'xmlns:xlink="http://www.w3.org/1999/xlink"><NamedLayer><UserStyle>'
+        f'<se:ExternalGraphic><se:OnlineResource xlink:href="{href}" '
+        'xlink:type="simple"/></se:ExternalGraphic>'
+        "</UserStyle></NamedLayer></StyledLayerDescriptor>"
     )
 
 
@@ -1591,7 +1597,7 @@ class TestSavingAStyleDeletedMeanwhile(unittest.TestCase):
                 shown.append(self)
                 if len(shown) > 1:  # back in the editor after the refusal: give up
                     return QDialog.DialogCode.Rejected
-                self.get_widget("body").setText("<StyledLayerDescriptor/>")
+                self.get_widget("body").setText(SLD.replace("<UserStyle/>", EDITED))
                 return QDialog.DialogCode.Accepted
 
         with patch.object(tab_styles, "ResourceFormDialog", Editing):
@@ -1629,6 +1635,41 @@ class TestStyleBodyCheck(unittest.TestCase):
             StyleTabMixin._check_style_body("sld", "<a>\n  <Rule>\n</a>")
         self.assertIn("not well-formed XML", str(ctx.exception))
         self.assertIn("line 3", str(ctx.exception))
+
+    def test_what_geoserver_would_not_store_is_refused_before_a_request(self):
+        # A parsed save refused these with a 400 (2.28.5); a raw one stored
+        # them, and the layers using the style drew nothing.
+        dlg = SyncDialog()
+        dlg.gs = FakeGS()
+        for body, said in (
+            ("<foo/>", "root element is <foo>"),
+            ("<html><body/></html>", "root element is <html>"),
+            ('<StyledLayerDescriptor version="1.0.0"/>', "no UserStyle"),
+            (
+                "<StyledLayerDescriptor><NamedLayer><NamedStyle><Name>point</Name>"
+                "</NamedStyle></NamedLayer></StyledLayerDescriptor>",
+                "no UserStyle",
+            ),
+        ):
+            with self.subTest(body):
+                with self.assertRaises(ValueError) as ctx:
+                    StyleTabMixin._check_style_body("sld", body)
+                self.assertIn(said, str(ctx.exception))
+                with self.assertRaises(ValueError):
+                    dlg._put_sld_body("population", None, body)
+        self.assertEqual(dlg.gs.calls, [])
+        # What GeoServer took: a UserLayer, a prefix, a misspelt element.
+        for body in (
+            "<StyledLayerDescriptor><UserLayer><UserStyle/></UserLayer>"
+            "</StyledLayerDescriptor>",
+            '<sld:StyledLayerDescriptor xmlns:sld="http://www.opengis.net/sld">'
+            "<sld:NamedLayer><sld:UserStyle/></sld:NamedLayer>"
+            "</sld:StyledLayerDescriptor>",
+            "<StyledLayerDescriptor><NamedLayer><UserStyle><FeatureTypeStyl/>"
+            "</UserStyle></NamedLayer></StyledLayerDescriptor>",
+        ):
+            with self.subTest(body):
+                StyleTabMixin._check_style_body("sld", body)
 
     def test_an_mbstyle_that_is_not_json_is_refused(self):
         with self.assertRaises(ValueError) as ctx:

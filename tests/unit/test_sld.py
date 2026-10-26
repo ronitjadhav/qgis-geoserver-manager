@@ -27,6 +27,7 @@ from geoserver_manager.toolbelt.sld import (
     local_icons,
     relative_hrefs,
     sld_content_type,
+    sld_outline,
     sld_version,
     style_text,
     utf8_sld,
@@ -311,6 +312,21 @@ class TestIconsForQgis(unittest.TestCase):
                     self.assertEqual(
                         icons_for_qgis(graphic(href), self.BASE, "topp"), graphic(url)
                     )
+
+
+class TestSldOutline(unittest.TestCase):
+    def test_the_root_and_a_userstyle_are_read_whatever_the_prefix(self):
+        se = '<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" '
+        se += 'xmlns:se="http://www.opengis.net/se"><NamedLayer><UserStyle>'
+        se += "<se:FeatureTypeStyle/></UserStyle></NamedLayer></StyledLayerDescriptor>"
+        self.assertEqual(sld_outline(se), ("StyledLayerDescriptor", True))
+        self.assertEqual(sld_outline("<foo><UserStyle/></foo>"), ("foo", True))
+        self.assertEqual(
+            sld_outline(
+                "<StyledLayerDescriptor><!-- UserStyle --></StyledLayerDescriptor>"
+            ),
+            ("StyledLayerDescriptor", False),
+        )
 
 
 class TestXmlProblem(unittest.TestCase):

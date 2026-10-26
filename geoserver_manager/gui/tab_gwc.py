@@ -284,7 +284,7 @@ class GwcTabMixin:
                 # In a worker, so logged: silent, its groups just went missing.
                 self.log(
                     f"Tile cache: the layer groups of '{ws_name}' could not be "
-                    f"listed: {self._error_text(error)}",
+                    f"listed: {self._logged_error(error)}",
                     log_level=Qgis.MessageLevel.Warning,
                 )
         return sorted(published - set(self._gwc_layer_names()))

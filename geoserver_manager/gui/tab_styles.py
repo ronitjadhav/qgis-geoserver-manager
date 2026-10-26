@@ -31,6 +31,7 @@ from geoserver_manager.toolbelt.sld import (
     layer_to_sld,
     relative_hrefs,
     sld_content_type,
+    sld_outline,
     sld_version,
     style_text,
     styleable_project_layers,
@@ -320,6 +321,7 @@ class StyleTabMixin:
             the server supplied (the edit form) could name any file here,
             which would be read and uploaded without the user knowing.
         """
+        self._check_style_body("sld", sld)  # every caller: the raw PUT checks none
         content_type = sld_content_type(sld)
         data = utf8_sld(sld)
         package = icon_package(data.decode("utf-8"), name) if local_icons else None
@@ -900,6 +902,24 @@ class StyleTabMixin:
                     translate(
                         "StyleTabMixin", "The SLD is not well-formed XML: {}"
                     ).format(problem)
+                )
+            # A raw save stores what GeoServer's parsing refused (sld_outline).
+            root, styled = sld_outline(text)
+            if root != "StyledLayerDescriptor":
+                raise ValueError(
+                    translate(
+                        "StyleTabMixin",
+                        "This is not an SLD: its root element is <{}>, not "
+                        "<StyledLayerDescriptor>.",
+                    ).format(root)
+                )
+            if not styled:
+                raise ValueError(
+                    translate(
+                        "StyleTabMixin",
+                        "The SLD holds no UserStyle, which GeoServer needs to store "
+                        "it as a style.",
+                    )
                 )
         elif style_format == "mbstyle":
             try:

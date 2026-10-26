@@ -971,7 +971,7 @@ class GeoServerMainDialog(
                 # the Cancel button now.
                 if slot == "_upload" and error is not None:
                     self.log(
-                        f"{failure_message}: {self._error_text(error)}",
+                        f"{failure_message}: {self._logged_error(error)}",
                         log_level=Qgis.MessageLevel.Critical,
                     )
                 return
@@ -999,7 +999,7 @@ class GeoServerMainDialog(
                     )
                 elif error is not None:
                     self.log(
-                        f"{failure_message}: {self._error_text(error)}",
+                        f"{failure_message}: {self._logged_error(error)}",
                         log_level=Qgis.MessageLevel.Critical,
                     )
                 elif slot == "_upload" and (completed or not task.isCanceled()):
@@ -2107,14 +2107,23 @@ class GeoServerMainDialog(
             )
         return None
 
+    @staticmethod
+    def _logged_error(error):
+        """_error_text for a log line. A request that never reached GeoServer
+        keeps the network library's own words there: they tell a refused
+        connection from a reset one, which the translated sentence does not."""
+        detail = GeoServerMainDialog._error_text(error)
+        if GeoServerMainDialog._network_problem(error):
+            return f"{detail} ({error})"
+        return detail
+
     def _report_failure(self, failure_message, error):
         """A failed action: the same line in the banner and in the QGIS log,
         where a request that never reached GeoServer keeps its cause too."""
-        detail = self._error_text(error)
-        self.show_error_message(f"{failure_message}: {detail}")
-        cause = f" ({error})" if self._network_problem(error) else ""
+        self.show_error_message(f"{failure_message}: {self._error_text(error)}")
         self.log(
-            f"{failure_message}: {detail}{cause}", log_level=Qgis.MessageLevel.Critical
+            f"{failure_message}: {self._logged_error(error)}",
+            log_level=Qgis.MessageLevel.Critical,
         )
 
     def _require_connection(self):
@@ -2501,7 +2510,7 @@ class GeoServerMainDialog(
         for label, error in failures:
             # With GeoServer's reason: an HTTPError alone says only the URL.
             self.log(
-                f"Could not list {label}: {self._error_text(error)}",
+                f"Could not list {label}: {self._logged_error(error)}",
                 log_level=Qgis.MessageLevel.Warning,
             )
         shown = ", ".join(label for label, _ in failures[:5])
@@ -2591,7 +2600,10 @@ class GeoServerMainDialog(
                     detail = self._error_text(e)
                     errors.append((label, detail))
                     # Logged here: a batch that ends after Close shows no banner.
-                    self.log(f"{label}: {detail}", log_level=Qgis.MessageLevel.Critical)
+                    self.log(
+                        f"{label}: {self._logged_error(e)}",
+                        log_level=Qgis.MessageLevel.Critical,
+                    )
                 if task is not None:
                     task.setProgress(100 * (index + 1) / len(labeled_deletes))
             return errors

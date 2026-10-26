@@ -557,6 +557,21 @@ class TestErrorText(unittest.TestCase):
         )
         self.assertIn(raw, logged[0])
 
+    def test_every_log_line_keeps_the_cause(self):
+        # A listing that failed for one workspace logged the sentence only.
+        dlg = SyncDialog()
+        logged = []
+        dlg.log = lambda text, **kwargs: logged.append(text)
+        dlg.show_warning_message = lambda text: None
+        raw = "HTTPConnectionPool(host='gs', port=8080): Connection reset by peer"
+        dlg._report_partial_failures(
+            [("workspace 'sf'", requests.ConnectionError(raw))]
+        )
+        self.assertIn("connection to it was cut", logged[0])
+        self.assertIn(raw, logged[0])
+        # Anything else is logged as before.
+        self.assertEqual(GeoServerMainDialog._logged_error(ValueError("nope")), "nope")
+
 
 # ############################################################################
 # ###### Background loading ######

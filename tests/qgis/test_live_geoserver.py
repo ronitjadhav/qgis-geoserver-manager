@@ -455,17 +455,33 @@ class TestLiveGeoServer(unittest.TestCase):
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_broken.json"))
 
     def test_32c_a_document_geoserver_refuses_comes_back_in_the_form(self):
-        # Well-formed, so the form lets it through; GeoServer refuses it, and
-        # the form opens again with the text, which the user then gives up.
+        # An SLD the form lets through, with a filter GeoServer's parser
+        # cannot read: a 500 (2.28.5). The form opens again with the text,
+        # which the user then gives up.
+        sld = SLD.format(colour="#FF0000").replace(
+            "<Rule>",
+            "<Rule><ogc:Filter><ogc:PropertyIsEqualTo><ogc:Nope/>"
+            "</ogc:PropertyIsEqualTo></ogc:Filter>",
+        )
         with answering(
-            {"name": "live_refused", "workspace": WS, "sld": "<a/>"}, None
+            {"name": "live_refused", "workspace": WS, "sld": sld}, None
         ) as forms:
             self.dlg._add_style()
         (error,) = [text for level, text in self.banners if level == "error"]
         self.assertIn("live_refused", error)
-        self.assertEqual(forms.shown[1]["sld"], "<a/>")
+        self.assertEqual(forms.shown[1]["sld"], sld.strip())
         self.assertEqual(forms.shown[1]["name"], "live_refused")
         self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_refused.json"))
+
+    def test_32d_a_document_that_is_no_sld_stays_in_the_form(self):
+        # GeoServer's parsed save refused it with a 400; a raw save would
+        # store it, so the form refuses it before it closes.
+        with answering(
+            {"name": "live_no_sld", "workspace": WS, "sld": "<a/>"},
+            refused="not an SLD",
+        ):
+            self.dlg._add_style()
+        self.assertTrue(self.gone(f"workspaces/{WS}/styles/live_no_sld.json"))
 
     def test_33_set_the_layer_styles(self):
         kept = self.inspire(f"layers/{LAYER}.json", "layer", "archsites")

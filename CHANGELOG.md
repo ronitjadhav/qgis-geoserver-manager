@@ -61,7 +61,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the vers
   have no policy. The form shows "Not set" for them and keeps it.
 - **Fixed.** A saved SLD kept only GeoServer's re-encoding of it: its
   comments, any second style and its layout were lost. The SLD is stored as
-  written, as GeoServer's own editor stores it.
+  written, as GeoServer's own editor stores it. A document GeoServer would
+  not store, one that is not an SLD or holds no UserStyle, is refused in the
+  editor.
 - **Fixed.** A renamed style lost its metadata. A layer, coverage store or
   cascaded store saved without a change rewrote a text that GeoServer's web
   interface wrote with Windows line ends or spaces at its ends. Both are

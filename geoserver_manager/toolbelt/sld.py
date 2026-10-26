@@ -71,6 +71,23 @@ def xml_problem(text):
     return ""
 
 
+def sld_outline(text):
+    """(the root element's local name, whether a UserStyle is in it) of a
+    well-formed document.
+
+    GeoServer stores a style only from a StyledLayerDescriptor that holds a
+    UserStyle: a parsed save refused any other root, and an SLD with none,
+    with a 400 (measured on 2.28.5). A raw save, which keeps the text as
+    written, stores either, and the layers using the style draw nothing.
+    """
+    root = ElementTree.fromstring(text.encode("utf-8"))  # nosec B314
+
+    def local(tag):
+        return str(tag).rpartition("}")[2]
+
+    return local(root.tag), any(local(e.tag) == "UserStyle" for e in root.iter())
+
+
 def sld_version(sld):
     """The SLD version of a document: "1.1.0" or "1.0.0".
 

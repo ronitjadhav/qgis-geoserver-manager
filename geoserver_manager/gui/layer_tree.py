@@ -530,7 +530,8 @@ class LayerTreeMenu:
             detail = dlg._error_text(error)
             self._say(f"{failure_message}: {detail}", Qgis.MessageLevel.Critical)
             self.log(
-                f"{failure_message}: {detail}", log_level=Qgis.MessageLevel.Critical
+                f"{failure_message}: {dlg._logged_error(error)}",
+                log_level=Qgis.MessageLevel.Critical,
             )
             return False, None
         finally:

@@ -588,10 +588,12 @@ class ServerTabMixin:
         except Exception as error:
             detail = self._error_text(error)
             if not detail.startswith("HTTP 404"):
-                problem = "{}: {}".format(
-                    translate("ServerTabMixin", "Failed to read the log"), detail
+                failed = translate("ServerTabMixin", "Failed to read the log")
+                problem = f"{failed}: {detail}"
+                self.log(
+                    f"{failed}: {self._logged_error(error)}",
+                    log_level=Qgis.MessageLevel.Critical,
                 )
-                self.log(problem, log_level=Qgis.MessageLevel.Critical)
                 _say_over(form, QMessageBox.Icon.Warning, problem)
                 return
             tail = ""  # no such file: "Undefined resource path." (measured)
