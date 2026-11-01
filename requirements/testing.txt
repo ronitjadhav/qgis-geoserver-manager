@@ -1,5 +1,5 @@
 # Testing dependencies
 # --------------------
 
-pytest>=8
+pytest>=9.2.0
 packaging>=23
