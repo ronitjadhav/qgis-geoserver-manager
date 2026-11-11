@@ -99,7 +99,7 @@ jobs:
       run: sphinx-build -b html -j auto -W -d docs/_build/cache -q docs docs/_build/html
 
     - name: Download artifact from build workflow
-      if: ${{ env.CONDITION_IS_PUSH || env.CONDITION_IS_WORKFLOW_RUN || env.CONDITION_IS_DISPATCH }}
+      # runs on pull requests too, so a bump of this action gets a real run
       uses: dawidd6/action-download-artifact@v27
       with:
         allow_forks: false
@@ -120,18 +120,19 @@ jobs:
         path: docs/_build/html/*
         retention-days: 30
 
+    # env values are strings, and the string 'false' counts as true
     - name: Setup Pages
       uses: actions/configure-pages@v6
-      if: ${{ env.CONDITION_IS_PUSH || env.CONDITION_IS_WORKFLOW_RUN || env.CONDITION_IS_DISPATCH }}
+      if: env.CONDITION_IS_PUSH == 'true' || env.CONDITION_IS_WORKFLOW_RUN == 'true' || env.CONDITION_IS_DISPATCH == 'true'
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v5
-      if: ${{ env.CONDITION_IS_PUSH || env.CONDITION_IS_WORKFLOW_RUN || env.CONDITION_IS_DISPATCH }}
+      if: env.CONDITION_IS_PUSH == 'true' || env.CONDITION_IS_WORKFLOW_RUN == 'true' || env.CONDITION_IS_DISPATCH == 'true'
       with:
         # Upload entire repository
         path: docs/_build/html/
 
     - name: Deploy to GitHub Pages
       id: deployment
-      if: ${{ env.CONDITION_IS_PUSH || env.CONDITION_IS_WORKFLOW_RUN || env.CONDITION_IS_DISPATCH }}
+      if: env.CONDITION_IS_PUSH == 'true' || env.CONDITION_IS_WORKFLOW_RUN == 'true' || env.CONDITION_IS_DISPATCH == 'true'
       uses: actions/deploy-pages@v5
