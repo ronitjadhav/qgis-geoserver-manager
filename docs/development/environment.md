@@ -29,6 +29,9 @@ source .venv/bin/activate
 
 ## Install the development dependencies
 
+They need Python 3.11 or newer. QGIS on Ubuntu 22.04 runs Python 3.10: there,
+install only pre-commit, with `pipx install pre-commit`. The hooks bring their own tools.
+
 ```sh
 # bump dependencies inside venv
 python -m pip install -U pip
