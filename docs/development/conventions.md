@@ -134,6 +134,9 @@ to work on them, and links to the page that teaches each practice.
 
 ## Before you push
 
+On Python 3.10, install only `requirements/testing.txt` here, and pre-commit
+with pipx (see [the environment setup](environment.md#install-the-development-dependencies)).
+
 ```sh
 python -m pip install -r requirements/development.txt -r requirements/testing.txt
 pre-commit install
