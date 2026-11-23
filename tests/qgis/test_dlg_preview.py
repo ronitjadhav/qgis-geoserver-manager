@@ -184,10 +184,12 @@ class TestLayerPreview(unittest.TestCase):
         self.assertFalse(broken.isValid())
         dlg = LayerPreviewDialog("topp:roads", broken, None)
         self.assertFalse(dlg.message.isHidden())
-        self.assertEqual(
+        # the reason after the colon is QGIS's, and QGIS 4.4 leaves it out
+        self.assertTrue(
+            dlg.message.text().startswith(
+                "The layer did not load: Download of capabilities failed"
+            ),
             dlg.message.text(),
-            "The layer did not load: "
-            "Download of capabilities failed: Connection refused",
         )
         self.assertEqual(dlg.canvas.layers(), [])
         dlg.identify(QgsPointXY(0, 0))
