@@ -177,7 +177,7 @@ class TestLiveGeoServer(unittest.TestCase):
         cls.connecting = list(cls.banners)
         # A run that stopped half-way left its workspace behind.
         cls.rest("delete", f"workspaces/{WS}", params={"recurse": "true"}, accept=404)
-        cls.dlg._raw_rest("delete", cls.dlg._gridset_path(GRIDSET), accept=(404,))
+        cls.drop_gridset()
         # Server-wide settings the steps change, put back at the end.
         cls.server = {
             path: cls.rest("get", path).json()
@@ -192,12 +192,18 @@ class TestLiveGeoServer(unittest.TestCase):
             cls.rest(
                 "delete", f"workspaces/{WS}", params={"recurse": "true"}, accept=404
             )
-            cls.dlg._raw_rest("delete", cls.dlg._gridset_path(GRIDSET), accept=(404,))
+            cls.drop_gridset()
             for path, settings in cls.server.items():
                 cls.rest("put", path, json=settings)
         cls.dlg.close()
 
     added_to_qgis = []
+
+    @classmethod
+    def drop_gridset(cls):
+        # GeoWebCache can answer a DELETE of a gridset it lacks with a 500
+        if GRIDSET in cls.dlg._custom_gridset_names():
+            cls.dlg._raw_rest("delete", cls.dlg._gridset_path(GRIDSET))
 
     @classmethod
     def rest(cls, method, path, accept=(), **kwargs):
